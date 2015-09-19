@@ -1,3 +1,5 @@
+![img](pic.jpg)
+
 ### 概述
 以ps脚本解析LabelPlus文本以达到自动化导入psd的目的。
 
