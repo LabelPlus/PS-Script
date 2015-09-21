@@ -39,8 +39,7 @@ const _MT_ERROR_READLABELTEXTFILEFAILL = "解析LabelPlus文本失败";
 const _MT_ERROR_NOTCHOOSEIMAGE = "未选择输出图片";
 
 //
-// This is the class that contains our options for this script
-// The default values for this class are specified here
+// 初始设置
 //
 LabelPlusInputOptions = function(obj) {
   var self = this;
@@ -56,7 +55,7 @@ LabelPlusInputOptions.INI_FILE = Stdlib.PREFERENCES_FOLDER + "/LabelPlusInput.in
 LabelPlusInputOptions.LOG_FILE = Stdlib.PREFERENCES_FOLDER + "/LabelPlusInput.log";
 
 //
-// LabelPlusInput is our UI class
+// 用户UI
 //
 LabelPlusInput = function() {
   var self = this;
@@ -79,10 +78,12 @@ LabelPlusInput = function() {
     
 };
 
-LabelPlusInput.prototype = new GenericUI();// make it a subclass of GenericUI
+LabelPlusInput.prototype = new GenericUI();
 LabelPlusInput.prototype.typename = "LabelPlusInput";
 
-// Here is where we create the components of our panel
+//
+// createPanel回调函数
+//
 LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   var self = this;
   
@@ -101,6 +102,67 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   //------------------路径选择区------------------
   var xx = xOfs;
 
+  // LabelPlus文本文件输入
+  pnl.lpTextFileLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
+                            _MT_STRING_LABEL_TEXTFILE);
+  xx += 120;
+  pnl.lpTextFileTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20], '');
+  pnl.lpTextFileTextBox.enabled = false;
+  xx += 305;
+  pnl.lpTextFileBrowseButton = pnl.add('button', [xx,yy,xx+30,yy+20], '...');
+  
+  pnl.lpTextFileBrowseButton.onClick = function() {
+    try {
+      var pnl = this.parent;
+      var fmask =  "LabelPlus Text: *.txt";
+      var f = File.openDialog(_MT_STRING_LABEL_TEXTFILE, fmask);
+       
+      if (f && f.exists) {
+        pnl.lpTextFileTextBox.text = f.toUIString();
+        
+        //图源、输出文件夹赋上相同目录
+        var fl = new Folder(f.path);
+        pnl.sourceTextBox.text = fl.toUIString();
+        pnl.targetTextBox.text = fl.toUIString();
+        
+      }
+      else{
+        //取消
+        return;        
+      }
+      
+      // 确认      
+      pnl.chooseImageListBox.removeAll();
+      
+      var labelFile;
+      try{
+        labelFile = new LabelPlusTextReader(pnl.lpTextFileTextBox.text);        
+      }
+      catch(err){        
+        return;
+      }
+      var arr = labelFile.getImageList();
+      if(!arr){
+        pnl.parent.process.enabled = false;
+        alert(_MT_ERROR_READLABELTEXTFILEFAILL );
+        return;
+      }
+
+      for(var i=0; i<arr.length ;i++){
+        pnl.chooseImageListBox[i] = pnl.chooseImageListBox.add('item', arr[i], i);      
+        pnl.chooseImageListBox[i].selected = true;
+      }      
+      
+      pnl.labelFile = labelFile;  //返回LabelPlusTextReader对象
+      
+    } catch (e) {
+      alert(Stdlib.exceptionMessage(e));
+    }
+  };
+
+  xx = xOfs;
+  yy += 35;
+    
   // 图源文件夹 
   pnl.sourceLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_SOURCE);
@@ -141,7 +203,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx += 120;
   pnl.targetTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20],
                        opts.target || '');
-  //pnl.targetTextBox.enabled = false;
+  
   xx += 305;
   pnl.targetBrowse = pnl.add('button', [xx,yy,xx+30,yy+20], '...');
 
@@ -167,61 +229,6 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
     }
   };
 
-  xx = xOfs;
-  yy += 35;
-  
-  // LabelPlus文本文件输入
-  pnl.lpTextFileLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
-                            _MT_STRING_LABEL_TEXTFILE);
-  xx += 120;
-  pnl.lpTextFileTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20], '');
-  pnl.lpTextFileTextBox.enabled = false;
-  xx += 305;
-  pnl.lpTextFileBrowseButton = pnl.add('button', [xx,yy,xx+30,yy+20], '...');
-  
-  pnl.lpTextFileBrowseButton.onClick = function() {
-    try {
-      var pnl = this.parent;
-      var fmask =  "LabelPlus Text: *.txt";
-      var f = File.openDialog(_MT_STRING_LABEL_TEXTFILE, fmask);//todo:默认文件夹改为...
-       
-      if (f && f.exists) {
-        pnl.lpTextFileTextBox.text = f.toUIString();
-      }
-      else{
-        //取消
-        return;        
-      }
-      
-      // 确认      
-      pnl.chooseImageListBox.removeAll();
-      
-      var labelFile;
-      try{
-        labelFile = new LabelPlusTextReader(pnl.lpTextFileTextBox.text);        
-      }
-      catch(err){        
-        return;
-      }
-      var arr = labelFile.getImageList();
-      if(!arr){
-        pnl.parent.process.enabled = false;
-        alert(_MT_ERROR_READLABELTEXTFILEFAILL );
-        return;
-      }
-
-      for(var i=0; i<arr.length ;i++){
-        pnl.chooseImageListBox[i] = pnl.chooseImageListBox.add('item', arr[i], i);      
-        pnl.chooseImageListBox[i].selected = true;
-      }      
-      
-      pnl.labelFile = labelFile;  //返回LabelPlusTextReader对象
-      
-    } catch (e) {
-      alert(Stdlib.exceptionMessage(e));
-    }
-  };
-  
   //------------------设置区------------------
   xOfs = 20;
 
@@ -339,7 +346,7 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   }
   
   // Image选择  
-  if(pnl.chooseImageListBox.selection.length == 0)
+  if(!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0)
     return self.errorPrompt(_MT_ERROR_NOTCHOOSEIMAGE);
   else
     opts.imageSelected = pnl.chooseImageListBox.selection;  
@@ -424,13 +431,11 @@ LabelPlusInput.prototype.process = function(opts, doc) {
   Stdlib.log("Complete!");
 };
 
-
-
-LabelPlusTextReader = function(filename){
+LabelPlusTextReader = function(filename) {
   //测试段
-  this.imageList = ["a", "b", "c"];
-  this.getImageList = function() { return this.imageList; };  
-  return this;
+//~   this.imageList = ["a", "b", "c"];
+//~   this.getImageList = function() { return this.imageList; };  
+//~   return this;
   //测试段
   
   var self = this;
@@ -445,15 +450,105 @@ LabelPlusTextReader = function(filename){
   } 
   
   // 成员函数
-  this.getImageList = function() { return this.imageList; };  
+  self.getImageList = function() { return this.imageList; };  
   
   // 成员变量
   self.filename = filename;    
+  self.imageList; 
   
-  // 读取
+  // 打开
+  f.open("r");  
   
+  // 分行读取
+  var state = 'start'; //'start','filehead','context'
+  var notDealStr;
+  var notDealLabelheadMsg;
+  
+  for(var i=0; !f.eof; i++) {
+    var lineStr = f.readln();
+    var lineMsg = LabelPlusTextReader.judgeLineType(lineStr);
+    switch(state) {
+      case 'start':
+        switch (lineMsg.type) {
+          case 'filehead':
+            state = 'filehead';
+            //todo:LabelPlus文件头处理
+            //todo:创建文件存储
+            break;
+          case 'labelhead':
+            throw "start-filehead";
+            break;
+          case 'unkown':            
+            notDealStr += "\r" + lineStr;
+            break;
+        }
+        break;
+      case 'filehead':
+        switch (lineMsg.type) {
+          case 'filehead':
+            state = 'filehead';
+            //todo:创建文件存储
+            break;
+          case 'labelhead':
+            state = 'context';
+            notDealLabelheadMsg = lineMsg;
+            notDealStr = "";
+            break;
+          case 'unkown':            
+            break;
+        }      
+        break;
+      case 'context':
+        switch (lineMsg.type) {
+          case 'filehead':
+            //todo:保存标签
+            notDealStr = "";
+            state = 'filehead';
+            //todo:创建文件存储
+            break;
+          case 'labelhead':            
+            state = 'context';
+            notDealLabelheadMsg = lineMsg;
+            //todo:保存标签
+            notDealStr = "";
+            break;
+          case 'unkown':  
+            notDealStr += "\r" + lineStr;
+            break;
+        }      
+      break;       
+    }    
+  }
   
   return self;
+};
+
+//判断字符串行类型 'filehead','labelhead','unkown'
+LabelPlusTextReader.judgeLineType = function(str) {
+  var myType = 'unkown';
+  var myTitle;
+  var myValues;
+  
+  str = str.trim();
+  var fileheadRegExp = />{6,}[.+]<{6,}/g;
+  var labelheadRegExp = /-{6,}[\d+]-{6,}[.+]/g;
+  
+  if(fileheadRegExp.test(str)) {
+    myType = 'filehead';
+    //todo:
+    
+  }   
+  else if(labelheadRegExp.test(str)) {
+    myType = 'labelhead';
+    //todo:
+    
+  }
+  
+  return {    
+    type : myType,
+    title : myTitle,
+    values : myValues,
+  };
 };
 
 // 主程序
