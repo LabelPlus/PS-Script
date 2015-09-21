@@ -450,7 +450,7 @@ LabelPlusTextReader = function(filename) {
   } 
   
   // 成员函数
-  self.getImageList = function() { return this.imageList; };  
+  self.getImageList = function() { return this.filenameList; };  
   
   // 成员变量
   self.filename = filename;    
@@ -463,53 +463,73 @@ LabelPlusTextReader = function(filename) {
   var state = 'start'; //'start','filehead','context'
   var notDealStr;
   var notDealLabelheadMsg;
+  var labelData = new Array();
+  var filenameList = new Array();
+  var groupData;
   
   for(var i=0; !f.eof; i++) {
     var lineStr = f.readln();
     var lineMsg = LabelPlusTextReader.judgeLineType(lineStr);
     switch(state) {
       case 'start':
-        switch (lineMsg.type) {
-          case 'filehead':
-            state = 'filehead';
-            //todo:LabelPlus文件头处理
-            //todo:创建文件存储
+        switch (lineMsg.Type) {
+          case 'filehead':          //start-filehead
+           
+            //处理start blocks
+            var result = LabelPlusTextReader.readStartBlocks(notDealStr);
+            if(!result)
+                throw "readStartBlocks fail";
+            groupData = result.Groups;
+            
+            //新建文件项
+            data[lineMsg.Title] = new Array();
+            filenameList.push(lineMsg.Title);
             break;
-          case 'labelhead':
+          case 'labelhead':     //start-labelhead 不存在
             throw "start-filehead";
             break;
-          case 'unkown':            
+          case 'unkown':       //start-unkown
             notDealStr += "\r" + lineStr;
             break;
         }
         break;
       case 'filehead':
-        switch (lineMsg.type) {
-          case 'filehead':
-            state = 'filehead';
-            //todo:创建文件存储
+        switch (lineMsg.Type) {
+          case 'filehead':      //filehead-filehead 上一个文件无Label
+            data[lineMsg.Title] = new Array();
             break;
-          case 'labelhead':
+          case 'labelhead':     //filehead-labelhead
             state = 'context';
             notDealLabelheadMsg = lineMsg;
             notDealStr = "";
             break;
-          case 'unkown':            
+          case 'unkown':        //filehead-unkown
             break;
         }      
         break;
       case 'context':
-        switch (lineMsg.type) {
-          case 'filehead':
-            //todo:保存标签
+        switch (lineMsg.Type) {
+          case 'filehead':      //context-filehead
+            labelData[notDealLabelheadMsg.Title] = {
+                LabelheadValue : notDealLabelheadMsg.Values,
+                LabelString : notDealStr 
+            };
+        
             notDealStr = "";
             state = 'filehead';
-            //todo:创建文件存储
+            
+            //新建文件项
+            data[lineMsg.Title] = new Array();
+            filenameList.push(lineMsg.Title);
             break;
-          case 'labelhead':            
+          case 'labelhead':            //context-labelhead
             state = 'context';
-            notDealLabelheadMsg = lineMsg;
-            //todo:保存标签
+            labelData[notDealLabelheadMsg.Title] = {
+                LabelheadValue : notDealLabelheadMsg.Values,
+                LabelString : notDealStr 
+            };
+        
+            notDealLabelheadMsg = lineMsg;            
             notDealStr = "";
             break;
           case 'unkown':  
@@ -530,25 +550,53 @@ LabelPlusTextReader.judgeLineType = function(str) {
   var myValues;
   
   str = str.trim();
-  var fileheadRegExp = />{6,}[.+]<{6,}/g;
+  var fileheadRegExp = />{6,}[.+]<{6,}/g;   //todo:正则匹配不成功
   var labelheadRegExp = /-{6,}[\d+]-{6,}[.+]/g;
   
   if(fileheadRegExp.test(str)) {
     myType = 'filehead';
-    //todo:
-    
+    mytitle = str.substring(str.indexOf("[")+1, str.IndexOf("]")-1);       
   }   
   else if(labelheadRegExp.test(str)) {
     myType = 'labelhead';
-    //todo:
-    
+    mytitle = str.substring(str.indexOf("[")+1, str.IndexOf("]")-1);
+    valuesStr = str.substring(str.lastIndexOf("[")+1, str.lastIndexOf("]")-1)
+    myValues = valuesStr.split(",");    
   }
   
   return {    
-    type : myType,
-    title : myTitle,
-    values : myValues,
+    Type : myType,
+    Title : myTitle,
+    Values : myValues,
   };
+};
+
+LabelPlusTextReader.readStartBlocks = function(str) {
+var blocks = str.split ("-");
+    if(blocks.length < 3)
+        throw "Start blocks error!";
+    
+    //block1 文件头
+    var filehead = blocks[0].split(",");
+    if(filehead.length < 2)
+        throw "filehead error!";
+    var first_version = parseInt(filehead[0]);
+    var last_version = parseInt(filehead[1]);
+    
+    //block2 分组信息
+    var groups = blocks[1].split("\r");    
+    for(var i=0; i<groups.length; i++)
+        groups[i] = groups[i].trim();   
+    
+    //block末
+    var comment = blocks[blocks.length - 1];
+     
+    return {
+        FirstVer : first_version,
+        LastVer : last_version,
+        Groups : groups,
+        Comment : comment,
+    };
 };
 
 // 主程序
