@@ -13056,8 +13056,7 @@ const _MT_ERROR_READLABELTEXTFILEFAILL = "解析LabelPlus文本失败";
 const _MT_ERROR_NOTCHOOSEIMAGE = "未选择输出图片";
 
 //
-// This is the class that contains our options for this script
-// The default values for this class are specified here
+// 初始设置
 //
 LabelPlusInputOptions = function(obj) {
   var self = this;
@@ -13073,7 +13072,7 @@ LabelPlusInputOptions.INI_FILE = Stdlib.PREFERENCES_FOLDER + "/LabelPlusInput.in
 LabelPlusInputOptions.LOG_FILE = Stdlib.PREFERENCES_FOLDER + "/LabelPlusInput.log";
 
 //
-// LabelPlusInput is our UI class
+// 用户UI
 //
 LabelPlusInput = function() {
   var self = this;
@@ -13096,10 +13095,12 @@ LabelPlusInput = function() {
     
 };
 
-LabelPlusInput.prototype = new GenericUI();// make it a subclass of GenericUI
+LabelPlusInput.prototype = new GenericUI();
 LabelPlusInput.prototype.typename = "LabelPlusInput";
 
-// Here is where we create the components of our panel
+//
+// 用户界面构建
+//
 LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   var self = this;
   
@@ -13118,6 +13119,68 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   //------------------路径选择区------------------
   var xx = xOfs;
 
+  // LabelPlus文本文件输入
+  pnl.lpTextFileLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
+                            _MT_STRING_LABEL_TEXTFILE);
+  xx += 120;
+  pnl.lpTextFileTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20], '');
+  pnl.lpTextFileTextBox.enabled = false;
+  xx += 305;
+  pnl.lpTextFileBrowseButton = pnl.add('button', [xx,yy,xx+30,yy+20], '...');
+  
+  pnl.lpTextFileBrowseButton.onClick = function() {
+    try {
+      var pnl = this.parent;
+      var fmask =  "LabelPlus Text: *.txt";
+      var f = File.openDialog(_MT_STRING_LABEL_TEXTFILE, fmask);
+       
+      if (f && f.exists) {
+        pnl.lpTextFileTextBox.text = f.toUIString();
+        
+        //图源、输出文件夹赋上相同目录
+        var fl = new Folder(f.path);
+        pnl.sourceTextBox.text = fl.toUIString();
+        pnl.targetTextBox.text = fl.toUIString();
+        
+      }
+      else{
+        //取消
+        return;        
+      }
+      
+      // 确认      
+      pnl.chooseImageListBox.removeAll();
+      
+      var labelFile;
+      try{
+        labelFile = new LabelPlusTextReader(pnl.lpTextFileTextBox.text);        
+      }
+      catch(err){        
+        alert(err);
+        return;
+      }
+      var arr = labelFile.ImageList;
+      if(!arr){
+        pnl.parent.process.enabled = false;
+        alert(_MT_ERROR_READLABELTEXTFILEFAILL );
+        return;
+      }
+
+      for(var i=0; i<arr.length ;i++){
+        pnl.chooseImageListBox[i] = pnl.chooseImageListBox.add('item', arr[i], i);      
+        pnl.chooseImageListBox[i].selected = true;
+      }      
+      
+      pnl.labelFile = labelFile;  //返回LabelPlusTextReader对象
+      
+    } catch (e) {
+      alert(Stdlib.exceptionMessage(e));
+    }
+  };
+
+  xx = xOfs;
+  yy += 35;
+    
   // 图源文件夹 
   pnl.sourceLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_SOURCE);
@@ -13158,7 +13221,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx += 120;
   pnl.targetTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20],
                        opts.target || '');
-  //pnl.targetTextBox.enabled = false;
+  
   xx += 305;
   pnl.targetBrowse = pnl.add('button', [xx,yy,xx+30,yy+20], '...');
 
@@ -13184,61 +13247,6 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
     }
   };
 
-  xx = xOfs;
-  yy += 35;
-  
-  // LabelPlus文本文件输入
-  pnl.lpTextFileLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
-                            _MT_STRING_LABEL_TEXTFILE);
-  xx += 120;
-  pnl.lpTextFileTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20], '');
-  pnl.lpTextFileTextBox.enabled = false;
-  xx += 305;
-  pnl.lpTextFileBrowseButton = pnl.add('button', [xx,yy,xx+30,yy+20], '...');
-  
-  pnl.lpTextFileBrowseButton.onClick = function() {
-    try {
-      var pnl = this.parent;
-      var fmask =  "LabelPlus Text: *.txt";
-      var f = File.openDialog(_MT_STRING_LABEL_TEXTFILE, fmask);//todo:默认文件夹改为...
-       
-      if (f && f.exists) {
-        pnl.lpTextFileTextBox.text = f.toUIString();
-      }
-      else{
-        //取消
-        return;        
-      }
-      
-      // 确认      
-      pnl.chooseImageListBox.removeAll();
-      
-      var labelFile;
-      try{
-        labelFile = new LabelPlusTextReader(pnl.lpTextFileTextBox.text);        
-      }
-      catch(err){        
-        return;
-      }
-      var arr = labelFile.getImageList();
-      if(!arr){
-        pnl.parent.process.enabled = false;
-        alert(_MT_ERROR_READLABELTEXTFILEFAILL );
-        return;
-      }
-
-      for(var i=0; i<arr.length ;i++){
-        pnl.chooseImageListBox[i] = pnl.chooseImageListBox.add('item', arr[i], i);      
-        pnl.chooseImageListBox[i].selected = true;
-      }      
-      
-      pnl.labelFile = labelFile;  //返回LabelPlusTextReader对象
-      
-    } catch (e) {
-      alert(Stdlib.exceptionMessage(e));
-    }
-  };
-  
   //------------------设置区------------------
   xOfs = 20;
 
@@ -13320,7 +13328,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
 };
 
 //
-// code for validating our panel
+// 读出用户UI数据
 //
 LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   var self = this;
@@ -13354,9 +13362,10 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   if(!f || !f.exists) {
     return self.errorPrompt(_MT_ERROR_NOTFOUNLABELTEXT);
   }
+  opts.labelFilename = pnl.lpTextFileTextBox.text;
   
   // Image选择  
-  if(pnl.chooseImageListBox.selection.length == 0)
+  if(!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0)
     return self.errorPrompt(_MT_ERROR_NOTCHOOSEIMAGE);
   else
     opts.imageSelected = pnl.chooseImageListBox.selection;  
@@ -13373,7 +13382,7 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   
   // 使用指定类型图源
   if (pnl.setSourceFileTypeCheckBox.value){    
-    opts.sourceFileType = pnl.setSourceFileTypeList.selection;
+    opts.sourceFileType = pnl.setSourceFileTypeList.selection.text;
   }
   else
     opts.sourceFileType = undefined;
@@ -13390,131 +13399,289 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   return opts;
 };
 
+//
+// 执行用户UI功能
+//
 LabelPlusInput.prototype.process = function(opts, doc) {
   var self = this;
 
   Stdlib.log.setFile(LabelPlusInputOptions.LOG_FILE);
   Stdlib.log("Start");
   Stdlib.log("Properties:");
-  Stdlib.log(listProps(opts));
-
-  
-  //检查图片文件是否存在, 若存在, 将它替换成绝对路径
-  for(var i=0; i<opts.imageSelected.length ; i++) {
-    var filename = opts.imageSelected[i];
-    //todo:根据sourceFileType替换文件后缀名    
+  Stdlib.log(listProps(opts)); 
     
-    var f = File(opts.source + "//" + filename);
-    if(!f || filename){
+  //解析LabelPlus文本
+  var lpFile = new LabelPlusTextReader(opts.labelFilename);
+  
+  //遍历所选图片 导入数据= =
+  for(var i=0; i<opts.imageSelected.length; i++){
+    var originName = opts.imageSelected[i].text;
+    var filename;
+    var labelData = lpFile.LabelData[originName];
+    var gourpData = lpFile.GroupData;
+    
+    // 根据sourceFileType替换文件后缀名      
+    if(opts.sourceFileType){
+      filename = originName.substring(0,originName.lastIndexOf("."))  + opts.sourceFileType;
+    }
+    else
+      filename = originName;
+
+    // 不处理无标号文档
+    if(!opts.outputNoSignPsd && labelData.length == 0)
+      continue;
+      
+    var bgFile = File(opts.source + "//" + filename);
+    if(!bgFile || !bgFile.exists){
       var msg = "Image " + filename + " Not Found.";
       Stdlib.log(msg);
       alert(msg);
-      return;    
-    }
-    else{
-      opts.imageSelected[i] = f.toUIString();
-    }
-  }  
-  
-  //解析LabelPlus文本
-  var lpFile = new LabelPlusTextReader(filename);
-  
-  //遍历所选图片 导入数据
-  for(var i=0; i<opts.imageSelected.length; i++){
-    var filename = opts.imageSelected[i];
+      continue;
+    } 
+      
+    // 打开文件 
+    var bg = app.open(bgFile);
     
+    var layerGroups = new Array();
+    
+    // 遍历LabelData
+    for(var i=0; i<labelData.length; i++){
+        var labelNum = i+1;
+        var labelX = labelData[i].LabelheadValue[0];
+        var labelY = labelData[i].LabelheadValue[1];
+        var labelGroup = gourpData[labelData[i].LabelheadValue[2]];
+        var labelString = labelData[i].LabelString;
+        var artLayer;
+        
+        //创建分组
+        if(!layerGroups[labelGroup]){
+          layerGroups[labelGroup] = bg.layerSets.add();
+          layerGroups[labelGroup].name = labelGroup;
+        }       
+        
+        // 导出标号
+        if(opts.outputLabelNumber){
+          LabelPlusInput.newTextLayer(bg,
+            labelNum,
+            labelX,
+            labelY,
+            opts.font.font,
+            opts.font.size,            
+            false,
+            90);
+        }
+      
+        // 导出文本
+        if(labelString != ""){
+          artLayer = LabelPlusInput.newTextLayer(bg,
+            labelString,
+            labelX,
+            labelY,
+            opts.font.font,
+            opts.font.size,
+            true,
+            90,
+            layerGroups[labelGroup] );          
+          
+        }
+        
+        // 执行动作,名称为分组名
+        if(opts.runActionGroup) {
+          bg.activeLayer = artLayer;
+          app.doAction(labelGroup , opts.runActionGroup);
+        }        
+    }
+
+    // 保存文件
+    var fileOut = new File(opts.target + "//" + filename);
+    var options = PhotoshopSaveOptions;
+    var asCopy = false;
+    var extensionType = Extension.LOWERCASE;
+    bg.saveAs(fileOut, options, asCopy, extensionType);
+    
+    // 关闭文件
+    if(!opts.notClose)
+      bg.close();    
   }
   
-/*
-  if (!opts.source) {
-    var msg = "Source folder not specified.";
-    Stdlib.log(msg);
-    alert(msg);
-    return;
-  }
-  var f = new Folder(opts.source);
-  if (!f.exists) {
-    var msg = "Unable to find source folder: " + f.toUIString();
-    Stdlib.log(msg);
-    alert(msg);
-    return;
-  }
-  opts.source = f;
-
-  if (!opts.target) {
-    var msg = "Output folder not specified.";
-    Stdlib.log(msg);
-    alert(msg);
-    return;
-  }
-  f = new Folder(opts.target);
-  if (!f.exists) {
-    if (!f.create()) {
-      var msg = "Unable to create output folder: " + f.toUIString();
-      Stdlib.log(msg);
-      alert(msg);
-      return;
-    }
-  }
-  opts.target = f;
-
-  var ru = app.preferences.rulerUnits;
-  app.preferences.rulerUnits = Units.PIXELS;
-
-  try {
-    // alert(listProps(opts));
-
-  } catch (e) {
-    var msg = Stdlib.exceptionMessage(e);
-    Stdlib.log(msg);
-    alert(msg);
-
-  } finally {
-    app.preferences.rulerUnits = ru;
-  }
-*/
-  Stdlib.log("Stop");
+  Stdlib.log("Complete!");
 };
 
-LabelPlusTextReader = function(filename){
-  //测试段
-  this.imageList = ["a", "b", "c"];
-  this.getImageList = function() { return this.imageList; };  
-  return this;
-  //测试段
-  
+LabelPlusTextReader = function(path) {  
   var self = this;
   
-  if(!filename){    
+  if(!path){    
     throw "LabelPlusTextReader no filename";
   }
   
-  var f = new File(filename);  
+  var f = new File(path);  
   if(!f || !f.exists){    
     throw "LabelPlusTextReader file not exists";
   } 
   
-  // 成员函数
-  this.getImageList = function() { return this.imageList; };  
+  // 打开
+  f.open("r");  
+  
+  // 分行读取
+  var state = 'start'; //'start','filehead','context'
+  var notDealStr;
+  var notDealLabelheadMsg;
+  var nowFilename;
+  var labelData = new Array();
+  var filenameList = new Array();
+  var groupData;
+  
+  for(var i=0; !f.eof; i++) {
+    var lineStr = f.readln();
+    var lineMsg = LabelPlusTextReader.judgeLineType(lineStr);
+    switch (lineMsg.Type){
+      case 'filehead':
+        if(state == 'start'){
+          //处理start blocks
+          var result = LabelPlusTextReader.readStartBlocks(notDealStr);
+          if(!result)
+              throw "readStartBlocks fail";
+          groupData = result.Groups;        
+        }
+        else if(state == 'filehead'){        
+        }
+        else if(state == 'context'){
+          //保存label
+          labelData[nowFilename].push(
+              {
+              LabelheadValue : notDealLabelheadMsg.Values,
+              LabelString : notDealStr.trim() }
+          );        
+        }    
+      
+        //新建文件项
+        labelData[lineMsg.Title] = new Array();
+        filenameList.push(lineMsg.Title);
+        nowFilename = lineMsg.Title;    
+        notDealStr = "";
+        state = 'filehead';      
+        break;
+        
+      case 'labelhead':
+        if(state == 'start'){   //start-labelhead 不存在
+              throw "start-filehead";
+              break;        
+        }
+        else if(state == 'filehead'){
+        }
+        else if(state == 'context'){
+          labelData[nowFilename].push(
+              {
+              LabelheadValue : notDealLabelheadMsg.Values,
+              LabelString : notDealStr.trim() }
+          );        
+        }    
+        
+        notDealStr = "";
+        notDealLabelheadMsg = lineMsg;
+        state = 'context';
+        break;
+        
+      case 'unkown':
+        notDealStr += "\r" + lineStr;
+        break; 
+      }
+  }
   
   // 成员变量
-  self.filename = filename;    
+  self.Path = path;      
+  self.ImageList = filenameList;
+  self.LabelData = labelData;
+  self.GroupData = groupData;
   
-  //todo:读取
+  // 成员函数 
   
   return self;
 };
 
-// 读取LabelPlus文本文件
-LabelPlusInput.readLabelPlusText = function(filename) {
-  var arr = ["a", "b", "c"];
-  return  arr;
+//判断字符串行类型 'filehead','labelhead','unkown'
+LabelPlusTextReader.judgeLineType = function(str) {
+  var myType = 'unkown';
+  var myTitle;
+  var myValues;
   
-  var file = new File(filename);
-  if(!file || !file.exists){
-    return undefined;
+  str = str.trim();
+  var fileheadRegExp = />{6,}\[.+\]<{6,}/g;
+  var labelheadRegExp = /-{6,}\[\d+\]-{6,}\[.+\]/g;
+  
+  var fileheadStrArr = fileheadRegExp.exec(str);
+  var labelheadStrArr = labelheadRegExp.exec(str);
+  if(fileheadStrArr &&  fileheadStrArr.length != 0) {
+    myType = 'filehead';
+    var s = fileheadStrArr[0];
+    myTitle = s.substring(s.indexOf("[")+1, s.indexOf("]"));       
+  }   
+  else if(labelheadStrArr && labelheadStrArr.length !=0) {
+    myType = 'labelhead';
+    var s = labelheadStrArr[0];
+    myTitle = s.substring(s.indexOf("[")+1, s.indexOf("]"));
+    valuesStr = s.substring(s.lastIndexOf("[")+1, s.lastIndexOf("]"))
+    myValues = valuesStr.split(",");    
   }
+  
+  return {    
+    Type : myType,
+    Title : myTitle,
+    Values : myValues,
+  };
 };
+
+LabelPlusTextReader.readStartBlocks = function(str) {
+var blocks = str.split ("-");
+    if(blocks.length < 3)
+        throw "Start blocks error!";
+    
+    //block1 文件头
+    var filehead = blocks[0].split(",");
+    if(filehead.length < 2)
+        throw "filehead error!";
+    var first_version = parseInt(filehead[0]);
+    var last_version = parseInt(filehead[1]);
+    
+    //block2 分组信息
+    var groups = blocks[1].split("\r");    
+    for(var i=0; i<groups.length; i++)
+        groups[i] = groups[i].trim();   
+    
+    //block末
+    var comment = blocks[blocks.length - 1];
+     
+    return {
+        FirstVer : first_version,
+        LastVer : last_version,
+        Groups : groups,
+        Comment : comment,
+    };
+};
+
+LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity,group) {
+  artLayerRef = doc.artLayers.add();
+  artLayerRef.kind = LayerKind.TEXT;
+  textItemRef = artLayerRef.textItem;
+
+  textItemRef.contents = text;
+  
+  if(size)
+    textItemRef.size = size;
+  else
+    textItemRef.size = doc.height / 130;
+    
+  textItemRef.font = font;
+  if(isVertical)
+    textItemRef.direction = Direction.VERTICAL;
+  textItemRef.antiAliasMethod = AntiAlias.SMOOTH;
+  textItemRef.position = Array(doc.width*x,doc.height*y);
+
+  if(group)
+    artLayerRef.move(group, ElementPlacement.PLACEATBEGINNING);  
+    
+  return artLayerRef;
+}
 
 // 主程序
 LabelPlusInput.main = function() {

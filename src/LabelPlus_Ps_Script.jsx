@@ -23,11 +23,14 @@ const _MY_TIP_TEXT = "内容";
 const _MT_STRING_LABEL_TEXTFILE = "LabelPlus文本:";
 const _MT_STRING_LABEL_SOURCE = "图源文件夹:";
 const _MT_STRING_LABEL_TARGET = "输出PSD文件夹:";
+const _MT_STRING_LABEL_FONT = "字体:";
+
 const _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER = "导出标号";
 const _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD = "处理无标号文档";
 const _MT_STRING_CHECKBOX_SETSOURCETYPE = "指定图源后缀名";
 const _MT_STRING_CHECKBOX_RUNACTION = "根据分组执行动作GroupN";
 const _MT_STRING_CHECKBOX_NOTCLOSE = "导入后不关闭文档";
+const _MT_STRING_CHECKBOX_SETFONT = "修改默认字体";
 
 const _MT_STRING_LABEL_SELECTIMAGE = "选择需要导入的图片";
 
@@ -68,7 +71,7 @@ LabelPlusInput = function() {
     x: 200,
     y: 200,
     w: 675,
-    h: 435
+    h: 455
   };  
   
   self.title = _MY_APPNAME + " " + _MY_VER;// our window title
@@ -82,7 +85,7 @@ LabelPlusInput.prototype = new GenericUI();
 LabelPlusInput.prototype.typename = "LabelPlusInput";
 
 //
-// createPanel回调函数
+// 用户界面构建
 //
 LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   var self = this;
@@ -236,10 +239,28 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 35;
   
+  // 使用自定义字体设置
+  pnl.setFontCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                           _MT_STRING_CHECKBOX_SETFONT);  
+  pnl.setFontCheckBox.onClick = function() {
+    var value = pnl.setFontCheckBox.value;
+    pnl.font.family.enabled = value;
+    pnl.font.style.enabled = value;
+    pnl.font.fontSize.enabled = value;
+  }   
+ 
+ xx = xOfs;
+  yy += 25;
+  
   // 字体
   pnl.font = pnl.add('group', [xx,yy,xx+400,yy+40]);
   self.createFontPanel(pnl.font, ini);
-
+  pnl.font.label.text = _MT_STRING_LABEL_FONT;  
+  pnl.font.family.enabled = false;
+  pnl.font.style.enabled = false;
+  pnl.font.fontSize.enabled = false;
+  pnl.font.family.selection = pnl.font.family.find("SimSun");
+  
   xx = xOfs;
   yy += 30;
   
@@ -311,7 +332,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
 };
 
 //
-// code for validating our panel
+// 读出用户UI数据
 //
 LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   var self = this;
@@ -345,6 +366,7 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   if(!f || !f.exists) {
     return self.errorPrompt(_MT_ERROR_NOTFOUNLABELTEXT);
   }
+  opts.labelFilename = pnl.lpTextFileTextBox.text;
   
   // Image选择  
   if(!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0)
@@ -354,7 +376,10 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   
   
   // 字体  
-  opts.font = pnl.font.getFont();
+  opts.setFont = pnl.setFontCheckBox.value;
+  var font = pnl.font.getFont()
+  opts.font = font.font;
+  opts.fontSize = font.size;
   
   // 导出标号选项
   opts.outputLabelNumber = pnl.outputLabelNumberCheckBox.value;
@@ -364,7 +389,7 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   
   // 使用指定类型图源
   if (pnl.setSourceFileTypeCheckBox.value){    
-    opts.sourceFileType = pnl.setSourceFileTypeList.selection;
+    opts.sourceFileType = pnl.setSourceFileTypeList.selection.text;
   }
   else
     opts.sourceFileType = undefined;
@@ -381,52 +406,112 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   return opts;
 };
 
+//
+// 执行用户UI功能
+//
 LabelPlusInput.prototype.process = function(opts, doc) {
   var self = this;
 
   Stdlib.log.setFile(LabelPlusInputOptions.LOG_FILE);
   Stdlib.log("Start");
   Stdlib.log("Properties:");
-  Stdlib.log(listProps(opts));
-
+  Stdlib.log(listProps(opts)); 
+    
+  //解析LabelPlus文本
+  var lpFile = new LabelPlusTextReader(opts.labelFilename);
   
-  //检查图片文件是否存在, 若存在, 将它转换成绝对路径
-  var fullFilename = [];
-  for(var i=0; i<opts.imageSelected.length ; i++) {
-    var filename = opts.imageSelected[i];    
+  //选项排序
+  opts.imageSelected.sort();
+  
+  //遍历所选图片 导入数据= =
+  for(var i=0; i<opts.imageSelected.length; i++){
+    var originName = opts.imageSelected[i].text;
+    var filename;
+    var labelData = lpFile.LabelData[originName];
+    var gourpData = lpFile.GroupData;
     
+    // 根据sourceFileType替换文件后缀名      
     if(opts.sourceFileType){
-      //todo:根据sourceFileType替换文件后缀名              
+      filename = originName.substring(0,originName.lastIndexOf("."))  + opts.sourceFileType;
     }
-    
-    var f = File(opts.source + "//" + filename);
-    if(!f || filename){
+    else
+      filename = originName;
+
+    // 不处理无标号文档
+    if(!opts.outputNoSignPsd && labelData.length == 0)
+      continue;
+      
+    var bgFile = File(opts.source + "//" + filename);
+    if(!bgFile || !bgFile.exists){
       var msg = "Image " + filename + " Not Found.";
       Stdlib.log(msg);
       alert(msg);
-      return;    
-    }
-    else{
-      fullFilename[i] = f.toUIString();
-    }
-  }  
-  
-  //解析LabelPlus文本
-  var lpFile = new LabelPlusTextReader(filename);
-  
-  //遍历所选图片 导入数据
-  for(var i=0; i<opts.imageSelected.length; i++){
-    var filename = opts.imageSelected[i];
-    
-    var artLayerRef;
-    var textItemRef;
-    
-    //打开原文件
-    var bgFile = File(filename);
+      continue;
+    } 
+      
+    // 打开文件 
     var bg = app.open(bgFile);
     
-    //todo:遍历
+    var layerGroups = new Array();
     
+    // 遍历LabelData
+    for(var j=0; j<labelData.length; j++){
+        var labelNum = j+1;
+        var labelX = labelData[j].LabelheadValue[0];
+        var labelY = labelData[j].LabelheadValue[1];
+        var labelGroup = gourpData[labelData[j].LabelheadValue[2]];
+        var labelString = labelData[j].LabelString;
+        var artLayer;
+        
+        //创建分组
+        if(!layerGroups[labelGroup]){
+          layerGroups[labelGroup] = bg.layerSets.add();
+          layerGroups[labelGroup].name = labelGroup;
+        }       
+        
+        // 导出标号
+        if(opts.outputLabelNumber){
+          LabelPlusInput.newTextLayer(bg,
+            labelNum,
+            labelX,
+            labelY,
+            "Arial",
+            opts.setFont ? opts.fontSize : undefined,
+            false,
+            90);
+        }
+      
+        // 导出文本
+        if(labelString != ""){
+          artLayer = LabelPlusInput.newTextLayer(bg,
+            labelString,
+            labelX,
+            labelY,
+            opts.setFont ? opts.font : "SimSun",
+            opts.setFont ? opts.fontSize : undefined,
+            true,
+            90,
+            layerGroups[labelGroup] );          
+          
+        }
+        
+        // 执行动作,名称为分组名
+        if(opts.runActionGroup) {
+          bg.activeLayer = artLayer;
+          app.doAction(labelGroup , opts.runActionGroup);
+        }        
+    }
+
+    // 保存文件
+    var fileOut = new File(opts.target + "//" + filename);
+    var options = PhotoshopSaveOptions;
+    var asCopy = false;
+    var extensionType = Extension.LOWERCASE;
+    bg.saveAs(fileOut, options, asCopy, extensionType);
+    
+    // 关闭文件
+    if(!opts.notClose)
+      bg.close();    
   }
   
   Stdlib.log("Complete!");
@@ -475,7 +560,7 @@ LabelPlusTextReader = function(path) {
           labelData[nowFilename].push(
               {
               LabelheadValue : notDealLabelheadMsg.Values,
-              LabelString : notDealStr }
+              LabelString : notDealStr.trim() }
           );        
         }    
       
@@ -498,7 +583,7 @@ LabelPlusTextReader = function(path) {
           labelData[nowFilename].push(
               {
               LabelheadValue : notDealLabelheadMsg.Values,
-              LabelString : notDealStr }
+              LabelString : notDealStr.trim() }
           );        
         }    
         
@@ -519,8 +604,8 @@ LabelPlusTextReader = function(path) {
   self.LabelData = labelData;
   self.GroupData = groupData;
   
-  // 成员函数
-  //self.getImageList = function() { return this.filenameList; };  
+  // 成员函数 
+  
   return self;
 };
 
@@ -531,7 +616,7 @@ LabelPlusTextReader.judgeLineType = function(str) {
   var myValues;
   
   str = str.trim();
-  var fileheadRegExp = />{6,}\[.+\]<{6,}/g;   //todo:正则匹配不成功  
+  var fileheadRegExp = />{6,}\[.+\]<{6,}/g;
   var labelheadRegExp = /-{6,}\[\d+\]-{6,}\[.+\]/g;
   
   var fileheadStrArr = fileheadRegExp.exec(str);
@@ -583,6 +668,30 @@ var blocks = str.split ("-");
         Comment : comment,
     };
 };
+
+LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity,group) {
+  artLayerRef = doc.artLayers.add();
+  artLayerRef.kind = LayerKind.TEXT;
+  textItemRef = artLayerRef.textItem;
+
+  textItemRef.contents = text;
+  
+  if(size)
+    textItemRef.size = size;
+  else
+    textItemRef.size = doc.height / 130;
+  
+  textItemRef.font = font;
+  if(isVertical)
+    textItemRef.direction = Direction.VERTICAL;
+  textItemRef.antiAliasMethod = AntiAlias.SMOOTH;
+  textItemRef.position = Array(doc.width*x,doc.height*y);
+
+  if(group)
+    artLayerRef.move(group, ElementPlacement.PLACEATBEGINNING);  
+    
+  return artLayerRef;
+}
 
 // 主程序
 LabelPlusInput.main = function() {
