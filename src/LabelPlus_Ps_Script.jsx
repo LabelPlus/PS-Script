@@ -139,9 +139,10 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
         labelFile = new LabelPlusTextReader(pnl.lpTextFileTextBox.text);        
       }
       catch(err){        
+        alert(err);
         return;
       }
-      var arr = labelFile.getImageList();
+      var arr = labelFile.ImageList;
       if(!arr){
         pnl.parent.process.enabled = false;
         alert(_MT_ERROR_READLABELTEXTFILEFAILL );
@@ -431,30 +432,17 @@ LabelPlusInput.prototype.process = function(opts, doc) {
   Stdlib.log("Complete!");
 };
 
-LabelPlusTextReader = function(filename) {
-  //测试段
-//~   this.imageList = ["a", "b", "c"];
-//~   this.getImageList = function() { return this.imageList; };  
-//~   return this;
-  //测试段
-  
+LabelPlusTextReader = function(path) {  
   var self = this;
   
-  if(!filename){    
+  if(!path){    
     throw "LabelPlusTextReader no filename";
   }
   
-  var f = new File(filename);  
+  var f = new File(path);  
   if(!f || !f.exists){    
     throw "LabelPlusTextReader file not exists";
   } 
-  
-  // 成员函数
-  self.getImageList = function() { return this.filenameList; };  
-  
-  // 成员变量
-  self.filename = filename;    
-  self.imageList; 
   
   // 打开
   f.open("r");  
@@ -463,6 +451,7 @@ LabelPlusTextReader = function(filename) {
   var state = 'start'; //'start','filehead','context'
   var notDealStr;
   var notDealLabelheadMsg;
+  var nowFilename;
   var labelData = new Array();
   var filenameList = new Array();
   var groupData;
@@ -470,76 +459,68 @@ LabelPlusTextReader = function(filename) {
   for(var i=0; !f.eof; i++) {
     var lineStr = f.readln();
     var lineMsg = LabelPlusTextReader.judgeLineType(lineStr);
-    switch(state) {
-      case 'start':
-        switch (lineMsg.Type) {
-          case 'filehead':          //start-filehead
-           
-            //处理start blocks
-            var result = LabelPlusTextReader.readStartBlocks(notDealStr);
-            if(!result)
-                throw "readStartBlocks fail";
-            groupData = result.Groups;
-            
-            //新建文件项
-            data[lineMsg.Title] = new Array();
-            filenameList.push(lineMsg.Title);
-            break;
-          case 'labelhead':     //start-labelhead 不存在
-            throw "start-filehead";
-            break;
-          case 'unkown':       //start-unkown
-            notDealStr += "\r" + lineStr;
-            break;
-        }
-        break;
+    switch (lineMsg.Type){
       case 'filehead':
-        switch (lineMsg.Type) {
-          case 'filehead':      //filehead-filehead 上一个文件无Label
-            data[lineMsg.Title] = new Array();
-            break;
-          case 'labelhead':     //filehead-labelhead
-            state = 'context';
-            notDealLabelheadMsg = lineMsg;
-            notDealStr = "";
-            break;
-          case 'unkown':        //filehead-unkown
-            break;
-        }      
+        if(state == 'start'){
+          //处理start blocks
+          var result = LabelPlusTextReader.readStartBlocks(notDealStr);
+          if(!result)
+              throw "readStartBlocks fail";
+          groupData = result.Groups;        
+        }
+        else if(state == 'filehead'){        
+        }
+        else if(state == 'context'){
+          //保存label
+          labelData[nowFilename].push(
+              {
+              LabelheadValue : notDealLabelheadMsg.Values,
+              LabelString : notDealStr }
+          );        
+        }    
+      
+        //新建文件项
+        labelData[lineMsg.Title] = new Array();
+        filenameList.push(lineMsg.Title);
+        nowFilename = lineMsg.Title;    
+        notDealStr = "";
+        state = 'filehead';      
         break;
-      case 'context':
-        switch (lineMsg.Type) {
-          case 'filehead':      //context-filehead
-            labelData[notDealLabelheadMsg.Title] = {
-                LabelheadValue : notDealLabelheadMsg.Values,
-                LabelString : notDealStr 
-            };
         
-            notDealStr = "";
-            state = 'filehead';
-            
-            //新建文件项
-            data[lineMsg.Title] = new Array();
-            filenameList.push(lineMsg.Title);
-            break;
-          case 'labelhead':            //context-labelhead
-            state = 'context';
-            labelData[notDealLabelheadMsg.Title] = {
-                LabelheadValue : notDealLabelheadMsg.Values,
-                LabelString : notDealStr 
-            };
+      case 'labelhead':
+        if(state == 'start'){   //start-labelhead 不存在
+              throw "start-filehead";
+              break;        
+        }
+        else if(state == 'filehead'){
+        }
+        else if(state == 'context'){
+          labelData[nowFilename].push(
+              {
+              LabelheadValue : notDealLabelheadMsg.Values,
+              LabelString : notDealStr }
+          );        
+        }    
         
-            notDealLabelheadMsg = lineMsg;            
-            notDealStr = "";
-            break;
-          case 'unkown':  
-            notDealStr += "\r" + lineStr;
-            break;
-        }      
-      break;       
-    }    
+        notDealStr = "";
+        notDealLabelheadMsg = lineMsg;
+        state = 'context';
+        break;
+        
+      case 'unkown':
+        notDealStr += "\r" + lineStr;
+        break; 
+      }
   }
   
+  // 成员变量
+  self.Path = path;      
+  self.ImageList = filenameList;
+  self.LabelData = labelData;
+  self.GroupData = groupData;
+  
+  // 成员函数
+  //self.getImageList = function() { return this.filenameList; };  
   return self;
 };
 
@@ -550,17 +531,21 @@ LabelPlusTextReader.judgeLineType = function(str) {
   var myValues;
   
   str = str.trim();
-  var fileheadRegExp = />{6,}[.+]<{6,}/g;   //todo:正则匹配不成功
-  var labelheadRegExp = /-{6,}[\d+]-{6,}[.+]/g;
+  var fileheadRegExp = />{6,}\[.+\]<{6,}/g;   //todo:正则匹配不成功  
+  var labelheadRegExp = /-{6,}\[\d+\]-{6,}\[.+\]/g;
   
-  if(fileheadRegExp.test(str)) {
+  var fileheadStrArr = fileheadRegExp.exec(str);
+  var labelheadStrArr = labelheadRegExp.exec(str);
+  if(fileheadStrArr &&  fileheadStrArr.length != 0) {
     myType = 'filehead';
-    mytitle = str.substring(str.indexOf("[")+1, str.IndexOf("]")-1);       
+    var s = fileheadStrArr[0];
+    myTitle = s.substring(s.indexOf("[")+1, s.indexOf("]"));       
   }   
-  else if(labelheadRegExp.test(str)) {
+  else if(labelheadStrArr && labelheadStrArr.length !=0) {
     myType = 'labelhead';
-    mytitle = str.substring(str.indexOf("[")+1, str.IndexOf("]")-1);
-    valuesStr = str.substring(str.lastIndexOf("[")+1, str.lastIndexOf("]")-1)
+    var s = labelheadStrArr[0];
+    myTitle = s.substring(s.indexOf("[")+1, s.indexOf("]"));
+    valuesStr = s.substring(s.lastIndexOf("[")+1, s.lastIndexOf("]"))
     myValues = valuesStr.split(",");    
   }
   
