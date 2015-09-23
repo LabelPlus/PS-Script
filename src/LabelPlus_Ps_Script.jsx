@@ -28,9 +28,10 @@ const _MT_STRING_LABEL_FONT = "字体:";
 const _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER = "导出标号";
 const _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD = "处理无标号文档";
 const _MT_STRING_CHECKBOX_SETSOURCETYPE = "指定图源后缀名";
-const _MT_STRING_CHECKBOX_RUNACTION = "根据分组执行动作GroupN";
+const _MT_STRING_CHECKBOX_RUNACTION = "导入文本后，执行以分组名命名的动作";
 const _MT_STRING_CHECKBOX_NOTCLOSE = "导入后不关闭文档";
 const _MT_STRING_CHECKBOX_SETFONT = "修改默认字体";
+const _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT = "输出横排文字";
 
 const _MT_STRING_LABEL_SELECTIMAGE = "选择需要导入的图片";
 
@@ -71,7 +72,7 @@ LabelPlusInput = function() {
     x: 200,
     y: 200,
     w: 675,
-    h: 455
+    h: 490
   };  
   
   self.title = _MY_APPNAME + " " + _MY_VER;// our window title
@@ -189,9 +190,6 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
         if (!pnl.targetTextBox.text) {
           pnl.targetTextBox.text = pnl.sourceTextBox.text;
         }
-        if (!pnl.lpTextFileTextBox.text) {
-          pnl.lpTextFileTextBox.text = pnl.sourceTextBox.text;
-        }        
       }
     } catch (e) {
       alert(Stdlib.exceptionMessage(e));
@@ -238,6 +236,22 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
 
   xx = xOfs;
   yy += 35;
+
+  // 使用指定类型图源
+  pnl.setSourceFileTypeCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                          _MT_STRING_CHECKBOX_SETSOURCETYPE  );
+  pnl.setSourceFileTypeCheckBox.onClick = function() {
+    pnl.setSourceFileTypeList.enabled = pnl.setSourceFileTypeCheckBox.value;
+  }  
+  xx += 260;
+  var setSourceFileTypeListItems = [".psd", ".jpg", ".png"];
+  pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx,yy,xx+70,yy+22],
+                                   setSourceFileTypeListItems);  
+  pnl.setSourceFileTypeList.selection = pnl.setSourceFileTypeList.find(".psd");
+  pnl.setSourceFileTypeList.enabled = false;
+  
+  xx = xOfs;
+  yy += 25;  
   
   // 使用自定义字体设置
   pnl.setFontCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
@@ -263,35 +277,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   
   xx = xOfs;
   yy += 30;
-  
-  // 导出标号选项
-  pnl.outputLabelNumberCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
-                                           _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER);
-  xx = xOfs;
-  yy += 25;
-  
-  // 处理无标号文档
-  pnl.outputNoSignPsdCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
-                                          _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD  );
-  xx = xOfs;
-  yy += 25;
-  
-  // 使用指定类型图源
-  pnl.setSourceFileTypeCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
-                                          _MT_STRING_CHECKBOX_SETSOURCETYPE  );
-  pnl.setSourceFileTypeCheckBox.onClick = function() {
-    pnl.setSourceFileTypeList.enabled = pnl.setSourceFileTypeCheckBox.value;
-  }  
-  xx += 260;
-  var setSourceFileTypeListItems = [".psd", ".jpg", ".png"];
-  pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx,yy,xx+70,yy+22],
-                                   setSourceFileTypeListItems);  
-  pnl.setSourceFileTypeList.selection = pnl.setSourceFileTypeList.find(".psd");
-  pnl.setSourceFileTypeList.enabled = false;
-  
-  xx = xOfs;
-  yy += 25;  
-  
+
   // 执行动作GroupN
   pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                            _MT_STRING_CHECKBOX_RUNACTION );
@@ -310,6 +296,25 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   
   xx = xOfs;
   yy += 25;
+    
+  // 导出标号选项
+  pnl.outputLabelNumberCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                           _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER);
+  xx = xOfs;
+  yy += 25;
+    
+  // 输出横排文字
+  pnl.outputHorizontalCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                           _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT);
+  xx = xOfs;
+  yy += 25;
+    
+  // 处理无标号文档
+  pnl.outputNoSignPsdCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                          _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD  );
+  xx = xOfs;
+  yy += 25;
+  
   
   // 导入后不关闭文档
   pnl.notCloseCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
@@ -342,6 +347,10 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   if (pnl.sourceTextBox.text) {    
     f = new Folder(pnl.sourceTextBox.text);
   }
+  else{
+    return self.errorPrompt(_MT_ERROR_NOTFOUNDSOURCE);  
+  }
+
   if (!f || !f.exists) {
     return self.errorPrompt(_MT_ERROR_NOTFOUNDSOURCE);
   }
@@ -356,6 +365,11 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
       }
     }
   }
+  else{
+    return self.errorPrompt(_MT_ERROR_NOTFOUNDTARGET);
+  }
+  
+  
   if (!f || !f.exists) {
     return self.errorPrompt(_MT_ERROR_NOTFOUNDTARGET);
   }
@@ -383,6 +397,9 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini) {
   
   // 导出标号选项
   opts.outputLabelNumber = pnl.outputLabelNumberCheckBox.value;
+  
+  // 输出横排文字
+   opts.horizontalText = pnl.outputHorizontalCheckBox.value;
   
   // 处理无标号文档
   opts.outputNoSignPsd = pnl.outputNoSignPsdCheckBox.value;
@@ -489,7 +506,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
             labelY,
             opts.setFont ? opts.font : "SimSun",
             opts.setFont ? opts.fontSize : undefined,
-            true,
+            !opts.horizontalText,
             90,
             layerGroups[labelGroup] );          
           

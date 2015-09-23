@@ -5,6 +5,7 @@
 
 ### 脚本说明 
 该ps脚本基于xtools编写。
+直接执行src文件夹中的jsx文件 需要在本地安装xtools
 
 P.S.关于[xtools](http://ps-scripts.sourceforge.net/xtools.html)
 `xtools is a JavaScript toolkit that facilitates scripting Adobe Photoshop.`
