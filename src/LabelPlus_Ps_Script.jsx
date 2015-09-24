@@ -13,7 +13,7 @@ app;
 //
 
 // Gobal Const
-const _MY_APPNAME = "LabelPlus Inputer For FileVer<=";
+const _MY_APPNAME = "LabelPlus Inputer";
 const _MY_VER = "1.0";
 const _MY_TIP_TITLE = "说明";
 const _MY_TIP_TEXT = "本脚本支持将LabelPlus格式的文本导入成ps图层。\r\n" +
@@ -52,6 +52,7 @@ const _MT_ERROR_NOTFOUNLABELTEXT = "未找到LabelPlus文本文件";
 const _MT_ERROR_CANNOTBUILDNEWFOLDER = "无法创建新文件夹";
 const _MT_ERROR_READLABELTEXTFILEFAILL = "解析LabelPlus文本失败";
 const _MT_ERROR_NOTCHOOSEIMAGE = "未选择输出图片";
+const _MT_ERROR_NOTCHOOSEGROUP = "未选择导入分组";
 
 //
 // 初始设置
@@ -78,10 +79,10 @@ LabelPlusInput = function() {
     x: 200,
     y: 200,
     w: 875,
-    h: 600
+    h: 610
   };  
   
-  self.title = _MY_APPNAME + _MY_VER;// our window title
+  self.title = _MY_APPNAME + " For FileVer<=" + _MY_VER;// our window title
   self.notesSize = 75;
   self.notesTxt = _MY_TIP_TITLE;
   self.documentation = _MY_TIP_TEXT;
@@ -145,14 +146,14 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
         pnl.targetTextBox.text = fl.toUIString();
         
       }
-      else{
-        //取消
-        return;        
+      else{        
+        return;        //取消
       }
       
-      // 确认      
       pnl.chooseImageListBox.removeAll();
+      pnl.chooseGroupListBox.removeAll();
       
+      // 读取LabelPlus文件
       var labelFile;
       try{
         labelFile = new LabelPlusTextReader(pnl.lpTextFileTextBox.text);        
@@ -160,17 +161,26 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
       catch(err){        
         alert(err);
         return;
-      }
+      } 
+    
+      // 填充图片选择列表
       var arr = labelFile.ImageList;
-      if(!arr){
-        pnl.parent.process.enabled = false;
-        alert(_MT_ERROR_READLABELTEXTFILEFAILL );
-        return;
+      if(arr){
+        for(var i=0; i<arr.length ;i++){
+          pnl.chooseImageListBox[i] = pnl.chooseImageListBox.add('item', arr[i], i);      
+          pnl.chooseImageListBox[i].selected = true;
+        }
       }
-
-      for(var i=0; i<arr.length ;i++){
-        pnl.chooseImageListBox[i] = pnl.chooseImageListBox.add('item', arr[i], i);      
-        pnl.chooseImageListBox[i].selected = true;
+    
+      // 填充分组选择列表    
+      var arr = labelFile.GroupData;
+      if(arr){
+        for(var i=0; i<arr.length ;i++){
+          if(arr[i] == "")
+            continue;
+          pnl.chooseGroupListBox[i] = pnl.chooseGroupListBox.add('item', arr[i], i);
+          pnl.chooseGroupListBox[i].selected = true;
+        }            
       }      
       
       pnl.labelFile = labelFile;  //返回LabelPlusTextReader对象
@@ -600,9 +610,22 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
     if(!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0)
       return self.errorPrompt(_MT_ERROR_NOTCHOOSEIMAGE);
     else
-      opts.imageSelected = pnl.chooseImageListBox.selection;  
+    {
+      opts.imageSelected = new Array();
+      for(var i=0;i<pnl.chooseImageListBox.selection.length;i++)
+        opts.imageSelected[i] = pnl.chooseImageListBox.selection[i].text;
+    }
+    // 分组选择
+    if(!pnl.chooseGroupListBox.selection || pnl.chooseGroupListBox.selection.length ==0)
+      return self.errorPrompt(_MT_ERROR_NOTCHOOSEGROUP);  
+    else
+    {
+      opts.groupSelected = new Array();
+      for(var i=0;i<pnl.chooseGroupListBox.selection.length;i++)
+        opts.groupSelected[i] = pnl.chooseGroupListBox.selection[i].text;      
+    }
+      
   }
-  
   // 文本替换  
   if(pnl.textReplaceCheckBox.value)
     opts.textReplace = pnl.textReplaceTextBox.text;  
@@ -674,7 +697,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
   
   //遍历所选图片 导入数据= =
   for(var i=0; i<opts.imageSelected.length; i++){
-    var originName = opts.imageSelected[i].text;
+    var originName = opts.imageSelected[i];
     var filename;
     var labelData = lpFile.LabelData[originName];
     var gourpData = lpFile.GroupData;    
@@ -714,7 +737,11 @@ LabelPlusInput.prototype.process = function(opts, doc) {
         var labelString = labelData[j].LabelString;
         var artLayer;
         
-        //创建分组
+        // 所在分组是否需要导入
+        if(opts.groupSelected.indexOf(labelGroup) == -1)
+          continue;
+        
+        // 创建分组
         if(!opts.layerNotGroup && !layerGroups[labelGroup]){
           layerGroups[labelGroup] = bg.layerSets.add();
           layerGroups[labelGroup].name = labelGroup;
