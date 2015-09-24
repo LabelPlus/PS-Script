@@ -2,8 +2,6 @@
 //   LabelPlus_Ps_Script.jsx
 //   This is a Input Text Tool for LabelPlus Text File.
 //
-// $Id: LabelPlus_Ps_Script.jsx,v 1.0 2015/09/19 13:07:00 Noodlefighter Exp $
-//
 //@show include
 //
 app;
@@ -33,7 +31,8 @@ const _MT_STRING_LABEL_SOURCE = "图源文件夹:";
 const _MT_STRING_LABEL_TARGET = "输出PSD文件夹:";
 const _MT_STRING_LABEL_FONT = "字体:";
 const _MT_STRING_LABEL_SETTING = "存取配置";
-const _MT_STRING_LABEL_SELECTIMAGE = "选择需要导入的图片";
+const _MT_STRING_LABEL_SELECTIMAGE = "导入图片选择";
+const _MT_STRING_LABEL_SELECTGROUP = "导入分组选择";
 
 const _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER = "导出标号";
 const _MT_STRING_CHECKBOX_TEXTREPLACE = "文本替换(例:\"A->B|C->D\")";
@@ -43,6 +42,7 @@ const _MT_STRING_CHECKBOX_RUNACTION = "导入文本后，执行以分组名命�
 const _MT_STRING_CHECKBOX_NOTCLOSE = "导入后不关闭文档";
 const _MT_STRING_CHECKBOX_SETFONT = "修改默认字体";
 const _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT = "输出横排文字";
+const _MT_STRING_CHECKBOX_LAYERNOTGROUP = "不对图层进行分组";
 
 const _MY_STRING_COMPLETE = "导出完毕！";
 
@@ -53,22 +53,14 @@ const _MT_ERROR_CANNOTBUILDNEWFOLDER = "无法创建新文件夹";
 const _MT_ERROR_READLABELTEXTFILEFAILL = "解析LabelPlus文本失败";
 const _MT_ERROR_NOTCHOOSEIMAGE = "未选择输出图片";
 
-//todo: ini文件没法正常读写了
-
 //
 // 初始设置
 //
 LabelPlusInputOptions = function(obj) {
-  var self = this;
-  
-  self.source = '';// the source folder
-  self.target = '';// the target/destination folder 
-  
+  var self = this;  
   Stdlib.copyFromTo(obj, self);
 };
 LabelPlusInputOptions.prototype.typename = "LabelPlusInputOptions";
-
-LabelPlusInputOptions.INI_FILE = Stdlib.PREFERENCES_FOLDER + "/LabelPlusInput.ini";
 LabelPlusInputOptions.LOG_FILE = Stdlib.PREFERENCES_FOLDER + "/LabelPlusInput.log";
 
 //
@@ -77,16 +69,15 @@ LabelPlusInputOptions.LOG_FILE = Stdlib.PREFERENCES_FOLDER + "/LabelPlusInput.lo
 LabelPlusInput = function() {
   var self = this;
 
-  //self.iniFile = LabelPlusInputOptions.INI_FILE;
   self.saveIni = false;
   self.hasBorder = true;
   self.optionsClass = LabelPlusInputOptions;
-  self.settingsPanel = false; //有自己创建的设置面板 不需要自带的
+  self.settingsPanel = false; //有自己创建的设置面板
   
   self.winRect = {          // the size of our window
     x: 200,
     y: 200,
-    w: 675,
+    w: 875,
     h: 600
   };  
   
@@ -111,8 +102,8 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   var opts = new LabelPlusInputOptions(ini);// default values
 
   // window's location
-  self.moveWindow(100, 100);  
-
+  self.moveWindow(100, 100);   
+  
   var xOfs = 10;
   var yOfs = 10;
   var xx = xOfs;
@@ -196,9 +187,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   pnl.sourceLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_SOURCE);
   xx += 120;
-  pnl.sourceTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20],
-                       opts.source || '');
-  //pnl.sourceTextBox.enabled = false;  
+  pnl.sourceTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20], '');
   xx += 305;
   pnl.sourceBrowse = pnl.add('button', [xx,yy,xx+30,yy+20], '...');
 
@@ -227,9 +216,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   pnl.targetLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_TARGET );
   xx += 120;
-  pnl.targetTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20],
-                       opts.target || '');
-  
+  pnl.targetTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20], '');  
   xx += 305;
   pnl.targetBrowse = pnl.add('button', [xx,yy,xx+30,yy+20], '...');
 
@@ -315,7 +302,12 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   
   xx = xOfs;
   yy += 30;
-
+  
+  // 不对图层进行分组
+  pnl.layerNotGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                           _MT_STRING_CHECKBOX_LAYERNOTGROUP);
+  yy += 25;
+  
   // 执行动作GroupN
   pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                            _MT_STRING_CHECKBOX_RUNACTION );
@@ -362,7 +354,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
 
   //------------------导入文件选择区------------------
   yy = yOfs;
-  xOfs = 10 + 475;  
+  xOfs +=  475;  
   xx = xOfs;  
 
   // 选择需要导入的图片
@@ -371,11 +363,23 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   yy += 20;
   pnl.chooseImageListBox = pnl.add('listbox', [xx,yy,xx+150,yy+285], [] ,{multiselect:true});
 
+  //------------------导入分组选择区------------------
+  yy = yOfs;
+  xOfs += 170;  
+  xx = xOfs;
+  
+  //选择需要导入的分组
+  pnl.chooseGroupLabel =  pnl.add('statictext', [xx,yy,xx+150,yy+22],
+                                           _MT_STRING_LABEL_SELECTGROUP );
+  yy += 20;
+  pnl.chooseGroupListBox =  pnl.add('listbox', [xx,yy,xx+150,yy+285], [] ,{multiselect:true});
+
   //------------------读取配置区------------------
   if (ini) {   // if there was an ini object
     //文本替换
     if(ini.textReplace){
       pnl.textReplaceCheckBox.value = true;
+      pnl.textReplaceTextBox.enabled = true;
       pnl.textReplaceTextBox.text = opts.textReplace;
     }  
     
@@ -417,7 +421,11 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   
     // 导入后不关闭文档
     if(ini.notClose)
-      pnl.notCloseCheckBox.value = ini.notClose;
+      pnl.notCloseCheckBox.value = true;
+    
+    // 不对图层进行分组
+    if(ini.layerNotGroup)
+      pnl.layerNotGroupCheckBox.value = true;
       
   } 
 
@@ -472,7 +480,7 @@ LabelPlusInput.createSettingsPanel = function(pnl, ini) {
     }
     f = Stdlib.selectFileOpen(prmpt, sel, def);
     if (f) {
-      win.ini = mgr.readIniFile(f);
+      win.ini =LabelPlusInput.readIni(f);
       win.close(4);
 
       if (pnl.onLoad) {
@@ -509,7 +517,7 @@ LabelPlusInput.createSettingsPanel = function(pnl, ini) {
       var res = mgr.validatePanel(win.appPnl, win.ini, true);
 
       if (typeof(res) != 'boolean') {
-        mgr.writeIniFile(f, res);
+        LabelPlusInput.writeIni(f, res);
 
         if (pnl.onSave) {
           pnl.onSave(f);
@@ -584,6 +592,9 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
       return self.errorPrompt(_MT_ERROR_NOTFOUNLABELTEXT);
     }
     opts.labelFilename = pnl.lpTextFileTextBox.text;
+
+    var fl = new Folder(f.path);
+    opts.labelFilePath = fl.toUIString();    
     
     // Image选择  
     if(!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0)
@@ -593,24 +604,28 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
   }
   
   // 文本替换  
-  if(pnl.textReplaceCheckBox){
-    opts.textReplace = pnl.textReplaceTextBox.text;
-  }
+  if(pnl.textReplaceCheckBox.value)
+    opts.textReplace = pnl.textReplaceTextBox.text;  
 
   // 字体  
-  opts.setFont = pnl.setFontCheckBox.value;
-  var font = pnl.font.getFont()
-  opts.font = font.font;
-  opts.fontSize = font.size;
-  
+  if(pnl.setFontCheckBox.value){
+    opts.setFont = true;
+    var font = pnl.font.getFont()
+    opts.font = font.font;
+    opts.fontSize = font.size;
+  }
+
   // 导出标号选项
-  opts.outputLabelNumber = pnl.outputLabelNumberCheckBox.value;
+  if(pnl.outputLabelNumberCheckBox.value)
+    opts.outputLabelNumber = true;
   
   // 输出横排文字
-   opts.horizontalText = pnl.outputHorizontalCheckBox.value;
+  if(pnl.outputHorizontalCheckBox.value)
+    opts.horizontalText = true;
   
   // 处理无标号文档
-  opts.outputNoSignPsd = pnl.outputNoSignPsdCheckBox.value;
+  if(pnl.outputNoSignPsdCheckBox.value)
+    opts.outputNoSignPsd = true;
   
   // 使用指定类型图源
   if (pnl.setSourceFileTypeCheckBox.value){    
@@ -626,7 +641,12 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
     opts.runActionGroup = undefined;
   
   // 导入后不关闭文档
-  opts.notClose = pnl.notCloseCheckBox.value;
+  if(pnl.notCloseCheckBox.value)
+    opts.notClose = true;
+    
+  // 不对图层进行分组
+  if(pnl.layerNotGroupCheckBox.value)
+    opts.layerNotGroup = true;
   
   return opts;
 };
@@ -637,7 +657,7 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
 LabelPlusInput.prototype.process = function(opts, doc) {
   var self = this;
 
-  Stdlib.log.setFile(LabelPlusInputOptions.LOG_FILE);
+  Stdlib.log.setFile(opts.labelFilePath+"\\LabelPlusInputer.log");//LabelPlusInputOptions.LOG_FILE);
   Stdlib.log("Start");
   Stdlib.log("Properties:");
   Stdlib.log(listProps(opts)); 
@@ -684,6 +704,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
     
     var layerGroups = new Array();
     
+    
     // 遍历LabelData
     for(var j=0; j<labelData.length; j++){
         var labelNum = j+1;
@@ -694,11 +715,15 @@ LabelPlusInput.prototype.process = function(opts, doc) {
         var artLayer;
         
         //创建分组
-        if(!layerGroups[labelGroup]){
+        if(!opts.layerNotGroup && !layerGroups[labelGroup]){
           layerGroups[labelGroup] = bg.layerSets.add();
           layerGroups[labelGroup].name = labelGroup;
         }       
-        
+        if(opts.outputLabelNumber && !layerGroups["_Label"]){
+          layerGroups["_Label"] = bg.layerSets.add();
+          layerGroups["_Label"].name = "Label";
+        }
+      
         // 导出标号
         if(opts.outputLabelNumber){
           LabelPlusInput.newTextLayer(bg,
@@ -708,7 +733,9 @@ LabelPlusInput.prototype.process = function(opts, doc) {
             "Arial",
             opts.setFont ? opts.fontSize : undefined,
             false,
-            90);
+            90,
+            layerGroups["_Label"]
+            );
         }
       
         // 替换文本
@@ -727,14 +754,20 @@ LabelPlusInput.prototype.process = function(opts, doc) {
             opts.setFont ? opts.fontSize : undefined,
             !opts.horizontalText,
             90,
-            layerGroups[labelGroup] );          
-          
+            opts.layerNotGroup ?  undefined : layerGroups[labelGroup]);
         }
         
         // 执行动作,名称为分组名
         if(opts.runActionGroup) {
           bg.activeLayer = artLayer;
-          app.doAction(labelGroup , opts.runActionGroup);
+          try{
+            app.doAction(labelGroup , opts.runActionGroup);
+          }
+          catch(e){
+            Stdlib.log("DoAction " +labelGroup +
+              " in " + opts.runActionGroup +
+              " Error: \r\n" + e);
+          }
         }        
     }
 
@@ -840,12 +873,12 @@ LabelPlusTextReader = function(path) {
   self.LabelData = labelData;
   self.GroupData = groupData;
   
-  // 成员函数 
-  
   return self;
 };
 
-//判断字符串行类型 'filehead','labelhead','unkown'
+//
+// 判断字符串行类型 'filehead','labelhead','unkown'
+//
 LabelPlusTextReader.judgeLineType = function(str) {
   var myType = 'unkown';
   var myTitle;
@@ -905,7 +938,9 @@ var blocks = str.split ("-");
     };
 };
 
-//创建文本图层
+//
+// 创建文本图层
+//
 LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity,group) {
   artLayerRef = doc.artLayers.add();
   artLayerRef.kind = LayerKind.TEXT;
@@ -916,7 +951,7 @@ LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity
   if(size)
     textItemRef.size = size;
   else
-    textItemRef.size = doc.height / 130;
+    textItemRef.size = doc.height / 90.0;
   
   textItemRef.font = font;
   if(isVertical)
@@ -930,7 +965,9 @@ LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity
   return artLayerRef;
 }
 
+//
 // 文本替换字符串解析程序
+//
 LabelPlusInput.textReplaceReader = function(str){
   var arr = new Array();
   var strs = str.split('|');
@@ -956,6 +993,69 @@ LabelPlusInput.textReplaceReader = function(str){
   else 
     return;
 }
+
+//
+// 写入配置
+//
+LabelPlusInput.writeIni = function(iniFile, ini) {
+  //$.level = 1; debugger;
+  if (!ini || !iniFile) {
+    return;
+  }
+  var file = GenericUI.iniFileToFile(iniFile);
+
+  if (!file) {
+    Error.runtimeError(9001, Error("Bad ini file specified: \"" + iniFile + "\"."));
+  }
+
+  if (file.open("w", "TEXT", "????")) {
+    file.lineFeed = "unix";
+    file.encoding = 'UTF-8';
+    var str = GenericUI.iniToString(ini);
+    file.write(str);
+    file.close();
+  }
+  return ini;
+};
+
+//
+// 读出配置
+//
+LabelPlusInput.readIni = function(iniFile, ini) {
+  //$.level = 1; debugger;
+
+  if (!ini) {
+    ini = {};
+  }
+  if (!iniFile) {
+    return ini;
+  }
+  var file = GenericUI.iniFileToFile(iniFile);
+
+  if (!file) {
+    Error.runtimeError(9001, Error("Bad ini file specified: \"" + iniFile + "\"."));
+  }
+
+  if (!file.exists) {
+    //
+    // XXX Check for an ini path .ini file in the script's folder.
+    //
+  }
+
+  if (file.exists && file.open("r", "TEXT", "????")) {
+    file.lineFeed = "unix";
+    file.encoding = 'UTF-8';
+    var str = file.read();
+    ini = GenericUI.iniFromString(str, ini);
+    file.close();
+  }
+
+  if (ini.noUI) {
+    ini.noUI = toBoolean(ini.noUI);
+  }
+
+  return ini;
+};
 
 // 主程序
 LabelPlusInput.main = function() {
