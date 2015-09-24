@@ -26,6 +26,10 @@ const _MY_STRING_BUTTON_LOAD = "加载配置";
 const _MY_STRING_BUTTON_SAVE = "保存配置";
 const _MY_STRING_BUTTON_RESET = "还原配置";
 
+const _MT_STRING_LABEL_TIP_FILE =              "> 文件 / 预处理";
+const _MT_STRING_LABEL_TIP_INPUTITEM    = "> 导入项目";
+const _MT_STRING_LABEL_TIP_STYLE_AUTO = "> 格式 / 自动化";
+
 const _MT_STRING_LABEL_TEXTFILE = "LabelPlus文本:";
 const _MT_STRING_LABEL_SOURCE = "图源文件夹:";
 const _MT_STRING_LABEL_TARGET = "输出PSD文件夹:";
@@ -33,6 +37,7 @@ const _MT_STRING_LABEL_FONT = "字体:";
 const _MT_STRING_LABEL_SETTING = "存取配置";
 const _MT_STRING_LABEL_SELECTIMAGE = "导入图片选择";
 const _MT_STRING_LABEL_SELECTGROUP = "导入分组选择";
+
 
 const _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER = "导出标号";
 const _MT_STRING_CHECKBOX_TEXTREPLACE = "文本替换(例:\"A->B|C->D\")";
@@ -120,15 +125,15 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 75;  
   yOfs = yy; 
-  //------------------路径选择区------------------
+  //------------------LabelPlus文件区------------------
   
   // LabelPlus文本文件输入
   pnl.lpTextFileLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_TEXTFILE);
   xx += 120;
-  pnl.lpTextFileTextBox = pnl.add('edittext', [xx,yy,xx+300,yy+20], '');
+  pnl.lpTextFileTextBox = pnl.add('edittext', [xx,yy,xx+170,yy+20], '');
   pnl.lpTextFileTextBox.enabled = false;
-  xx += 305;
+  xx += 175;
   pnl.lpTextFileBrowseButton = pnl.add('button', [xx,yy,xx+30,yy+20], '...');
   
   pnl.lpTextFileBrowseButton.onClick = function() {
@@ -190,9 +195,37 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
     }
   };
 
+
+  //------------------图片选择区------------------
+  yy = yOfs +35;  
+  xx = xOfs;  
+
+  // 选择需要导入的图片
+  pnl.chooseImageLabel =  pnl.add('statictext', [xx,yy,xx+150,yy+22],
+                                           _MT_STRING_LABEL_SELECTIMAGE );
+  yy += 20;
+  pnl.chooseImageListBox = pnl.add('listbox', [xx,yy,xx+150,yy+285], [] ,{multiselect:true});
+
+  //------------------分组选择区------------------
+  yy = yOfs +35;  
+  xOfs += 170;  
   xx = xOfs;
-  yy += 35;
-    
+  
+  //选择需要导入的分组
+  pnl.chooseGroupLabel =  pnl.add('statictext', [xx,yy,xx+150,yy+22],
+                                           _MT_STRING_LABEL_SELECTGROUP );
+  yy += 20;
+  pnl.chooseGroupListBox =  pnl.add('listbox', [xx,yy,xx+150,yy+285], [] ,{multiselect:true});
+
+  //------------------设置区------------------
+  yy = yOfs;
+  xOfs = 10 +  345;  
+  xx = xOfs;
+  
+  // >>>>>文件 预处理
+  pnl.add('statictext', [xx,yy,xx+120,yy+20],
+                            _MT_STRING_LABEL_TIP_FILE);
+  yy += 20;  
   // 图源文件夹 
   pnl.sourceLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_SOURCE);
@@ -220,7 +253,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   };
 
   xx = xOfs;
-  yy += 35;
+  yy += 25;
 
   // 输出目录
   pnl.targetLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
@@ -252,11 +285,8 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
     }
   };
 
-  //------------------设置区------------------
-  xOfs = 20;
-
   xx = xOfs;
-  yy += 35;
+  yy += 25;
 
   // 使用指定类型图源
   pnl.setSourceFileTypeCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
@@ -272,8 +302,20 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   pnl.setSourceFileTypeList.enabled = false;
   
   xx = xOfs;
-  yy += 25;  
+  yy += 20;  
 
+  // 处理无标号文档
+  pnl.outputNoSignPsdCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                          _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD  );
+  xx = xOfs;
+  yy += 20;  
+
+  // 导入后不关闭文档
+  pnl.notCloseCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                           _MT_STRING_CHECKBOX_NOTCLOSE );
+  xx = xOfs;
+  yy += 20;  
+  
   // 文本替换(例:"A->B|C->D")
   pnl.textReplaceCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                           _MT_STRING_CHECKBOX_TEXTREPLACE);
@@ -284,9 +326,32 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   pnl.textReplaceTextBox = pnl.add('edittext', [xx,yy,xx+180,yy+20]);  
   pnl.textReplaceTextBox.text = "！？->!?|...->…";
   pnl.textReplaceTextBox.enabled = false;
-
   xx = xOfs;
-  yy += 25;
+  yy += 20;  
+  
+  
+  // >>>>>导入项目
+  yy += 10;
+  pnl.add('statictext', [xx,yy,xx+120,yy+20],
+                            _MT_STRING_LABEL_TIP_INPUTITEM);
+  yy += 20;  
+
+  // 导出标号选项
+  pnl.outputLabelNumberCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                           _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER);
+  xx = xOfs;
+  yy += 20;  
+    
+  // 不对图层进行分组
+  pnl.layerNotGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                           _MT_STRING_CHECKBOX_LAYERNOTGROUP);
+  yy += 20;  
+  
+  // >>>>>格式 / 自动化
+  yy += 10;
+  pnl.add('statictext', [xx,yy,xx+120,yy+20],
+                            _MT_STRING_LABEL_TIP_STYLE_AUTO);
+  yy += 20;  
   
   // 使用自定义字体设置
   pnl.setFontCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
@@ -296,11 +361,9 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
     pnl.font.family.enabled = value;
     pnl.font.style.enabled = value;
     pnl.font.fontSize.enabled = value;
-  }   
- 
+  }    
   xx = xOfs;
-  yy += 25;
-  
+  yy += 20;  
   // 字体
   pnl.font = pnl.add('group', [xx,yy,xx+400,yy+40]);
   self.createFontPanel(pnl.font, ini);
@@ -311,13 +374,14 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   pnl.font.family.selection = pnl.font.family.find("SimSun");
   
   xx = xOfs;
-  yy += 30;
-  
-  // 不对图层进行分组
-  pnl.layerNotGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
-                                           _MT_STRING_CHECKBOX_LAYERNOTGROUP);
-  yy += 25;
-  
+  yy += 20;  
+
+  // 输出横排文字
+  pnl.outputHorizontalCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                           _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT);
+  xx = xOfs;
+  yy += 20;  
+      
   // 执行动作GroupN
   pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                            _MT_STRING_CHECKBOX_RUNACTION );
@@ -335,54 +399,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   pnl.runActionGroupList.enabled = false;
   
   xx = xOfs;
-  yy += 25;
-    
-  // 导出标号选项
-  pnl.outputLabelNumberCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
-                                           _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER);
-  xx = xOfs;
-  yy += 25;
-    
-  // 输出横排文字
-  pnl.outputHorizontalCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
-                                           _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT);
-  xx = xOfs;
-  yy += 25;
-    
-  // 处理无标号文档
-  pnl.outputNoSignPsdCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
-                                          _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD  );
-  xx = xOfs;
-  yy += 25;
-  
-  
-  // 导入后不关闭文档
-  pnl.notCloseCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
-                                           _MT_STRING_CHECKBOX_NOTCLOSE );
-  xx = xOfs;
-  yy += 35;
-
-  //------------------导入文件选择区------------------
-  yy = yOfs;
-  xOfs +=  475;  
-  xx = xOfs;  
-
-  // 选择需要导入的图片
-  pnl.chooseImageLabel =  pnl.add('statictext', [xx,yy,xx+150,yy+22],
-                                           _MT_STRING_LABEL_SELECTIMAGE );
-  yy += 20;
-  pnl.chooseImageListBox = pnl.add('listbox', [xx,yy,xx+150,yy+285], [] ,{multiselect:true});
-
-  //------------------导入分组选择区------------------
-  yy = yOfs;
-  xOfs += 170;  
-  xx = xOfs;
-  
-  //选择需要导入的分组
-  pnl.chooseGroupLabel =  pnl.add('statictext', [xx,yy,xx+150,yy+22],
-                                           _MT_STRING_LABEL_SELECTGROUP );
-  yy += 20;
-  pnl.chooseGroupListBox =  pnl.add('listbox', [xx,yy,xx+150,yy+285], [] ,{multiselect:true});
+  yy += 20;  
 
   //------------------读取配置区------------------
   if (ini) {   // if there was an ini object
@@ -767,8 +784,10 @@ LabelPlusInput.prototype.process = function(opts, doc) {
       
         // 替换文本
         if(textReplace){
-          for(var k=0;k<textReplace.length;k++)
-            labelString = labelString.replace (textReplace[k].From, textReplace[k].To);
+          for(var k=0;k<textReplace.length;k++){
+            while(labelString.indexOf(textReplace[k].From) != -1)
+              labelString = labelString.replace (textReplace[k].From, textReplace[k].To);
+          }
         }
       
         // 导出文本
@@ -971,9 +990,7 @@ var blocks = str.split ("-");
 LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity,group) {
   artLayerRef = doc.artLayers.add();
   artLayerRef.kind = LayerKind.TEXT;
-  textItemRef = artLayerRef.textItem;
-
-  textItemRef.contents = text;
+  textItemRef = artLayerRef.textItem; 
   
   if(size)
     textItemRef.size = size;
@@ -983,12 +1000,15 @@ LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity
   textItemRef.font = font;
   if(isVertical)
     textItemRef.direction = Direction.VERTICAL;
+    
   textItemRef.antiAliasMethod = AntiAlias.SMOOTH;
   textItemRef.position = Array(doc.width*x,doc.height*y);
 
   if(group)
     artLayerRef.move(group, ElementPlacement.PLACEATBEGINNING);  
     
+  textItemRef.contents = text;
+  
   return artLayerRef;
 }
 
