@@ -1026,7 +1026,7 @@ LabelPlusInput.textReplaceReader = function(str){
       continue;
       
     var strss = strs[i].split("->");
-    if((strss.length != 2) || (strss[0]=="") || (strss[1]==""))
+    if((strss.length != 2) || (strss[0]=="") )
       return; //解析失败
     
     arr.push({
