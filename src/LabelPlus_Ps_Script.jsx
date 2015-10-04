@@ -1,4 +1,4 @@
-﻿//
+//
 //   LabelPlus_Ps_Script.jsx
 //   This is a Input Text Tool for LabelPlus Text File.
 //
@@ -6,7 +6,7 @@
 //
 app;
 //
-//@includepath "/d/Green Program/Adobe Photoshop CS5 Extended 12.0.3.0/xtools"
+//@includepath "/d/Tools/Adobe Photoshop CS5 Extended 12.0.3.0/xtools"
 //
 //@include "xlib/stdlib.js"
 //@include "xlib/GenericUI.jsx"
@@ -907,11 +907,19 @@ LabelPlusTextReader = function(path) {
         state = 'context';
         break;
         
-      case 'unkown':
+      case 'unknown':
         notDealStr += "\r" + lineStr;
         break; 
       }
   }
+  
+  if(state == 'context' && lineMsg.Type == 'unknown')
+    labelData[nowFilename].push(
+      {
+	  LabelheadValue : notDealLabelheadMsg.Values,
+	  LabelString : notDealStr.trim() 
+      }
+    );
   
   // 成员变量
   self.Path = path;      
@@ -923,10 +931,10 @@ LabelPlusTextReader = function(path) {
 };
 
 //
-// 判断字符串行类型 'filehead','labelhead','unkown'
+// 判断字符串行类型 'filehead','labelhead','unknown'
 //
 LabelPlusTextReader.judgeLineType = function(str) {
-  var myType = 'unkown';
+  var myType = 'unknown';
   var myTitle;
   var myValues;
   
