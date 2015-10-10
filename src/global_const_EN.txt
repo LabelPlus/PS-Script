@@ -37,7 +37,7 @@ const _MY_STRING_COMPLETE = "Export completed!";
 
 const _MT_ERROR_NOTFOUNDSOURCE = "Image Source Folder Not Found!";
 const _MT_ERROR_NOTFOUNDTARGET = "Output PSD Folder Not Found!";
-const _MT_ERROR_NOTFOUNLABELTEXT = "LabelPlus Text File Not Found!;
+const _MT_ERROR_NOTFOUNLABELTEXT = "LabelPlus Text File Not Found!"";
 const _MT_ERROR_CANNOTBUILDNEWFOLDER = "Could not build new folder";
 const _MT_ERROR_READLABELTEXTFILEFAILL = "Fail To Load LabelPlus Text File";
 const _MT_ERROR_NOTCHOOSEIMAGE = "Please select more than one image";
