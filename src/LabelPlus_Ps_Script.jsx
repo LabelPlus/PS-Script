@@ -446,9 +446,9 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   
     // 执行动作GroupN
     if (ini.runActionGroup){
-      pnl.runActionGroupList.enabled = true;      
-      pnl.runActionGroupList.selection = ini.runActionGroup;  
       pnl.runActionGroupCheckBox.value = true;
+      pnl.runActionGroupList.enabled = true;      
+      pnl.runActionGroupList.selection.text = ini.runActionGroup;  
     }  
   
     // 导入后不关闭文档
