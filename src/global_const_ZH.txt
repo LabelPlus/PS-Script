@@ -1,6 +1,7 @@
 // Gobal Const
 const _MY_APPNAME = "LabelPlus Inputer";
-const _MY_VER = "1.0";
+const _MY_VER = "1.1";
+const _MY_FILE_VER = "1.0";
 const _MY_TIP_TITLE = "说明";
 const _MY_TIP_TEXT = "本脚本支持将LabelPlus格式的文本导入成ps图层。\r\n" +
   "利用\“存取配置\”功能，可以方便的根据不同需求（如区分图片分辨率），快速应用配置。\r\n" +

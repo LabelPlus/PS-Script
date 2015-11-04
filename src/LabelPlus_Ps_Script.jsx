@@ -19,7 +19,8 @@ app;
 
 // Gobal Const
 const _MY_APPNAME = "LabelPlus Inputer";
-const _MY_VER = "1.0";
+const _MY_VER = "1.1";
+const _MY_FILE_VER = "1.0";
 const _MY_TIP_TITLE = "说明";
 const _MY_TIP_TEXT = "本脚本支持将LabelPlus格式的文本导入成ps图层。\r\n" +
   "利用\“存取配置\”功能，可以方便的根据不同需求（如区分图片分辨率），快速应用配置。\r\n" +
@@ -92,7 +93,7 @@ LabelPlusInput = function() {
     h: 610
   };  
   
-  self.title = _MY_APPNAME + " For FileVer<=" + _MY_VER;// our window title
+  self.title = _MY_APPNAME + " " + _MY_VER + " For FileVer<=" + _MY_FILE_VER;	// our window title
   self.notesSize = 75;
   self.notesTxt = _MY_TIP_TITLE;
   self.documentation = _MY_TIP_TEXT;
@@ -150,10 +151,10 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
       if (f && f.exists) {
         pnl.lpTextFileTextBox.text = f.toUIString();
         
-        //图源、输出文件夹赋上相同目录
-        var fl = new Folder(f.path);
+		//图源、输出文件夹赋上目录
+        var fl = new Folder(f.path);		
         pnl.sourceTextBox.text = fl.toUIString();
-        pnl.targetTextBox.text = fl.toUIString();
+        pnl.targetTextBox.text = fl.toUIString()+'\\output';
         
       }
       else{        

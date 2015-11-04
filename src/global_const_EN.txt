@@ -1,6 +1,7 @@
 // Gobal Const
 const _MY_APPNAME = "LabelPlus Inputer";
-const _MY_VER = "1.0";
+const _MY_VER = "1.1";
+const _MY_FILE_VER = "1.0";
 const _MY_TIP_TITLE = "Note";
 const _MY_TIP_TEXT =  "Help: http://noodlefighter.com/label_plus/";
 
