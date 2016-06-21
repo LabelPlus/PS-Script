@@ -1,4 +1,4 @@
-//
+﻿//
 //   LabelPlus_Ps_Script.jsx
 //   This is a Input Text Tool for LabelPlus Text File.
 // 
@@ -7,67 +7,21 @@
 //
 // License: http://noodlefighter.com/label_plus/license
 //
-//@show include
-//
-app;
-//
-//@includepath "/d/Tools/Adobe Photoshop CS5 Extended 12.0.3.0/xtools"
-//
-//@include "xlib/stdlib.js"
-//@include "xlib/GenericUI.jsx"
+//@show include  
+//@include "my_include.js" 
+//@include "my_action.js"
+//@include "labelplus_text_reader.js"
+//@include "get_internal_font_name.js"
 //
 
-// Gobal Const
-
+// ======================================== Gobal Const 
 // Version
 const _MY_VER = "1.1";
 const _MY_FILE_VER = "1.0";
 
 // String Const
-const _MY_APPNAME = "LabelPlus Inputer";
-const _MY_TIP_TITLE = "说明";
-const _MY_TIP_TEXT = "本脚本支持将LabelPlus格式的文本导入成ps图层。\r\n" +
-  "利用\“存取配置\”功能，可以方便的根据不同需求（如区分图片分辨率），快速应用配置。\r\n" +
-  "更多信息: http://noodlefighter.com/label_plus/";
-
-const _MY_STRING_BUTTON_RUN = "导入";
-const _MY_STRING_BUTTON_CANCEL = "关闭";
-const _MY_STRING_BUTTON_LOAD = "加载配置";
-const _MY_STRING_BUTTON_SAVE = "保存配置";
-const _MY_STRING_BUTTON_RESET = "还原配置";
-
-const _MT_STRING_LABEL_TIP_FILE =              "> 文件 / 预处理";
-const _MT_STRING_LABEL_TIP_INPUTITEM    = "> 导入项目";
-const _MT_STRING_LABEL_TIP_STYLE_AUTO = "> 格式 / 自动化";
-
-const _MT_STRING_LABEL_TEXTFILE = "LabelPlus文本:";
-const _MT_STRING_LABEL_SOURCE = "图源文件夹:";
-const _MT_STRING_LABEL_TARGET = "输出PSD文件夹:";
-const _MT_STRING_LABEL_FONT = "字体:";
-const _MT_STRING_LABEL_SETTING = "存取配置";
-const _MT_STRING_LABEL_SELECTIMAGE = "导入图片选择";
-const _MT_STRING_LABEL_SELECTGROUP = "导入分组选择";
-
-
-const _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER = "导出标号";
-const _MT_STRING_CHECKBOX_TEXTREPLACE = "文本替换(例:\"A->B|C->D\")";
-const _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD = "处理无标号文档";
-const _MT_STRING_CHECKBOX_SETSOURCETYPE = "指定图源后缀名";
-const _MT_STRING_CHECKBOX_RUNACTION = "导入文本后，执行以分组名命名的动作";
-const _MT_STRING_CHECKBOX_NOTCLOSE = "导入后不关闭文档";
-const _MT_STRING_CHECKBOX_SETFONT = "修改默认字体";
-const _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT = "输出横排文字";
-const _MT_STRING_CHECKBOX_LAYERNOTGROUP = "不对图层进行分组";
-
-const _MY_STRING_COMPLETE = "导出完毕！";
-
-const _MT_ERROR_NOTFOUNDSOURCE = "未找到图源文件夹";
-const _MT_ERROR_NOTFOUNDTARGET = "未找到目标文件夹";
-const _MT_ERROR_NOTFOUNLABELTEXT = "未找到LabelPlus文本文件";
-const _MT_ERROR_CANNOTBUILDNEWFOLDER = "无法创建新文件夹";
-const _MT_ERROR_READLABELTEXTFILEFAILL = "解析LabelPlus文本失败";
-const _MT_ERROR_NOTCHOOSEIMAGE = "未选择输出图片";
-const _MT_ERROR_NOTCHOOSEGROUP = "未选择导入分组";
+//-include "global_const_en.js"
+//@include "global_const_zh.js"
 
 //
 // 初始设置
@@ -149,7 +103,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   pnl.lpTextFileBrowseButton.onClick = function() {
     try {
       var pnl = this.parent;
-      var fmask =  "LabelPlus Text: *.txt";
+      var fmask =  "*.txt;*.json";
       var f = File.openDialog(_MT_STRING_LABEL_TEXTFILE, fmask);
        
       if (f && f.exists) {
@@ -752,6 +706,11 @@ LabelPlusInput.prototype.process = function(opts, doc) {
     // 在PS中打开文件 
     var bg = app.open(bgFile);
     
+    // 若文档类型为索引色模式 更改为RGB模式
+    if (bg.mode == DocumentMode.INDEXEDCOLOR){
+        bg.changeMode(ChangeMode.RGB);
+    }        
+    
     var layerGroups = new Array();
     
     // 文件打开时执行一次动作"_start"
@@ -761,7 +720,28 @@ LabelPlusInput.prototype.process = function(opts, doc) {
         app.doAction("_start" , opts.runActionGroup);
       }
       catch(e){ }
-    }            
+    }  
+        
+    // 涂白测试开始 {
+    //todo: 删除这个测试段
+    var labelArr = new Array();
+    
+    // 找出需要涂白的标签
+    for(var j=0; j<labelData.length; j++){
+        var labelX = labelData[j].LabelheadValue[0];
+        var labelY = labelData[j].LabelheadValue[1];
+        var labelXY = { x:labelX, y:labelY };        
+        var labelGroup = gourpData[labelData[j].LabelheadValue[2]];
+        
+        if(labelGroup == "框内"){
+            labelArr.push(labelXY);
+        }            
+    }
+    
+    //执行涂白
+    MyAction.lp_dialogClear(labelArr, bg.width, bg.height, 16, 1);        
+    
+    // 涂白测试结束 }
     
     // 遍历LabelData
     for(var j=0; j<labelData.length; j++){
@@ -784,8 +764,8 @@ LabelPlusInput.prototype.process = function(opts, doc) {
         if(opts.outputLabelNumber && !layerGroups["_Label"]){
           layerGroups["_Label"] = bg.layerSets.add();
           layerGroups["_Label"].name = "Label";
-        }
-      
+        }        
+        
         // 导出标号
         if(opts.outputLabelNumber){
           LabelPlusInput.newTextLayer(bg,
@@ -857,166 +837,6 @@ LabelPlusInput.prototype.process = function(opts, doc) {
   }
   alert(_MY_STRING_COMPLETE);
   Stdlib.log("Complete!");
-};
-
-LabelPlusTextReader = function(path) {  
-  var self = this;
-  
-  if(!path){    
-    throw "LabelPlusTextReader no filename";
-  }
-  
-  var f = new File(path);  
-  if(!f || !f.exists){    
-    throw "LabelPlusTextReader file not exists";
-  } 
-  
-  // 打开
-  f.open("r");  
-  
-  // 分行读取
-  var state = 'start'; //'start','filehead','context'
-  var notDealStr;
-  var notDealLabelheadMsg;
-  var nowFilename;
-  var labelData = new Array();
-  var filenameList = new Array();
-  var groupData;
-  
-  for(var i=0; !f.eof; i++) {
-    var lineStr = f.readln();
-    var lineMsg = LabelPlusTextReader.judgeLineType(lineStr);
-    switch (lineMsg.Type){
-      case 'filehead':
-        if(state == 'start'){
-          //处理start blocks
-          var result = LabelPlusTextReader.readStartBlocks(notDealStr);
-          if(!result)
-              throw "readStartBlocks fail";
-          groupData = result.Groups;        
-        }
-        else if(state == 'filehead'){        
-        }
-        else if(state == 'context'){
-          //保存label
-          labelData[nowFilename].push(
-              {
-              LabelheadValue : notDealLabelheadMsg.Values,
-              LabelString : notDealStr.trim() }
-          );        
-        }    
-      
-        //新建文件项
-        labelData[lineMsg.Title] = new Array();
-        filenameList.push(lineMsg.Title);
-        nowFilename = lineMsg.Title;    
-        notDealStr = "";
-        state = 'filehead';      
-        break;
-        
-      case 'labelhead':
-        if(state == 'start'){   //start-labelhead 不存在
-              throw "start-filehead";
-              break;        
-        }
-        else if(state == 'filehead'){
-        }
-        else if(state == 'context'){
-          labelData[nowFilename].push(
-              {
-              LabelheadValue : notDealLabelheadMsg.Values,
-              LabelString : notDealStr.trim() }
-          );        
-        }    
-        
-        notDealStr = "";
-        notDealLabelheadMsg = lineMsg;
-        state = 'context';
-        break;
-        
-      case 'unknown':
-        notDealStr += "\r" + lineStr;
-        break; 
-      }
-  }
-  
-  if(state == 'context' && lineMsg.Type == 'unknown')
-    labelData[nowFilename].push(
-      {
-	  LabelheadValue : notDealLabelheadMsg.Values,
-	  LabelString : notDealStr.trim() 
-      }
-    );
-  
-  // 成员变量
-  self.Path = path;      
-  self.ImageList = filenameList;
-  self.LabelData = labelData;
-  self.GroupData = groupData;
-  
-  return self;
-};
-
-//
-// 判断字符串行类型 'filehead','labelhead','unknown'
-//
-LabelPlusTextReader.judgeLineType = function(str) {
-  var myType = 'unknown';
-  var myTitle;
-  var myValues;
-  
-  str = str.trim();
-  var fileheadRegExp = />{6,}\[.+\]<{6,}/g;
-  var labelheadRegExp = /-{6,}\[\d+\]-{6,}\[.+\]/g;
-  
-  var fileheadStrArr = fileheadRegExp.exec(str);
-  var labelheadStrArr = labelheadRegExp.exec(str);
-  if(fileheadStrArr &&  fileheadStrArr.length != 0) {
-    myType = 'filehead';
-    var s = fileheadStrArr[0];
-    myTitle = s.substring(s.indexOf("[")+1, s.indexOf("]"));       
-  }   
-  else if(labelheadStrArr && labelheadStrArr.length !=0) {
-    myType = 'labelhead';
-    var s = labelheadStrArr[0];
-    myTitle = s.substring(s.indexOf("[")+1, s.indexOf("]"));
-    valuesStr = s.substring(s.lastIndexOf("[")+1, s.lastIndexOf("]"))
-    myValues = valuesStr.split(",");    
-  }
-  
-  return {    
-    Type : myType,
-    Title : myTitle,
-    Values : myValues,
-  };
-};
-
-LabelPlusTextReader.readStartBlocks = function(str) {
-var blocks = str.split ("-");
-    if(blocks.length < 3)
-        throw "Start blocks error!";
-    
-    //block1 文件头
-    var filehead = blocks[0].split(",");
-    if(filehead.length < 2)
-        throw "filehead error!";
-    var first_version = parseInt(filehead[0]);
-    var last_version = parseInt(filehead[1]);
-    
-    //block2 分组信息
-    var groups = blocks[1].split("\r");    
-    for(var i=0; i<groups.length; i++)
-        groups[i] = groups[i].trim();   
-    
-    //block末
-    var comment = blocks[blocks.length - 1];
-     
-    return {
-        FirstVer : first_version,
-        LastVer : last_version,
-        Groups : groups,
-        Comment : comment,
-    };
 };
 
 //

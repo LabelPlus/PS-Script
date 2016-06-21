@@ -31,3 +31,7 @@ P.S.关于[xtools](http://ps-scripts.sourceforge.net/xtools.html)
 * 添加头尾标志
 * 根据标号分组，执行某分组中对应的动作"GroupN"(N为分组编号)
 * 完成导入后不关闭psd文档
+
+#### 关于JSON格式
+    支持导入.json格式文本，想要处理json文件格式，文件后缀名应为.json。
+    
