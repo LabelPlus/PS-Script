@@ -112,7 +112,18 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
 		//图源、输出文件夹赋上目录
         var fl = new Folder(f.path);		
         pnl.sourceTextBox.text = fl.toUIString();
-        pnl.targetTextBox.text = fl.toUIString()+'\\output';
+
+        // 检测用户操作系统
+        var osName = /^Operating System: ([\w]+) /gm.exec(app.systemInformation)[0];
+        var dirSeparator;
+        if(osName === 'Windows') {
+          // Windows需\\分割文件夹名
+          dirSeparator = '\\';
+        } else {
+          // 其他则默认为是UNIX path规则
+          dirSeparator = '/';
+        }
+        pnl.targetTextBox.text = fl.toUIString() + dirSeparator + 'output';
         
       }
       else{        

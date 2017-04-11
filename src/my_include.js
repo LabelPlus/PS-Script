@@ -8,11 +8,11 @@
 // License: http://noodlefighter.com/label_plus/license
 
 //
-// 外部引用
+// 锟解部锟斤拷锟斤拷
 //
 
 //@show include
-//@includepath "/e/Green Software/Adobe Photoshop CS5/xtools"
+//@includepath "/Users/jin/Dev/xtools"
 //@include "xlib/stdlib.js"
 //@include "xlib/GenericUI.jsx"
 
