@@ -12,7 +12,7 @@
 //
 
 //@show include
-//@includepath "/Users/jin/Dev/xtools"
+//@includepath "/e/Green Software/Adobe Photoshop CS5/xtools"
 //@include "xlib/stdlib.js"
 //@include "xlib/GenericUI.jsx"
 
