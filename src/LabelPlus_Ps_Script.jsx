@@ -27,12 +27,20 @@ const _MY_FILE_VER = "1.0";
 // Operating System related
 var dirSeparator = $.os.search(/windows/i) === -1 ? '/': '\\';
 
+scriptPath = function () {
+  new String (fileName);
+
+  fileName = $.fileName;
+  return fileName;
+}
+
 //
 // 初始设置
 //
 LabelPlusInputOptions = function(obj) {
   var self = this;  
-  Stdlib.copyFromTo(obj, self);
+ 
+  Stdlib.copyFromTo(obj, self);  
 };
 LabelPlusInputOptions.prototype.typename = "LabelPlusInputOptions";
 LabelPlusInputOptions.LOG_FILE = Stdlib.PREFERENCES_FOLDER + "/LabelPlusInput.log";
@@ -256,10 +264,44 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 25;
 
+  // 无视LabelPlus文本中的图源文件名
+  pnl.ignoreImgFileNameCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+                                          _MT_STRING_CHECKBOX_IGNOREIMGFILENAME);
+  pnl.ignoreImgFileNameCheckBox.onClick = function () {
+  	pnl.setSourceFileTypeCheckBox.value = false;	// 与指定图源互斥
+  	pnl.ignoreImgFileNameTestButton.enabled = pnl.ignoreImgFileNameCheckBox.value;
+  }
+  xx += 260;
+  pnl.ignoreImgFileNameTestButton = pnl.add('button',  [xx,yy,xx+80,yy+18], 'preview');
+  pnl.ignoreImgFileNameTestButton.enabled = false;	
+ 
+  // 预览无视文件名效果
+  pnl.ignoreImgFileNameTestButton.onClick = function() {
+	var originFileNameList = LabelPlusInput.getFilesListOfPath(pnl.sourceTextBox.text); 
+  	var selectedImgFileNameList = LabelPlusInput.getSelectedItemsText(pnl.chooseImageListBox);
+
+  	var preview_list_string = '';
+  	for (var i = 0; i < selectedImgFileNameList.length; i++) {
+  		if (i >= 10) {
+  			break;
+  		}
+  		if (!originFileNameList[i]) {
+  			break;
+  		}
+  		preview_list_string = preview_list_string + selectedImgFileNameList[i].text + " -> " 
+  		                    + originFileNameList[selectedImgFileNameList[i].index] + "\n";
+  	}
+  	alert(preview_list_string);
+  }
+
+  xx = xOfs;
+  yy += 20;  
+
   // 使用指定类型图源
   pnl.setSourceFileTypeCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                           _MT_STRING_CHECKBOX_SETSOURCETYPE  );
   pnl.setSourceFileTypeCheckBox.onClick = function() {
+  	pnl.ignoreImgFileNameCheckBox.value = false;	//与无视图源文件名互斥
     pnl.setSourceFileTypeList.enabled = pnl.setSourceFileTypeCheckBox.value;
   }  
   xx += 260;
@@ -400,6 +442,12 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
     if(ini.outputNoSignPsd){
       pnl.outputNoSignPsdCheckBox.value = ini.outputNoSignPsd;
     }
+
+    // 无视LabelPlus文本中的图源文件名
+    if (ini.ignoreImgFileName) {
+    	pnl.ignoreImgFileNameCheckBox.value = true;
+    }
+
     // 使用指定类型图源
     if (ini.sourceFileType){    
       pnl.setSourceFileTypeCheckBox.value = true;
@@ -596,9 +644,13 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
       return self.errorPrompt(_MT_ERROR_NOTCHOOSEIMAGE);
     else
     {
-      opts.imageSelected = new Array();
-      for(var i=0;i<pnl.chooseImageListBox.selection.length;i++)
-        opts.imageSelected[i] = pnl.chooseImageListBox.selection[i].text;
+      var sortedImgSelection = pnl.chooseImageListBox.selection.sort();
+      opts.imageSelected = new Array(); 
+
+      for(var i=0;i<sortedImgSelection.length;i++) {
+        opts.imageSelected[i] = {text  : sortedImgSelection[i].text, 
+        						 index : sortedImgSelection[i].index };        
+      }
     }
     // 分组选择
     if(!pnl.chooseGroupListBox.selection || pnl.chooseGroupListBox.selection.length ==0)
@@ -634,6 +686,11 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
   // 处理无标号文档
   if(pnl.outputNoSignPsdCheckBox.value)
     opts.outputNoSignPsd = true;
+
+  // 无视LabelPlus文本中的图源文件名
+  if (pnl.ignoreImgFileNameCheckBox.value) {
+  	opts.ignoreImgFileName = true;
+  }
   
   // 使用指定类型图源
   if (pnl.setSourceFileTypeCheckBox.value){    
@@ -669,20 +726,20 @@ LabelPlusInput.prototype.process = function(opts, doc) {
   Stdlib.log("Start");
   Stdlib.log("Properties:");
   Stdlib.log(listProps(opts)); 
+
+  //读取图源文件夹文件列表 
+  var originFileList = LabelPlusInput.getFilesListOfPath(opts.source);
     
   //解析LabelPlus文本
   var lpFile = new LabelPlusTextReader(opts.labelFilename);
   
   //读取文本替换配置
   if(opts.textReplace)
-    var textReplace = LabelPlusInput.textReplaceReader(opts.textReplace);
-  
-  //选项排序
-  opts.imageSelected.sort();
+    var textReplace = LabelPlusInput.textReplaceReader(opts.textReplace); 
   
   //遍历所选图片 导入数据= =
   for(var i=0; i<opts.imageSelected.length; i++){
-    var originName = opts.imageSelected[i];
+    var originName = opts.imageSelected[i].text;
     var filename;
     var labelData = lpFile.LabelData[originName];
     var gourpData = lpFile.GroupData;    
@@ -694,12 +751,17 @@ LabelPlusInput.prototype.process = function(opts, doc) {
     else
       filename = originName;
 
+  	// 忽略原始图片名
+  	if (opts.ignoreImgFileName) {
+  		filename = originFileList[opts.imageSelected[i].index];  		
+  	}
+
     // 不处理无标号文档
     if(!opts.outputNoSignPsd && labelData.length == 0)
       continue;
       
     // 打开图片文件
-    var bgFile = File(opts.source + "//" + filename);
+    var bgFile = File(opts.source + dirSeparator + filename);
     if(!bgFile || !bgFile.exists){
       var msg = "Image " + filename + " Not Found.";
       Stdlib.log(msg);
@@ -963,6 +1025,41 @@ LabelPlusInput.readIni = function(iniFile, ini) {
   return ini;
 };
 
+//
+// 获取文件夹下文件的文件名字符串列表
+//
+LabelPlusInput.getFilesListOfPath = function(path) {
+	var folder = new Folder(path); 
+	  	if (!folder.exists) {
+	  		return null;
+	  	}
+
+	  	var fileList = folder.getFiles();
+	  	var fileNameList = new Array();
+
+	  	for (var i = 0; i < fileList.length; i++) {
+	  		var file = fileList[i]; 
+	  		if (file instanceof File) {
+	  			var short_name = file.toString().split("/");
+	  			fileNameList.push(short_name[short_name.length - 1]);
+	  		}
+	  	}   
+
+  		return fileNameList.sort();
+}
+
+//
+// 获取ListBox选中项目text及index
+//
+LabelPlusInput.getSelectedItemsText = function(listBox) {
+	var selectedItems = new Array();
+
+  	for (var i = 0; i < listBox.children.length; i++) {
+  		if (listBox[i].selected) 
+  			selectedItems.push({ text: listBox[i].text, index: listBox[i].index });
+  	}  
+  	return selectedItems;
+}
 // 主程序
 LabelPlusInput.main = function() {
   var ui = new LabelPlusInput();

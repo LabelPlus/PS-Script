@@ -25,6 +25,7 @@ const _MT_STRING_LABEL_SELECTGROUP = "Select Group";
 const _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER = "Output Label Number";
 const _MT_STRING_CHECKBOX_TEXTREPLACE = "Text Replace(e.g. \"A->B|C->D\")";
 const _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD = "Output no label file";
+const _MT_STRING_CHECKBOX_IGNOREIMGFILENAME = "Ignore filename in LabelPlus Text";
 const _MT_STRING_CHECKBOX_SETSOURCETYPE = "Replace file extension";
 const _MT_STRING_CHECKBOX_RUNACTION = "Execute actions named of group name";
 const _MT_STRING_CHECKBOX_NOTCLOSE = "Do not close the file";
