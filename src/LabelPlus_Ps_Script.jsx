@@ -263,7 +263,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
     pnl.setSourceFileTypeList.enabled = pnl.setSourceFileTypeCheckBox.value;
   }  
   xx += 260;
-  var setSourceFileTypeListItems = [".psd", ".jpg", ".png"];
+  var setSourceFileTypeListItems = [".psd", ".png", ".jpg", "jpeg", ".tif", ".tiff"];
   pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx,yy,xx+70,yy+22],
                                    setSourceFileTypeListItems);  
   pnl.setSourceFileTypeList.selection = pnl.setSourceFileTypeList.find(".psd");
