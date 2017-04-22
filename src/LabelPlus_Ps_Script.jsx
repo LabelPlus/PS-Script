@@ -60,7 +60,7 @@ LabelPlusInput = function() {
     x: 200,
     y: 200,
     w: 875,
-    h: 610
+    h: 650
   };  
   
   self.title = _MY_APPNAME + " " + _MY_VER + " For FileVer<=" + _MY_FILE_VER;	// our window title
@@ -393,12 +393,13 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   yy += 20;  
       
   // 执行动作GroupN
-  pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
+  pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+500,yy+22],
                                            _MT_STRING_CHECKBOX_RUNACTION );
   pnl.runActionGroupCheckBox.onClick = function() {
     pnl.runActionGroupList.enabled = pnl.runActionGroupCheckBox.value;
   }                                             
-  xx += 260;
+  xx = xOfs + 30;
+  yy += 20;  
   var ary = Stdlib.getActionSets();  
   pnl.runActionGroupList = pnl.add('dropdownlist', [xx,yy,xx+180,yy+22], ary);  
   pnl.runActionGroupList.selection = pnl.runActionGroupList.find("LabelPlusAction");
