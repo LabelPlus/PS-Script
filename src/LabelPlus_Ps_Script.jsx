@@ -718,9 +718,9 @@ LabelPlusInput.prototype.process = function(opts, doc) {
     var layerGroups = new Array();
     
     // 文件打开时执行一次动作"_start"
-    if(opts.runActionGroup) {
-      bg.activeLayer = bg.layers[bg.layers.length-1];
+    if(opts.runActionGroup) {      
       try{
+        bg.activeLayer = bg.layers[bg.layers.length-1];
         app.doAction("_start" , opts.runActionGroup);
       }
       catch(e){ }
@@ -806,9 +806,9 @@ LabelPlusInput.prototype.process = function(opts, doc) {
         }
         
         // 执行动作,名称为分组名
-        if(opts.runActionGroup) {
-          bg.activeLayer = artLayer;
+        if(opts.runActionGroup) {            
           try{
+            bg.activeLayer = artLayer;
             app.doAction(labelGroup , opts.runActionGroup);
           }
           catch(e){
@@ -820,9 +820,9 @@ LabelPlusInput.prototype.process = function(opts, doc) {
     }
     
     // 文件关闭时执行一次动作"_end"
-    if(opts.runActionGroup) {
-      bg.activeLayer = bg.layers[bg.layers.length-1];
+    if(opts.runActionGroup) {      
       try{
+        bg.activeLayer = bg.layers[bg.layers.length-1];
         app.doAction("_end" , opts.runActionGroup);
       }
       catch(e){ }

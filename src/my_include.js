@@ -1,4 +1,4 @@
-//
+﻿//
 //   LabelPlus_Ps_Script.jsx
 //   This is a Input Text Tool for LabelPlus Text File.
 // 
@@ -12,7 +12,7 @@
 //
 
 //@show include
-//@includepath "/e/Green Software/Adobe Photoshop CS5/xtools"
+//@includepath "/a/Green Software/Adobe Photoshop CC/xtools"
 //@include "xlib/stdlib.js"
 //@include "xlib/GenericUI.jsx"
 
