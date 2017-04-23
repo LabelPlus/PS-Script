@@ -145,6 +145,10 @@ MyAction.lp_dialogClear = function(labelArr, imgWidht, imgHeight, tolerance, con
 
     MyAction.selectNone();
     
+    // 单位转换
+    imgWidht.convert("px");
+    imgHeight.convert("px");
+    
     // 选中所有框内的空白区域
     for(var i=0; i<labelArr.length; i++){
         var x = (labelArr[i].x) * imgWidht;
