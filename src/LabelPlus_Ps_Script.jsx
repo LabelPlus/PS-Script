@@ -161,6 +161,11 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
             continue;
           pnl.chooseGroupListBox[i] = pnl.chooseGroupListBox.add('item', arr[i], i);
           pnl.chooseGroupListBox[i].selected = true;
+
+          // 涂白 指定分组文本框若空 填第一个分组
+          if (pnl.overlayGroupTextBox.text == "") {
+			pnl.overlayGroupTextBox.text = arr[i];
+          }
         }            
       }      
       
@@ -412,6 +417,17 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 20;  
 
+  // 涂白功能选项
+  pnl.overlayCheckBox = pnl.add('checkbox', [xx,yy,xx+300,yy+22],
+                                           _MT_STRING_CHECKBOX_OVERLAY );
+  pnl.overlayCheckBox.onClick = function() {
+    pnl.overlayGroupTextBox.enabled = pnl.overlayCheckBox.value; 
+  }
+  xx += 300;
+
+  pnl.overlayGroupTextBox = pnl.add('edittext', [xx,yy,xx+180,yy+20]);    
+  pnl.overlayGroupTextBox.enabled = false;
+
   //------------------读取配置区------------------
   if (ini) {   // if there was an ini object
     //文本替换
@@ -470,10 +486,17 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
     // 不对图层进行分组
     if(ini.layerNotGroup)
       pnl.layerNotGroupCheckBox.value = true;
-      
+
+  	// 涂白
+  	if (ini.overloayGroup) {
+  		pnl.overlayCheckBox.value = true;
+  		pnl.overlayGroupTextBox.enabled = true;
+  		pnl.overlayGroupTextBox.text = ini.overloayGroup;
+  	}
+
   } 
 
-  return pnl;
+  return pnl; 
 };
 
 //
@@ -714,6 +737,11 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
   if(pnl.layerNotGroupCheckBox.value)
     opts.layerNotGroup = true;
   
+  // 涂白
+  if (pnl.overlayCheckBox.value) { 
+  	opts.overloayGroup = pnl.overlayGroupTextBox.text;
+  }
+
   return opts;
 };
 
@@ -789,26 +817,25 @@ LabelPlusInput.prototype.process = function(opts, doc) {
       catch(e){ }
     }  
         
-    // 涂白测试开始 {
-    //todo: 删除这个测试段
-    var labelArr = new Array();
-    
-    // 找出需要涂白的标签
-    for(var j=0; j<labelData.length; j++){
-        var labelX = labelData[j].LabelheadValue[0];
-        var labelY = labelData[j].LabelheadValue[1];
-        var labelXY = { x:labelX, y:labelY };        
-        var labelGroup = gourpData[labelData[j].LabelheadValue[2]];
-        
-        if(labelGroup == "框内"){
-            labelArr.push(labelXY);
-        }            
-    }
-    
-    //执行涂白
-    MyAction.lp_dialogClear(labelArr, bg.width, bg.height, 16, 1);        
-    
-    // 涂白测试结束 }
+    // 涂白
+    if (opts.overloayGroup) {
+	    var labelArr = new Array();
+	    
+	    // 找出需要涂白的标签
+	    for(var j=0; j<labelData.length; j++){
+	        var labelX = labelData[j].LabelheadValue[0];
+	        var labelY = labelData[j].LabelheadValue[1];
+	        var labelXY = { x:labelX, y:labelY };        
+	        var labelGroup = gourpData[labelData[j].LabelheadValue[2]];
+	        
+	        if(labelGroup == opts.overloayGroup){
+	            labelArr.push(labelXY);
+	        }            
+	    }
+
+	    //执行涂白
+	    MyAction.lp_dialogClear(labelArr, bg.width, bg.height, 16, 1);        
+	}
     
     // 遍历LabelData
     for(var j=0; j<labelData.length; j++){

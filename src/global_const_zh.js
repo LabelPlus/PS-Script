@@ -34,6 +34,7 @@ const _MT_STRING_CHECKBOX_NOTCLOSE = "导入后不关闭文档";
 const _MT_STRING_CHECKBOX_SETFONT = "修改默认字体";
 const _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT = "输出横排文字";
 const _MT_STRING_CHECKBOX_LAYERNOTGROUP = "不对图层进行分组";
+const _MT_STRING_CHECKBOX_OVERLAY = "对指定分组执行涂白动作(实验性功能)";
 
 const _MY_STRING_COMPLETE = "导出完毕！";
 

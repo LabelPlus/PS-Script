@@ -32,6 +32,7 @@ const _MT_STRING_CHECKBOX_NOTCLOSE = "Do not close the file";
 const _MT_STRING_CHECKBOX_SETFONT = "Set default font";
 const _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT = "Output horizontal text";
 const _MT_STRING_CHECKBOX_LAYERNOTGROUP = "Layer not grouping";
+const _MT_STRING_CHECKBOX_OVERLAY = "Execute \"Text Overlay\" on specified group";
 
 const _MY_STRING_COMPLETE = "Export completed!";
 
