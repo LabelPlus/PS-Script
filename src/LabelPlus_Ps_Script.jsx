@@ -16,8 +16,7 @@
 
 // ======================================== Gobal Const 
 // Version
-const _MY_VER = "1.1";
-const _MY_FILE_VER = "1.0";
+const _MY_VER = "1.2.0"; 
 
 // String Const
 //@include "global_const_en.js"
@@ -63,7 +62,7 @@ LabelPlusInput = function() {
     h: 650
   };  
   
-  self.title = _MY_APPNAME + " " + _MY_VER + " For FileVer<=" + _MY_FILE_VER;	// our window title
+  self.title = _MY_APPNAME + " " + _MY_VER;	// our window title
   self.notesSize = 75;
   self.notesTxt = _MY_TIP_TITLE;
   self.documentation = _MY_TIP_TEXT;
