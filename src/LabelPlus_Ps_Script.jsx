@@ -745,6 +745,13 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
   return opts;
 };
 
+LabelPlusInput.prototype.doAction = function(action, actionSet)  {
+   
+    if (Stdlib.hasAction(action, actionSet)) {
+        app.doAction(action, actionSet);
+    }
+}
+
 //
 // 执行用户UI功能
 //
@@ -812,7 +819,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
     if(opts.runActionGroup) {      
       try{
         bg.activeLayer = bg.layers[bg.layers.length-1];
-        app.doAction("_start" , opts.runActionGroup);
+        this.doAction("_start" , opts.runActionGroup); 
       }
       catch(e){ }
     }  
@@ -899,7 +906,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
         if(opts.runActionGroup) {            
           try{
             bg.activeLayer = artLayer;
-            app.doAction(labelGroup , opts.runActionGroup);
+            this.doAction(labelGroup , opts.runActionGroup);
           }
           catch(e){
             Stdlib.log("DoAction " +labelGroup +
@@ -913,7 +920,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
     if(opts.runActionGroup) {      
       try{
         bg.activeLayer = bg.layers[bg.layers.length-1];
-        app.doAction("_end" , opts.runActionGroup);
+        this.doAction("_end" , opts.runActionGroup);
       }
       catch(e){ }
     }        
