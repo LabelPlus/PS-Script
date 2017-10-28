@@ -16,7 +16,7 @@
 
 // ======================================== Gobal Const 
 // Version
-const _MY_VER = "1.2.0"; 
+const _MY_VER = "1.2.1"; 
 
 // String Const
 //@include "global_const_en.js"
@@ -746,8 +746,8 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
 
 LabelPlusInput.prototype.doAction = function(action, actionSet)  {
    
-    if (Stdlib.hasAction(action, actionSet)) {
-        app.doAction(action, actionSet);
+    if (Stdlib.hasAction(action, actionSet.toString())) {
+        app.doAction(action, actionSet.toString());
     }
 }
 
