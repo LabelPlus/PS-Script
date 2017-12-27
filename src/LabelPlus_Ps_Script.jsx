@@ -756,6 +756,7 @@ LabelPlusInput.prototype.doAction = function(action, actionSet)  {
 //
 LabelPlusInput.prototype.process = function(opts, doc) {
   var self = this;
+  var errorMsg = "";
 
   Stdlib.log.setFile(opts.labelFilePath + dirSeparator + "LabelPlusInputer.log");//LabelPlusInputOptions.LOG_FILE);
   Stdlib.log("Start");
@@ -800,7 +801,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
     if(!bgFile || !bgFile.exists){
       var msg = "Image " + filename + " Not Found.";
       Stdlib.log(msg);
-      alert(msg);
+	  errorMsg = errorMsg + msg + "\r\n";
       continue;
     } 
       
@@ -810,9 +811,9 @@ LabelPlusInput.prototype.process = function(opts, doc) {
 	try {
 		bg = app.open(bgFile);
 	} catch(e) {
-		var msg =  "open file " + bgFile + " fail";
+		var msg =  "open file " + filename + " fail";
 		Stdlib.log(msg);
-		alert(msg);
+		errorMsg = errorMsg + msg + "\r\n";
 		continue;
 	}
     
@@ -945,6 +946,9 @@ LabelPlusInput.prototype.process = function(opts, doc) {
       bg.close();    
   }
   alert(_MY_STRING_COMPLETE);
+  if (errorMsg != "") {
+	  alert("error:\r\n" + errorMsg);
+  }  
   Stdlib.log("Complete!");
 };
 
