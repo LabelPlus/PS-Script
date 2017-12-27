@@ -805,7 +805,16 @@ LabelPlusInput.prototype.process = function(opts, doc) {
     } 
       
     // 在PS中打开文件 
-    var bg = app.open(bgFile);
+	 
+	var bg;
+	try {
+		bg = app.open(bgFile);
+	} catch(e) {
+		var msg =  "open file " + bgFile + " fail";
+		Stdlib.log(msg);
+		alert(msg);
+		continue;
+	}
     
     // 若文档类型为索引色模式 更改为RGB模式
     if (bg.mode == DocumentMode.INDEXEDCOLOR){
