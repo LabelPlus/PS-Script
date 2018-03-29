@@ -34,7 +34,7 @@ scriptPath = function () {
 }
 
 //
-// ³õÊ¼ÉèÖÃ
+// åˆå§‹è®¾ç½®
 //
 LabelPlusInputOptions = function(obj) {
   var self = this;  
@@ -45,7 +45,7 @@ LabelPlusInputOptions.prototype.typename = "LabelPlusInputOptions";
 LabelPlusInputOptions.LOG_FILE = Stdlib.PREFERENCES_FOLDER + "/LabelPlusInput.log";
 
 //
-// ÓÃ»§UI
+// ç”¨æˆ·UI
 //
 LabelPlusInput = function() {
   var self = this;
@@ -53,7 +53,7 @@ LabelPlusInput = function() {
   self.saveIni = false;
   self.hasBorder = true;
   self.optionsClass = LabelPlusInputOptions;
-  self.settingsPanel = false; //ÓĞ×Ô¼º´´½¨µÄÉèÖÃÃæ°å
+  self.settingsPanel = false; //æœ‰è‡ªå·±åˆ›å»ºçš„è®¾ç½®é¢æ¿
   
   self.winRect = {          // the size of our window
     x: 200,
@@ -76,7 +76,7 @@ LabelPlusInput.prototype = new GenericUI();
 LabelPlusInput.prototype.typename = "LabelPlusInput";
 
 //
-// ÓÃ»§½çÃæ¹¹½¨
+// ç”¨æˆ·ç•Œé¢æ„å»º
 //
 LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   var self = this;
@@ -90,7 +90,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   var xx = xOfs;
   var yy = yOfs;  
   
-  //------------------×Ô¼º´´½¨µÄÅäÖÃÃæ°å------------------  
+  //------------------è‡ªå·±åˆ›å»ºçš„é…ç½®é¢æ¿------------------  
   
   pnl.settingsPnl = pnl.add('panel', 
     [xOfs,yy,pnl.size.width-xOfs,yy+60]);   
@@ -100,9 +100,9 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 75;  
   yOfs = yy; 
-  //------------------LabelPlusÎÄ¼şÇø------------------
+  //------------------LabelPlusæ–‡ä»¶åŒº------------------
   
-  // LabelPlusÎÄ±¾ÎÄ¼şÊäÈë
+  // LabelPlusæ–‡æœ¬æ–‡ä»¶è¾“å…¥
   pnl.lpTextFileLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_TEXTFILE);
   xx += 120;
@@ -120,20 +120,20 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
       if (f && f.exists) {
         pnl.lpTextFileTextBox.text = f.toUIString();
         
-		//Í¼Ô´¡¢Êä³öÎÄ¼ş¼Ğ¸³ÉÏÄ¿Â¼
+		//å›¾æºã€è¾“å‡ºæ–‡ä»¶å¤¹èµ‹ä¸Šç›®å½•
         var fl = new Folder(f.path);		
         pnl.sourceTextBox.text = fl.toUIString();
         pnl.targetTextBox.text = fl.toUIString() + dirSeparator + 'output';
         
       }
       else{        
-        return;        //È¡Ïû
+        return;        //å–æ¶ˆ
       }
       
       pnl.chooseImageListBox.removeAll();
       pnl.chooseGroupListBox.removeAll();
       
-      // ¶ÁÈ¡LabelPlusÎÄ¼ş
+      // è¯»å–LabelPlusæ–‡ä»¶
       var labelFile;
       try{
         labelFile = new LabelPlusTextReader(pnl.lpTextFileTextBox.text);        
@@ -143,7 +143,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
         return;
       } 
     
-      // Ìî³äÍ¼Æ¬Ñ¡ÔñÁĞ±í
+      // å¡«å……å›¾ç‰‡é€‰æ‹©åˆ—è¡¨
       var arr = labelFile.ImageList;
       if(arr){
         for(var i=0; i<arr.length ;i++){
@@ -152,7 +152,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
         }
       }
     
-      // Ìî³ä·Ö×éÑ¡ÔñÁĞ±í    
+      // å¡«å……åˆ†ç»„é€‰æ‹©åˆ—è¡¨    
       var arr = labelFile.GroupData;
       if(arr){
         for(var i=0; i<arr.length ;i++){
@@ -161,14 +161,14 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
           pnl.chooseGroupListBox[i] = pnl.chooseGroupListBox.add('item', arr[i], i);
           pnl.chooseGroupListBox[i].selected = true;
 
-          // Í¿°× Ö¸¶¨·Ö×éÎÄ±¾¿òÈô¿Õ ÌîµÚÒ»¸ö·Ö×é
+          // æ¶‚ç™½ æŒ‡å®šåˆ†ç»„æ–‡æœ¬æ¡†è‹¥ç©º å¡«ç¬¬ä¸€ä¸ªåˆ†ç»„
           if (pnl.overlayGroupTextBox.text == "") {
 			pnl.overlayGroupTextBox.text = arr[i];
           }
         }            
       }      
       
-      pnl.labelFile = labelFile;  //·µ»ØLabelPlusTextReader¶ÔÏó
+      pnl.labelFile = labelFile;  //è¿”å›LabelPlusTextReaderå¯¹è±¡
       
     } catch (e) {
       alert(Stdlib.exceptionMessage(e));
@@ -176,37 +176,37 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   };
 
 
-  //------------------Í¼Æ¬Ñ¡ÔñÇø------------------
+  //------------------å›¾ç‰‡é€‰æ‹©åŒº------------------
   yy = yOfs +35;  
   xx = xOfs;  
 
-  // Ñ¡ÔñĞèÒªµ¼ÈëµÄÍ¼Æ¬
+  // é€‰æ‹©éœ€è¦å¯¼å…¥çš„å›¾ç‰‡
   pnl.chooseImageLabel =  pnl.add('statictext', [xx,yy,xx+150,yy+22],
                                            _MT_STRING_LABEL_SELECTIMAGE );
   yy += 20;
   pnl.chooseImageListBox = pnl.add('listbox', [xx,yy,xx+150,yy+285], [] ,{multiselect:true});
 
-  //------------------·Ö×éÑ¡ÔñÇø------------------
+  //------------------åˆ†ç»„é€‰æ‹©åŒº------------------
   yy = yOfs +35;  
   xOfs += 170;  
   xx = xOfs;
   
-  //Ñ¡ÔñĞèÒªµ¼ÈëµÄ·Ö×é
+  //é€‰æ‹©éœ€è¦å¯¼å…¥çš„åˆ†ç»„
   pnl.chooseGroupLabel =  pnl.add('statictext', [xx,yy,xx+150,yy+22],
                                            _MT_STRING_LABEL_SELECTGROUP );
   yy += 20;
   pnl.chooseGroupListBox =  pnl.add('listbox', [xx,yy,xx+150,yy+285], [] ,{multiselect:true});
 
-  //------------------ÉèÖÃÇø------------------
+  //------------------è®¾ç½®åŒº------------------
   yy = yOfs;
   xOfs = 10 +  345;  
   xx = xOfs;
   
-  // >>>>>ÎÄ¼ş Ô¤´¦Àí
+  // >>>>>æ–‡ä»¶ é¢„å¤„ç†
   pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_TIP_FILE);
   yy += 20;  
-  // Í¼Ô´ÎÄ¼ş¼Ğ 
+  // å›¾æºæ–‡ä»¶å¤¹ 
   pnl.sourceLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_SOURCE);
   xx += 120;
@@ -235,7 +235,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 25;
 
-  // Êä³öÄ¿Â¼
+  // è¾“å‡ºç›®å½•
   pnl.targetLabel = pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_TARGET );
   xx += 120;
@@ -268,18 +268,18 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 25;
 
-  // ÎŞÊÓLabelPlusÎÄ±¾ÖĞµÄÍ¼Ô´ÎÄ¼şÃû
+  // æ— è§†LabelPlusæ–‡æœ¬ä¸­çš„å›¾æºæ–‡ä»¶å
   pnl.ignoreImgFileNameCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                           _MT_STRING_CHECKBOX_IGNOREIMGFILENAME);
   pnl.ignoreImgFileNameCheckBox.onClick = function () {
-  	pnl.setSourceFileTypeCheckBox.value = false;	// ÓëÖ¸¶¨Í¼Ô´»¥³â
+  	pnl.setSourceFileTypeCheckBox.value = false;	// ä¸æŒ‡å®šå›¾æºäº’æ–¥
   	pnl.ignoreImgFileNameTestButton.enabled = pnl.ignoreImgFileNameCheckBox.value;
   }
   xx += 260;
   pnl.ignoreImgFileNameTestButton = pnl.add('button',  [xx,yy,xx+80,yy+18], 'preview');
   pnl.ignoreImgFileNameTestButton.enabled = false;	
  
-  // Ô¤ÀÀÎŞÊÓÎÄ¼şÃûĞ§¹û
+  // é¢„è§ˆæ— è§†æ–‡ä»¶åæ•ˆæœ
   pnl.ignoreImgFileNameTestButton.onClick = function() {
 	var originFileNameList = LabelPlusInput.getFilesListOfPath(pnl.sourceTextBox.text); 
   	var selectedImgFileNameList = LabelPlusInput.getSelectedItemsText(pnl.chooseImageListBox);
@@ -301,15 +301,15 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 20;  
 
-  // Ê¹ÓÃÖ¸¶¨ÀàĞÍÍ¼Ô´
+  // ä½¿ç”¨æŒ‡å®šç±»å‹å›¾æº
   pnl.setSourceFileTypeCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                           _MT_STRING_CHECKBOX_SETSOURCETYPE  );
   pnl.setSourceFileTypeCheckBox.onClick = function() {
-  	pnl.ignoreImgFileNameCheckBox.value = false;	//ÓëÎŞÊÓÍ¼Ô´ÎÄ¼şÃû»¥³â
+  	pnl.ignoreImgFileNameCheckBox.value = false;	//ä¸æ— è§†å›¾æºæ–‡ä»¶åäº’æ–¥
     pnl.setSourceFileTypeList.enabled = pnl.setSourceFileTypeCheckBox.value;
   }  
   xx += 260;
-  var setSourceFileTypeListItems = [".psd", ".png", ".jpg", "jpeg", ".tif", ".tiff"];
+  var setSourceFileTypeListItems = [".psd", ".png", ".jpg", ".jpeg", ".tif", ".tiff"];
   pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx,yy,xx+70,yy+22],
                                    setSourceFileTypeListItems);  
   pnl.setSourceFileTypeList.selection = pnl.setSourceFileTypeList.find(".psd");
@@ -318,19 +318,19 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 20;  
 
-  // ´¦ÀíÎŞ±êºÅÎÄµµ
+  // å¤„ç†æ— æ ‡å·æ–‡æ¡£
   pnl.outputNoSignPsdCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                           _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD  );
   xx = xOfs;
   yy += 20;  
 
-  // µ¼Èëºó²»¹Ø±ÕÎÄµµ
+  // å¯¼å…¥åä¸å…³é—­æ–‡æ¡£
   pnl.notCloseCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                            _MT_STRING_CHECKBOX_NOTCLOSE );
   xx = xOfs;
   yy += 20;  
   
-  // ÎÄ±¾Ìæ»»(Àı:"A->B|C->D")
+  // æ–‡æœ¬æ›¿æ¢(ä¾‹:"A->B|C->D")
   pnl.textReplaceCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                           _MT_STRING_CHECKBOX_TEXTREPLACE);
   pnl.textReplaceCheckBox.onClick = function() {
@@ -338,36 +338,36 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   };
   xx += 260;
   pnl.textReplaceTextBox = pnl.add('edittext', [xx,yy,xx+180,yy+20]);  
-  pnl.textReplaceTextBox.text = "£¡£¿->!?|...->¡­";
+  pnl.textReplaceTextBox.text = "ï¼ï¼Ÿ->!?|...->â€¦";
   pnl.textReplaceTextBox.enabled = false;
   xx = xOfs;
   yy += 20;  
   
 
-  // >>>>>µ¼ÈëÏîÄ¿
+  // >>>>>å¯¼å…¥é¡¹ç›®
   yy += 10;
   pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_TIP_INPUTITEM);
   yy += 20;  
 
-  // µ¼³ö±êºÅÑ¡Ïî
+  // å¯¼å‡ºæ ‡å·é€‰é¡¹
   pnl.outputLabelNumberCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                            _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER);
   xx = xOfs;
   yy += 20;  
     
-  // ²»¶ÔÍ¼²ã½øĞĞ·Ö×é
+  // ä¸å¯¹å›¾å±‚è¿›è¡Œåˆ†ç»„
   pnl.layerNotGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                            _MT_STRING_CHECKBOX_LAYERNOTGROUP);
   yy += 20;  
   
-  // >>>>>¸ñÊ½ / ×Ô¶¯»¯
+  // >>>>>æ ¼å¼ / è‡ªåŠ¨åŒ–
   yy += 10;
   pnl.add('statictext', [xx,yy,xx+120,yy+20],
                             _MT_STRING_LABEL_TIP_STYLE_AUTO);
   yy += 20;  
   
-  // Ê¹ÓÃ×Ô¶¨Òå×ÖÌåÉèÖÃ
+  // ä½¿ç”¨è‡ªå®šä¹‰å­—ä½“è®¾ç½®
   pnl.setFontCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                            _MT_STRING_CHECKBOX_SETFONT);  
   pnl.setFontCheckBox.onClick = function() {
@@ -378,7 +378,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   }    
   xx = xOfs;
   yy += 20;  
-  // ×ÖÌå
+  // å­—ä½“
   pnl.font = pnl.add('group', [xx,yy,xx+400,yy+40]);
   self.createFontPanel(pnl.font, ini);
   pnl.font.label.text = _MT_STRING_LABEL_FONT;  
@@ -390,13 +390,13 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 20;  
 
-  // Êä³öºáÅÅÎÄ×Ö
+  // è¾“å‡ºæ¨ªæ’æ–‡å­—
   pnl.outputHorizontalCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                            _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT);
   xx = xOfs;
   yy += 20;  
       
-  // Ö´ĞĞ¶¯×÷GroupN
+  // æ‰§è¡ŒåŠ¨ä½œGroupN
   pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx,yy,xx+500,yy+22],
                                            _MT_STRING_CHECKBOX_RUNACTION );
   pnl.runActionGroupCheckBox.onClick = function() {
@@ -416,7 +416,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 20;  
 
-  // Í¿°×¹¦ÄÜÑ¡Ïî
+  // æ¶‚ç™½åŠŸèƒ½é€‰é¡¹
   pnl.overlayCheckBox = pnl.add('checkbox', [xx,yy,xx+300,yy+22],
                                            _MT_STRING_CHECKBOX_OVERLAY );
   pnl.overlayCheckBox.onClick = function() {
@@ -427,16 +427,16 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   pnl.overlayGroupTextBox = pnl.add('edittext', [xx,yy,xx+180,yy+20]);    
   pnl.overlayGroupTextBox.enabled = false;
 
-  //------------------¶ÁÈ¡ÅäÖÃÇø------------------
+  //------------------è¯»å–é…ç½®åŒº------------------
   if (ini) {   // if there was an ini object
-    //ÎÄ±¾Ìæ»»
+    //æ–‡æœ¬æ›¿æ¢
     if(ini.textReplace){
       pnl.textReplaceCheckBox.value = true;
       pnl.textReplaceTextBox.enabled = true;
       pnl.textReplaceTextBox.text = opts.textReplace;
     }  
     
-    // ×ÖÌå  
+    // å­—ä½“  
     if (ini.setFont) {
       pnl.setFontCheckBox.value = true;
       pnl.font.family.enabled =  true;
@@ -445,48 +445,48 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
       pnl.font.setFont(ini.font, ini.fontSize);
     }
     
-    // µ¼³ö±êºÅÑ¡Ïî
+    // å¯¼å‡ºæ ‡å·é€‰é¡¹
     if(ini.outputLabelNumber){
       pnl.outputLabelNumberCheckBox.value = ini.outputLabelNumber;
     }
   
-    // Êä³öºáÅÅÎÄ×Ö
+    // è¾“å‡ºæ¨ªæ’æ–‡å­—
     if(ini.horizontalText){
       pnl.outputHorizontalCheckBox.value = ini.horizontalText;
     }
-    // ´¦ÀíÎŞ±êºÅÎÄµµ
+    // å¤„ç†æ— æ ‡å·æ–‡æ¡£
     if(ini.outputNoSignPsd){
       pnl.outputNoSignPsdCheckBox.value = ini.outputNoSignPsd;
     }
 
-    // ÎŞÊÓLabelPlusÎÄ±¾ÖĞµÄÍ¼Ô´ÎÄ¼şÃû
+    // æ— è§†LabelPlusæ–‡æœ¬ä¸­çš„å›¾æºæ–‡ä»¶å
     if (ini.ignoreImgFileName) {
     	pnl.ignoreImgFileNameCheckBox.value = true;
     }
 
-    // Ê¹ÓÃÖ¸¶¨ÀàĞÍÍ¼Ô´
+    // ä½¿ç”¨æŒ‡å®šç±»å‹å›¾æº
     if (ini.sourceFileType){    
       pnl.setSourceFileTypeCheckBox.value = true;
       pnl.setSourceFileTypeList.enabled = true;
       pnl.setSourceFileTypeList.selection.text = ini.sourceFileType;
     }
   
-    // Ö´ĞĞ¶¯×÷GroupN
+    // æ‰§è¡ŒåŠ¨ä½œGroupN
     if (ini.runActionGroup){
       pnl.runActionGroupCheckBox.value = true;
       pnl.runActionGroupList.enabled = true;      
       pnl.runActionGroupList.selection.text = ini.runActionGroup;  
     }  
   
-    // µ¼Èëºó²»¹Ø±ÕÎÄµµ
+    // å¯¼å…¥åä¸å…³é—­æ–‡æ¡£
     if(ini.notClose)
       pnl.notCloseCheckBox.value = true;
     
-    // ²»¶ÔÍ¼²ã½øĞĞ·Ö×é
+    // ä¸å¯¹å›¾å±‚è¿›è¡Œåˆ†ç»„
     if(ini.layerNotGroup)
       pnl.layerNotGroupCheckBox.value = true;
 
-  	// Í¿°×
+  	// æ¶‚ç™½
   	if (ini.overloayGroup) {
   		pnl.overlayCheckBox.value = true;
   		pnl.overlayGroupTextBox.enabled = true;
@@ -499,7 +499,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
 };
 
 //
-// ×Ô¶¨Òå¶ÁÈ¡Åä¿ò
+// è‡ªå®šä¹‰è¯»å–é…æ¡†
 //
 LabelPlusInput.createSettingsPanel = function(pnl, ini) {
   var win = GenericUI.getWindow(pnl.parent);
@@ -612,15 +612,15 @@ LabelPlusInput.createSettingsPanel = function(pnl, ini) {
 };
 
 //
-// ¶Á³öÓÃ»§UIÊı¾İ
+// è¯»å‡ºç”¨æˆ·UIæ•°æ®
 //
 LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
   var self = this;
   var opts = new LabelPlusInputOptions(ini);
 
-  // Ğ´ÅäÖÃÏîÊ±ÎŞĞè´æ´¢ÕâĞ©
+  // å†™é…ç½®é¡¹æ—¶æ— éœ€å­˜å‚¨è¿™äº›
   if(!tofile || tofile == false){
-    // Í¼Ô´ÎÄ¼ş¼Ğ
+    // å›¾æºæ–‡ä»¶å¤¹
     if (pnl.sourceTextBox.text) {    
       f = new Folder(pnl.sourceTextBox.text);
     }
@@ -633,7 +633,7 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
     }
     opts.source = f.toUIString();
     
-    // Êä³öÄ¿Â¼
+    // è¾“å‡ºç›®å½•
     if (pnl.targetTextBox.text) {
       f = new Folder(pnl.targetTextBox.text);
       if (!f.exists) {
@@ -652,7 +652,7 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
     }
     opts.target = f.toUIString();
 
-    // LabelPlusÎÄ±¾
+    // LabelPlusæ–‡æœ¬
     f = new File(pnl.lpTextFileTextBox.text);
     if(!f || !f.exists) {
       return self.errorPrompt(_MT_ERROR_NOTFOUNLABELTEXT);
@@ -662,7 +662,7 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
     var fl = new Folder(f.path);
     opts.labelFilePath = fl.toUIString();    
     
-    // ImageÑ¡Ôñ  
+    // Imageé€‰æ‹©  
     if(!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0)
       return self.errorPrompt(_MT_ERROR_NOTCHOOSEIMAGE);
     else
@@ -675,7 +675,7 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
         						 index : sortedImgSelection[i].index };        
       }
     }
-    // ·Ö×éÑ¡Ôñ
+    // åˆ†ç»„é€‰æ‹©
     if(!pnl.chooseGroupListBox.selection || pnl.chooseGroupListBox.selection.length ==0)
       return self.errorPrompt(_MT_ERROR_NOTCHOOSEGROUP);  
     else
@@ -686,11 +686,11 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
     }
       
   }
-  // ÎÄ±¾Ìæ»»  
+  // æ–‡æœ¬æ›¿æ¢  
   if(pnl.textReplaceCheckBox.value)
     opts.textReplace = pnl.textReplaceTextBox.text;  
 
-  // ×ÖÌå  
+  // å­—ä½“  
   if(pnl.setFontCheckBox.value){
     opts.setFont = true;
     var font = pnl.font.getFont()
@@ -698,45 +698,45 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
     opts.fontSize = font.size;
   }
 
-  // µ¼³ö±êºÅÑ¡Ïî
+  // å¯¼å‡ºæ ‡å·é€‰é¡¹
   if(pnl.outputLabelNumberCheckBox.value)
     opts.outputLabelNumber = true;
   
-  // Êä³öºáÅÅÎÄ×Ö
+  // è¾“å‡ºæ¨ªæ’æ–‡å­—
   if(pnl.outputHorizontalCheckBox.value)
     opts.horizontalText = true;
   
-  // ´¦ÀíÎŞ±êºÅÎÄµµ
+  // å¤„ç†æ— æ ‡å·æ–‡æ¡£
   if(pnl.outputNoSignPsdCheckBox.value)
     opts.outputNoSignPsd = true;
 
-  // ÎŞÊÓLabelPlusÎÄ±¾ÖĞµÄÍ¼Ô´ÎÄ¼şÃû
+  // æ— è§†LabelPlusæ–‡æœ¬ä¸­çš„å›¾æºæ–‡ä»¶å
   if (pnl.ignoreImgFileNameCheckBox.value) {
   	opts.ignoreImgFileName = true;
   }
   
-  // Ê¹ÓÃÖ¸¶¨ÀàĞÍÍ¼Ô´
+  // ä½¿ç”¨æŒ‡å®šç±»å‹å›¾æº
   if (pnl.setSourceFileTypeCheckBox.value){    
     opts.sourceFileType = pnl.setSourceFileTypeList.selection.text;
   }
   else
     opts.sourceFileType = undefined;
   
-  // Ö´ĞĞ¶¯×÷GroupN
+  // æ‰§è¡ŒåŠ¨ä½œGroupN
   if (pnl.runActionGroupCheckBox.value)
     opts.runActionGroup = pnl.runActionGroupList.selection;
   else
     opts.runActionGroup = undefined;
   
-  // µ¼Èëºó²»¹Ø±ÕÎÄµµ
+  // å¯¼å…¥åä¸å…³é—­æ–‡æ¡£
   if(pnl.notCloseCheckBox.value)
     opts.notClose = true;
     
-  // ²»¶ÔÍ¼²ã½øĞĞ·Ö×é
+  // ä¸å¯¹å›¾å±‚è¿›è¡Œåˆ†ç»„
   if(pnl.layerNotGroupCheckBox.value)
     opts.layerNotGroup = true;
   
-  // Í¿°×
+  // æ¶‚ç™½
   if (pnl.overlayCheckBox.value) { 
   	opts.overloayGroup = pnl.overlayGroupTextBox.text;
   }
@@ -752,7 +752,7 @@ LabelPlusInput.prototype.doAction = function(action, actionSet)  {
 }
 
 //
-// Ö´ĞĞÓÃ»§UI¹¦ÄÜ
+// æ‰§è¡Œç”¨æˆ·UIåŠŸèƒ½
 //
 LabelPlusInput.prototype.process = function(opts, doc) {
   var self = this;
@@ -763,40 +763,40 @@ LabelPlusInput.prototype.process = function(opts, doc) {
   Stdlib.log("Properties:");
   Stdlib.log(listProps(opts)); 
 
-  //¶ÁÈ¡Í¼Ô´ÎÄ¼ş¼ĞÎÄ¼şÁĞ±í 
+  //è¯»å–å›¾æºæ–‡ä»¶å¤¹æ–‡ä»¶åˆ—è¡¨ 
   var originFileList = LabelPlusInput.getFilesListOfPath(opts.source);
     
-  //½âÎöLabelPlusÎÄ±¾
+  //è§£æLabelPlusæ–‡æœ¬
   var lpFile = new LabelPlusTextReader(opts.labelFilename);
   
-  //¶ÁÈ¡ÎÄ±¾Ìæ»»ÅäÖÃ
+  //è¯»å–æ–‡æœ¬æ›¿æ¢é…ç½®
   if(opts.textReplace)
     var textReplace = LabelPlusInput.textReplaceReader(opts.textReplace); 
   
-  //±éÀúËùÑ¡Í¼Æ¬ µ¼ÈëÊı¾İ= =
+  //éå†æ‰€é€‰å›¾ç‰‡ å¯¼å…¥æ•°æ®= =
   for(var i=0; i<opts.imageSelected.length; i++){
     var originName = opts.imageSelected[i].text;
     var filename;
     var labelData = lpFile.LabelData[originName];
     var gourpData = lpFile.GroupData;    
     
-    // ¸ù¾İsourceFileTypeÌæ»»ÎÄ¼şºó×ºÃû      
+    // æ ¹æ®sourceFileTypeæ›¿æ¢æ–‡ä»¶åç¼€å      
     if(opts.sourceFileType){
       filename = originName.substring(0,originName.lastIndexOf("."))  + opts.sourceFileType;
     }
     else
       filename = originName;
 
-  	// ºöÂÔÔ­Ê¼Í¼Æ¬Ãû
+  	// å¿½ç•¥åŸå§‹å›¾ç‰‡å
   	if (opts.ignoreImgFileName) {
   		filename = originFileList[opts.imageSelected[i].index];  		
   	}
 
-    // ²»´¦ÀíÎŞ±êºÅÎÄµµ
+    // ä¸å¤„ç†æ— æ ‡å·æ–‡æ¡£
     if(!opts.outputNoSignPsd && labelData.length == 0)
       continue;
       
-    // ´ò¿ªÍ¼Æ¬ÎÄ¼ş
+    // æ‰“å¼€å›¾ç‰‡æ–‡ä»¶
     var bgFile = File(opts.source + dirSeparator + filename);
     if(!bgFile || !bgFile.exists){
       var msg = "Image " + filename + " Not Found.";
@@ -805,7 +805,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
       continue;
     } 
       
-    // ÔÚPSÖĞ´ò¿ªÎÄ¼ş 
+    // åœ¨PSä¸­æ‰“å¼€æ–‡ä»¶ 
 	 
 	var bg;
 	try {
@@ -817,14 +817,14 @@ LabelPlusInput.prototype.process = function(opts, doc) {
 		continue;
 	}
     
-    // ÈôÎÄµµÀàĞÍÎªË÷ÒıÉ«Ä£Ê½ ¸ü¸ÄÎªRGBÄ£Ê½
+    // è‹¥æ–‡æ¡£ç±»å‹ä¸ºç´¢å¼•è‰²æ¨¡å¼ æ›´æ”¹ä¸ºRGBæ¨¡å¼
     if (bg.mode == DocumentMode.INDEXEDCOLOR){
         bg.changeMode(ChangeMode.RGB);
     }        
     
     var layerGroups = new Array();
     
-    // ÎÄ¼ş´ò¿ªÊ±Ö´ĞĞÒ»´Î¶¯×÷"_start"
+    // æ–‡ä»¶æ‰“å¼€æ—¶æ‰§è¡Œä¸€æ¬¡åŠ¨ä½œ"_start"
     if(opts.runActionGroup) {      
       try{
         bg.activeLayer = bg.layers[bg.layers.length-1];
@@ -833,11 +833,11 @@ LabelPlusInput.prototype.process = function(opts, doc) {
       catch(e){ }
     }  
         
-    // Í¿°×
+    // æ¶‚ç™½
     if (opts.overloayGroup) {
 	    var labelArr = new Array();
 	    
-	    // ÕÒ³öĞèÒªÍ¿°×µÄ±êÇ©
+	    // æ‰¾å‡ºéœ€è¦æ¶‚ç™½çš„æ ‡ç­¾
 	    for(var j=0; j<labelData.length; j++){
 	        var labelX = labelData[j].LabelheadValue[0];
 	        var labelY = labelData[j].LabelheadValue[1];
@@ -849,11 +849,11 @@ LabelPlusInput.prototype.process = function(opts, doc) {
 	        }            
 	    }
 
-	    //Ö´ĞĞÍ¿°×
+	    //æ‰§è¡Œæ¶‚ç™½
 	    MyAction.lp_dialogClear(labelArr, bg.width, bg.height, 16, 1);        
 	}
     
-    // ±éÀúLabelData
+    // éå†LabelData
     for(var j=0; j<labelData.length; j++){
         var labelNum = j+1;
         var labelX = labelData[j].LabelheadValue[0];
@@ -862,11 +862,11 @@ LabelPlusInput.prototype.process = function(opts, doc) {
         var labelString = labelData[j].LabelString;
         var artLayer;
         
-        // ËùÔÚ·Ö×éÊÇ·ñĞèÒªµ¼Èë
+        // æ‰€åœ¨åˆ†ç»„æ˜¯å¦éœ€è¦å¯¼å…¥
         if(opts.groupSelected.indexOf(labelGroup) == -1)
           continue;
         
-        // ´´½¨·Ö×é
+        // åˆ›å»ºåˆ†ç»„
         if(!opts.layerNotGroup && !layerGroups[labelGroup]){
           layerGroups[labelGroup] = bg.layerSets.add();
           layerGroups[labelGroup].name = labelGroup;
@@ -876,7 +876,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
           layerGroups["_Label"].name = "Label";
         }        
         
-        // µ¼³ö±êºÅ
+        // å¯¼å‡ºæ ‡å·
         if(opts.outputLabelNumber){
           LabelPlusInput.newTextLayer(bg,
             labelNum,
@@ -890,7 +890,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
             );
         }
       
-        // Ìæ»»ÎÄ±¾
+        // æ›¿æ¢æ–‡æœ¬
         if(textReplace){
           for(var k=0;k<textReplace.length;k++){
             while(labelString.indexOf(textReplace[k].From) != -1)
@@ -898,7 +898,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
           }
         }
       
-        // µ¼³öÎÄ±¾
+        // å¯¼å‡ºæ–‡æœ¬
         if(labelString && labelString != ""){
           artLayer = LabelPlusInput.newTextLayer(bg,
             labelString,
@@ -911,7 +911,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
             opts.layerNotGroup ?  undefined : layerGroups[labelGroup]);
         }
         
-        // Ö´ĞĞ¶¯×÷,Ãû³ÆÎª·Ö×éÃû
+        // æ‰§è¡ŒåŠ¨ä½œ,åç§°ä¸ºåˆ†ç»„å
         if(opts.runActionGroup) {            
           try{
             bg.activeLayer = artLayer;
@@ -925,7 +925,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
         }        
     }
     
-    // ÎÄ¼ş¹Ø±ÕÊ±Ö´ĞĞÒ»´Î¶¯×÷"_end"
+    // æ–‡ä»¶å…³é—­æ—¶æ‰§è¡Œä¸€æ¬¡åŠ¨ä½œ"_end"
     if(opts.runActionGroup) {      
       try{
         bg.activeLayer = bg.layers[bg.layers.length-1];
@@ -934,14 +934,14 @@ LabelPlusInput.prototype.process = function(opts, doc) {
       catch(e){ }
     }        
     
-    // ±£´æÎÄ¼ş
+    // ä¿å­˜æ–‡ä»¶
     var fileOut = new File(opts.target + "//" + filename);
     var options = PhotoshopSaveOptions;
     var asCopy = false;
     var extensionType = Extension.LOWERCASE;
     bg.saveAs(fileOut, options, asCopy, extensionType);
     
-    // ¹Ø±ÕÎÄ¼ş
+    // å…³é—­æ–‡ä»¶
     if(!opts.notClose)
       bg.close();    
   }
@@ -953,7 +953,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
 };
 
 //
-// ´´½¨ÎÄ±¾Í¼²ã
+// åˆ›å»ºæ–‡æœ¬å›¾å±‚
 //
 LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity,group) {
   artLayerRef = doc.artLayers.add();
@@ -981,13 +981,13 @@ LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity
 }
 
 //
-// ÎÄ±¾Ìæ»»×Ö·û´®½âÎö³ÌĞò
+// æ–‡æœ¬æ›¿æ¢å­—ç¬¦ä¸²è§£æç¨‹åº
 //
 LabelPlusInput.textReplaceReader = function(str){
   var arr = new Array();
   var strs = str.split('|');
   if(!strs)
-    return; //½âÎöÊ§°Ü
+    return; //è§£æå¤±è´¥
     
   for(var i=0; i<strs.length; i++){
     if(!strs[i] || strs[i]=="")
@@ -995,7 +995,7 @@ LabelPlusInput.textReplaceReader = function(str){
       
     var strss = strs[i].split("->");
     if((strss.length != 2) || (strss[0]=="") )
-      return; //½âÎöÊ§°Ü
+      return; //è§£æå¤±è´¥
     
     arr.push({
       From : strss[0],
@@ -1010,7 +1010,7 @@ LabelPlusInput.textReplaceReader = function(str){
 }
 
 //
-// Ğ´ÈëÅäÖÃ
+// å†™å…¥é…ç½®
 //
 LabelPlusInput.writeIni = function(iniFile, ini) {
   //$.level = 1; debugger;
@@ -1034,7 +1034,7 @@ LabelPlusInput.writeIni = function(iniFile, ini) {
 };
 
 //
-// ¶Á³öÅäÖÃ
+// è¯»å‡ºé…ç½®
 //
 LabelPlusInput.readIni = function(iniFile, ini) {
   //$.level = 1; debugger;
@@ -1073,7 +1073,7 @@ LabelPlusInput.readIni = function(iniFile, ini) {
 };
 
 //
-// »ñÈ¡ÎÄ¼ş¼ĞÏÂÎÄ¼şµÄÎÄ¼şÃû×Ö·û´®ÁĞ±í
+// è·å–æ–‡ä»¶å¤¹ä¸‹æ–‡ä»¶çš„æ–‡ä»¶åå­—ç¬¦ä¸²åˆ—è¡¨
 //
 LabelPlusInput.getFilesListOfPath = function(path) {
 	var folder = new Folder(path); 
@@ -1096,7 +1096,7 @@ LabelPlusInput.getFilesListOfPath = function(path) {
 }
 
 //
-// »ñÈ¡ListBoxÑ¡ÖĞÏîÄ¿text¼°index
+// è·å–ListBoxé€‰ä¸­é¡¹ç›®textåŠindex
 //
 LabelPlusInput.getSelectedItemsText = function(listBox) {
 	var selectedItems = new Array();
@@ -1107,7 +1107,7 @@ LabelPlusInput.getSelectedItemsText = function(listBox) {
   	}  
   	return selectedItems;
 }
-// Ö÷³ÌĞò
+// ä¸»ç¨‹åº
 LabelPlusInput.main = function() {
   var ui = new LabelPlusInput();
   ui.exec();  
