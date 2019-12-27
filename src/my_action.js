@@ -1,7 +1,7 @@
 //
 //   LabelPlus_Ps_Script.jsx
 //   This is a Input Text Tool for LabelPlus Text File.
-// 
+//
 // Copyright 2015, Noodlefighter
 // Released under GPL License.
 //
@@ -11,11 +11,11 @@
 //@include "my_include.js"
 
 //
-// ¶¯×÷¿â
-// 
+// åŠ¨ä½œåº“
+//
 MyAction = function() { }
 
-// È¡ÏûÑ¡Ôñ
+// å–æ¶ˆé€‰æ‹©
 MyAction.selectNone = function() {
     var desc1 = new ActionDescriptor();
     var ref1 = new ActionReference();
@@ -26,57 +26,57 @@ MyAction.selectNone = function() {
       executeAction(sTID('set'), desc1, DialogModes.NO);
     }
     catch(e){}
-};    
+};
 
-// ·´ÏòÑ¡Ôñ
-MyAction.selectInverse = function() { 
+// åå‘é€‰æ‹©
+MyAction.selectInverse = function() {
     try{
     executeAction(cTID('Invs'), undefined, DialogModes.NO);
     }
     catch(e){}
-};  
+};
 
-// Ñ¡ÇøÊÕËõ(ÏñËØ)
-MyAction.selectContract = function(pxl) { 
+// é€‰åŒºæ”¶ç¼©(åƒç´ )
+MyAction.selectContract = function(pxl) {
     var desc1 = new ActionDescriptor();
-    try{  
+    try{
       desc1.putUnitDouble(cTID('By  '), cTID('#Pxl'), pxl);
       executeAction(cTID('Cntc'), desc1, DialogModes.NO);
     }
     catch(e){}
 };
 
-// Ñ¡ÇøÀ©Õ¹(ÏñËØ)
-MyAction.selectExpand = function(pxl) {  
+// é€‰åŒºæ‰©å±•(åƒç´ )
+MyAction.selectExpand = function(pxl) {
     var desc1 = new ActionDescriptor();
     try{
       desc1.putUnitDouble(cTID('By  '), cTID('#Pxl'), pxl);
       executeAction(cTID('Expn'), desc1, DialogModes.NO);
     }
     catch(e){}
-};  
+};
 
-// Ä§°ô(x, y, Èİ²î, ²ÉÑùËùÓĞÍ¼²ã, ¿¹¾â³İ, ĞÂÑ¡ÇøÓò·½Ê½×Ö·û´®)
-// ĞÂÑ¡ÇøÓò·½Ê½×Ö·û´® ¿ÉÒÔÎª:
-// 'setd' ĞÂ½¨ÇøÓò
-// 'addTo'    Ìí¼Ó
-// 'subtractFrom' ÒÆ³ö
-// 'interfaceWhite'  ½»¼¯
+// é­”æ£’(x, y, å®¹å·®, é‡‡æ ·æ‰€æœ‰å›¾å±‚, æŠ—é”¯é½¿, æ–°é€‰åŒºåŸŸæ–¹å¼å­—ç¬¦ä¸²)
+// æ–°é€‰åŒºåŸŸæ–¹å¼å­—ç¬¦ä¸² å¯ä»¥ä¸º:
+// 'setd' æ–°å»ºåŒºåŸŸ
+// 'addTo'    æ·»åŠ 
+// 'subtractFrom' ç§»å‡º
+// 'interfaceWhite'  äº¤é›†
 MyAction.magicWand = function(x, y, tolerance, merged, antiAlias, newAreaModeStr) {
     try{
       if(x == undefined || y == undefined){
         x = 0;
-        y = 0;      
+        y = 0;
       }
-      if(tolerance == undefined) 
+      if(tolerance == undefined)
           tolerance = 32;
-      if(merged == undefined) 
+      if(merged == undefined)
           merged = false;
-      if(antiAlias == undefined) 
-          antiAlias = true;        
+      if(antiAlias == undefined)
+          antiAlias = true;
       if(newAreaModeStr == undefined || newAreaModeStr == '')
           newAreaModeStr = 'setd';
-         
+
       var desc1 = new ActionDescriptor();
       var ref1 = new ActionReference();
       ref1.putProperty(cTID('Chnl'), sTID("selection"));
@@ -91,40 +91,40 @@ MyAction.magicWand = function(x, y, tolerance, merged, antiAlias, newAreaModeStr
       executeAction(sTID(newAreaModeStr), desc1, DialogModes.NO);
     }
     catch(e){}
-  
+
 };
 
-// ĞÂ½¨Í¼²ã
-MyAction.newLyr = function() {     
+// æ–°å»ºå›¾å±‚
+MyAction.newLyr = function() {
     try{
         var desc1 = new ActionDescriptor();
         var ref1 = new ActionReference();
         ref1.putClass(cTID('Lyr '));
         desc1.putReference(cTID('null'), ref1);
-        executeAction(cTID('Mk  '), desc1, DialogModes.NO);   
+        executeAction(cTID('Mk  '), desc1, DialogModes.NO);
     }
     catch(e){}
 }
-// É¾³ıµ±Ç°Í¼²ã
+// åˆ é™¤å½“å‰å›¾å±‚
 MyAction.delLyr = function() {
     try{
         var desc1 = new ActionDescriptor();
         var ref1 = new ActionReference();
         ref1.putEnumerated(cTID('Lyr '), cTID('Ordn'), cTID('Trgt'));
         desc1.putReference(cTID('null'), ref1);
-        executeAction(cTID('Dlt '), desc1, DialogModes.NO);        
+        executeAction(cTID('Dlt '), desc1, DialogModes.NO);
     }
     catch(e){}
 }
 
-// Ìî³ä(Ê¹ÓÃÊ²Ã´Ìî³ä, Í¸Ã÷¶È)
-// use¿ÉÒÔÊÇ:
-// 'FrgC' Ç°¾°É«
-// 'BckC' ±³¾°É«
-// 'Blck' ºÚÉ«
-// 'Gry ' »ÒÉ«  
-// 'Wht ' °×É«
-MyAction.fill = function(use, opct) { 
+// å¡«å……(ä½¿ç”¨ä»€ä¹ˆå¡«å……, é€æ˜åº¦)
+// useå¯ä»¥æ˜¯:
+// 'FrgC' å‰æ™¯è‰²
+// 'BckC' èƒŒæ™¯è‰²
+// 'Blck' é»‘è‰²
+// 'Gry ' ç°è‰²
+// 'Wht ' ç™½è‰²
+MyAction.fill = function(use, opct) {
     try{
         var desc1 = new ActionDescriptor();
         desc1.putEnumerated(cTID('Usng'), cTID('FlCn'), cTID(use));
@@ -135,33 +135,33 @@ MyAction.fill = function(use, opct) {
     catch(e){}
 };
 
-// ¶Ô»°¿òÍ¿°×¶¯×÷(±êÇ©Êı¾İ, Í¼Ïñ¿í¶È, Í¼Ïñ¸ß¶È, Ä§°ôÈİ²î, ÊÕËõ±£»¤ÏñËØ)
+// å¯¹è¯æ¡†æ¶‚ç™½åŠ¨ä½œ(æ ‡ç­¾æ•°æ®, å›¾åƒå®½åº¦, å›¾åƒé«˜åº¦, é­”æ£’å®¹å·®, æ”¶ç¼©ä¿æŠ¤åƒç´ )
 MyAction.lp_dialogClear = function(labelArr, imgWidht, imgHeight, tolerance, contract) {
 
-    // ²ÎÊı¼ì²é
+    // å‚æ•°æ£€æŸ¥
     if (labelArr.length == 0) {
       return;
     }
 
     MyAction.selectNone();
-    
-    // µ¥Î»×ª»»
+
+    // å•ä½è½¬æ¢
     imgWidht.convert("px");
     imgHeight.convert("px");
-    
-    // Ñ¡ÖĞËùÓĞ¿òÄÚµÄ¿Õ°×ÇøÓò
+
+    // é€‰ä¸­æ‰€æœ‰æ¡†å†…çš„ç©ºç™½åŒºåŸŸ
     for(var i=0; i<labelArr.length; i++){
         var x = (labelArr[i].x) * imgWidht;
         var y = (labelArr[i].y) * imgHeight;
-        
+
         MyAction.magicWand(x, y, tolerance, true, true, 'addTo');
-    }     
-    
-    // ÔÚĞÂ½¨µÄ¸¨ÖúÍ¼²ãÖĞÌî³ä³ö¿Õ°×ÇøÓò
+    }
+
+    // åœ¨æ–°å»ºçš„è¾…åŠ©å›¾å±‚ä¸­å¡«å……å‡ºç©ºç™½åŒºåŸŸ
     MyAction.newLyr();
-    MyAction.fill('Blck', 100);    
-    
-    // ËÄ¸ö½ÇÊ¹ÓÃÄ§°ô ÔÙ·´Ñ¡ ±£»¤ĞÔÊÕËõ
+    MyAction.fill('Blck', 100);
+
+    // å››ä¸ªè§’ä½¿ç”¨é­”æ£’ å†åé€‰ ä¿æŠ¤æ€§æ”¶ç¼©
     MyAction.selectNone();
     MyAction.magicWand(0                , 0                  , tolerance, false, true, 'addTo');
     MyAction.magicWand(imgWidht-1 , 0                  , tolerance, false, true, 'addTo');
@@ -169,14 +169,14 @@ MyAction.lp_dialogClear = function(labelArr, imgWidht, imgHeight, tolerance, con
     MyAction.magicWand(imgWidht-1 , imgHeight-1  , tolerance, false, true, 'addTo');
     MyAction.selectInverse();
     MyAction.selectContract(contract);
-    
-    // É¾³ı¸¨ÖúÍ¼²ã ½¨Á¢Í¿°×Í¼²ã ²¢Ìî³ä±³¾°É«
+
+    // åˆ é™¤è¾…åŠ©å›¾å±‚ å»ºç«‹æ¶‚ç™½å›¾å±‚ å¹¶å¡«å……èƒŒæ™¯è‰²
     MyAction.delLyr();
     MyAction.newLyr();
     MyAction.fill('BckC', 100);
-    
+
     MyAction.selectNone();
-    
+
 };
 
 // TEST

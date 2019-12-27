@@ -1,7 +1,7 @@
 //
 //   LabelPlus_Ps_Script.jsx
 //   This is a Input Text Tool for LabelPlus Text File.
-// 
+//
 // Copyright 2015, Noodlefighter
 // Released under GPL License.
 //
@@ -11,34 +11,34 @@
 //@include "my_include.js"
 //
 
-// LabelPlus×¨ÓÃ¸ñÊ½µÄTextReader
-LabelPlusTextReader = function(path) {  
+// LabelPlusä¸“ç”¨æ ¼å¼çš„TextReader
+LabelPlusTextReader = function(path) {
   var self = this;
-  
-  if(!path){    
+
+  if(!path){
     throw "LabelPlusTextReader no filename";
   }
-  
-  var f = new File(path);  
-  if(!f || !f.exists){    
+
+  var f = new File(path);
+  if(!f || !f.exists){
     throw "LabelPlusTextReader file not exists";
-  } 
-  
-  // ´ò¿ª
-  f.open("r");  
-  
-  // json¸ñÊ½¶ÁÈ¡
-  if(path.substring(path.lastIndexOf("."), path.length) == '.json'){  
+  }
+
+  // æ‰“å¼€
+  f.open("r");
+
+  // jsonæ ¼å¼è¯»å–
+  if(path.substring(path.lastIndexOf("."), path.length) == '.json'){
     f.open("r", "TEXT", "????");
     f.lineFeed = "unix";
-    f.encoding = 'UTF-8';    
+    f.encoding = 'UTF-8';
     var json = f.read();
     var data = (new Function('return ' + json))();
     f.close();
     return data;
   }
-  
-  // ·ÖÐÐ¶ÁÈ¡
+
+  // åˆ†è¡Œè¯»å–
   var state = 'start'; //'start','filehead','context'
   var notDealStr;
   var notDealLabelheadMsg;
@@ -46,42 +46,42 @@ LabelPlusTextReader = function(path) {
   var labelData = new Array();
   var filenameList = new Array();
   var groupData;
-  
+
   for(var i=0; !f.eof; i++) {
     var lineStr = f.readln();
     var lineMsg = LabelPlusTextReader.judgeLineType(lineStr);
     switch (lineMsg.Type){
       case 'filehead':
         if(state == 'start'){
-          //´¦Àístart blocks
+          //å¤„ç†start blocks
           var result = LabelPlusTextReader.readStartBlocks(notDealStr);
           if(!result)
               throw "readStartBlocks fail";
-          groupData = result.Groups;        
+          groupData = result.Groups;
         }
-        else if(state == 'filehead'){        
+        else if(state == 'filehead'){
         }
         else if(state == 'context'){
-          //±£´ælabel
+          //ä¿å­˜label
           labelData[nowFilename].push(
               {
               LabelheadValue : notDealLabelheadMsg.Values,
               LabelString : notDealStr.trim() }
-          );        
-        }    
-      
-        //ÐÂ½¨ÎÄ¼þÏî
+          );
+        }
+
+        //æ–°å»ºæ–‡ä»¶é¡¹
         labelData[lineMsg.Title] = new Array();
         filenameList.push(lineMsg.Title);
-        nowFilename = lineMsg.Title;    
+        nowFilename = lineMsg.Title;
         notDealStr = "";
-        state = 'filehead';      
+        state = 'filehead';
         break;
-        
+
       case 'labelhead':
-        if(state == 'start'){   //start-labelhead ²»´æÔÚ
+        if(state == 'start'){   //start-labelhead ä¸å­˜åœ¨
               throw "start-filehead";
-              break;        
+              break;
         }
         else if(state == 'filehead'){
         }
@@ -90,65 +90,65 @@ LabelPlusTextReader = function(path) {
               {
               LabelheadValue : notDealLabelheadMsg.Values,
               LabelString : notDealStr.trim() }
-          );        
-        }    
-        
+          );
+        }
+
         notDealStr = "";
         notDealLabelheadMsg = lineMsg;
         state = 'context';
         break;
-        
+
       case 'unknown':
         notDealStr += "\r" + lineStr;
-        break; 
+        break;
       }
   }
-  
+
   if(state == 'context' && lineMsg.Type == 'unknown')
     labelData[nowFilename].push(
       {
 	  LabelheadValue : notDealLabelheadMsg.Values,
-	  LabelString : notDealStr.trim() 
+	  LabelString : notDealStr.trim()
       }
     );
-  
-  // ³ÉÔ±±äÁ¿
-  self.Path = path;      
+
+  // æˆå‘˜å˜é‡
+  self.Path = path;
   self.ImageList = filenameList;
   self.LabelData = labelData;
   self.GroupData = groupData;
-  
+
   return self;
 };
 
 //
-// ÅÐ¶Ï×Ö·û´®ÐÐÀàÐÍ 'filehead','labelhead','unknown'
+// åˆ¤æ–­å­—ç¬¦ä¸²è¡Œç±»åž‹ 'filehead','labelhead','unknown'
 //
 LabelPlusTextReader.judgeLineType = function(str) {
   var myType = 'unknown';
   var myTitle;
   var myValues;
-  
+
   str = str.trim();
   var fileheadRegExp = />{6,}\[.+\]<{6,}/g;
   var labelheadRegExp = /-{6,}\[\d+\]-{6,}\[.+\]/g;
-  
+
   var fileheadStrArr = fileheadRegExp.exec(str);
   var labelheadStrArr = labelheadRegExp.exec(str);
   if(fileheadStrArr &&  fileheadStrArr.length != 0) {
     myType = 'filehead';
     var s = fileheadStrArr[0];
-    myTitle = s.substring(s.indexOf("[")+1, s.indexOf("]"));       
-  }   
+    myTitle = s.substring(s.indexOf("[")+1, s.indexOf("]"));
+  }
   else if(labelheadStrArr && labelheadStrArr.length !=0) {
     myType = 'labelhead';
     var s = labelheadStrArr[0];
     myTitle = s.substring(s.indexOf("[")+1, s.indexOf("]"));
     valuesStr = s.substring(s.lastIndexOf("[")+1, s.lastIndexOf("]"))
-    myValues = valuesStr.split(",");    
+    myValues = valuesStr.split(",");
   }
-  
-  return {    
+
+  return {
     Type : myType,
     Title : myTitle,
     Values : myValues,
@@ -159,22 +159,22 @@ LabelPlusTextReader.readStartBlocks = function(str) {
 var blocks = str.split ("-");
     if(blocks.length < 3)
         throw "Start blocks error!";
-    
-    //block1 ÎÄ¼þÍ·
+
+    //block1 æ–‡ä»¶å¤´
     var filehead = blocks[0].split(",");
     if(filehead.length < 2)
         throw "filehead error!";
     var first_version = parseInt(filehead[0]);
     var last_version = parseInt(filehead[1]);
-    
-    //block2 ·Ö×éÐÅÏ¢
-    var groups = blocks[1].split("\r");    
+
+    //block2 åˆ†ç»„ä¿¡æ¯
+    var groups = blocks[1].split("\r");
     for(var i=0; i<groups.length; i++)
-        groups[i] = groups[i].trim();   
-    
-    //blockÄ©
+        groups[i] = groups[i].trim();
+
+    //blockæœ«
     var comment = blocks[blocks.length - 1];
-     
+
     return {
         FirstVer : first_version,
         LastVer : last_version,
