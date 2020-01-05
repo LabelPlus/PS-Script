@@ -25,7 +25,7 @@ const _MT_STRING_LABEL_SELECTGROUP = "导入分组选择";
 
 const _MT_STRING_CHECKBOX_OUTPUTLABELNUMBER = "导出标号";
 const _MT_STRING_CHECKBOX_TEXTREPLACE = "文本替换(例:\"A->B|C->D\")";
-const _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD = "处理无标号文档";
+const _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD = "导出没有标号的文档";
 const _MT_STRING_CHECKBOX_IGNOREIMGFILENAME = "无视翻译文本中指定的图片文件名";
 const _MT_STRING_CHECKBOX_SETSOURCETYPE = "指定图源后缀名";
 const _MT_STRING_CHECKBOX_RUNACTION = "导入文本后，执行以分组名命名的动作；打开图片时执行_start，关闭前执行_end动作";
