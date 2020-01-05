@@ -321,6 +321,7 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   // 处理无标号文档
   pnl.outputNoSignPsdCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                           _MT_STRING_CHECKBOX_OUTPUTNOSIGNPSD  );
+  pnl.outputNoSignPsdCheckBox.value = true;
   xx = xOfs;
   yy += 20;
 
