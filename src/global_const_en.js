@@ -29,6 +29,7 @@ const _MT_STRING_CHECKBOX_SETSOURCETYPE = "Replace file extension";
 const _MT_STRING_CHECKBOX_RUNACTION = "Execute actions named of group name;\"_start\" after open, \"_end\" before close";
 const _MT_STRING_CHECKBOX_NOTCLOSE = "Do not close the file";
 const _MT_STRING_CHECKBOX_SETFONT = "Set default font";
+const _MT_STRING_CHECKBOX_CUSTOMLEADING = "Set leading size";
 const _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT = "Output horizontal text";
 const _MT_STRING_CHECKBOX_LAYERNOTGROUP = "Layer not grouping";
 const _MT_STRING_CHECKBOX_OVERLAY = "Execute \"Text Overlay\" on specified group";

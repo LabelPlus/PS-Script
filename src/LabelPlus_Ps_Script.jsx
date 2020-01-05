@@ -59,7 +59,7 @@ LabelPlusInput = function() {
     x: 200,
     y: 200,
     w: 875,
-    h: 650
+    h: 670
   };
 
   self.title = _MY_APPNAME + " " + _MY_VER;	// our window title
@@ -391,6 +391,20 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
   xx = xOfs;
   yy += 25;
 
+  // 自定义行距
+  pnl.setTextLeadingCheckBox = pnl.add('checkbox', [xx,yy,xx+120,yy+20], _MT_STRING_CHECKBOX_CUSTOMLEADING);
+  pnl.setTextLeadingCheckBox.onClick = function() {
+    pnl.textLeadingTextBox.enabled = pnl.setTextLeadingCheckBox.value;
+  }
+  xx += 120
+  pnl.textLeadingTextBox = pnl.add('edittext', [xx,yy,xx+50,yy+20]);
+  pnl.textLeadingTextBox.enabled = false;
+  pnl.textLeadingTextBox.text = "0";
+  xx += 55;
+  pnl.add('statictext', [xx,yy,xx+40,yy+20], "pt");
+  xx = xOfs;
+  yy += 20;
+
   // 输出横排文字
   pnl.outputHorizontalCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],
                                            _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT);
@@ -444,6 +458,13 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
       pnl.font.style.enabled =  true;
       pnl.font.fontSize.enabled =  true;
       pnl.font.setFont(ini.font, ini.fontSize);
+    }
+
+    // 行距
+    if (ini.setTextLeading) {
+      pnl.setTextLeadingCheckBox.value = true;
+      pnl.textLeadingTextBox.enabled = true;
+      pnl.textLeadingTextBox.text = ini.textLeading;
     }
 
     // 导出标号选项
@@ -699,6 +720,12 @@ LabelPlusInput.prototype.validatePanel = function(pnl, ini, tofile) {
     opts.fontSize = font.size;
   }
 
+  // 行距
+  if (pnl.setTextLeadingCheckBox.value) {
+    opts.setTextLeading = true;
+    opts.textLeading = pnl.textLeadingTextBox.text;
+  }
+
   // 导出标号选项
   if(pnl.outputLabelNumberCheckBox.value)
     opts.outputLabelNumber = true;
@@ -887,7 +914,8 @@ LabelPlusInput.prototype.process = function(opts, doc) {
             opts.setFont ? opts.fontSize : undefined,
             false,
             90,
-            layerGroups["_Label"]
+            layerGroups["_Label"],
+            0
             );
         }
 
@@ -909,7 +937,9 @@ LabelPlusInput.prototype.process = function(opts, doc) {
             opts.setFont ? opts.fontSize : undefined,
             !opts.horizontalText,
             90,
-            opts.layerNotGroup ?  undefined : layerGroups[labelGroup]);
+            opts.layerNotGroup ?  undefined : layerGroups[labelGroup],
+            opts.textLeading ? opts.textLeading + " pt": 0
+            );
         }
 
         // 执行动作,名称为分组名
@@ -956,7 +986,7 @@ LabelPlusInput.prototype.process = function(opts, doc) {
 //
 // 创建文本图层
 //
-LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity,group) {
+LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity,group,lending) {
   artLayerRef = doc.artLayers.add();
   artLayerRef.kind = LayerKind.TEXT;
   textItemRef = artLayerRef.textItem;
@@ -977,6 +1007,14 @@ LabelPlusInput.newTextLayer = function(doc,text,x,y,font,size,isVertical,opacity
     artLayerRef.move(group, ElementPlacement.PLACEATBEGINNING);
 
   textItemRef.contents = text;
+
+  if (lending == 0) {
+    textItemRef.useAutoLeading = true;
+  }
+  else {
+    textItemRef.useAutoLeading = false;
+    textItemRef.leading = lending;
+  }
 
   return artLayerRef;
 }
