@@ -16,7 +16,7 @@
 
 // ======================================== Gobal Const
 // Version
-const _MY_VER = "1.2.2";
+const _MY_VER = "1.3.0";
 
 // String Const
 //-include "global_const_en.js"
