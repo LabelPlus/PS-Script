@@ -16,7 +16,6 @@ const _MT_STRING_LABEL_TIP_STYLE_AUTO = "> Format / Automation";
 const _MT_STRING_LABEL_TEXTFILE = "LabelPlus Text:";
 const _MT_STRING_LABEL_SOURCE = "Image Source:";
 const _MT_STRING_LABEL_TARGET = "Output PSD:";
-const _MT_STRING_LABEL_FONT = "Font:";
 const _MT_STRING_LABEL_SETTING = "Setting";
 const _MT_STRING_LABEL_SELECTIMAGE = "Select Image";
 const _MT_STRING_LABEL_SELECTGROUP = "Select Group";

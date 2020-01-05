@@ -378,18 +378,18 @@ LabelPlusInput.prototype.createPanel = function(pnl, ini) {
     pnl.font.fontSize.enabled = value;
   }
   xx = xOfs;
-  yy += 20;
+  yy += 25;
   // 字体
-  pnl.font = pnl.add('group', [xx,yy,xx+400,yy+40]);
+  pnl.font = pnl.add('group', [xx,yy,xx+400,yy+25]);
   self.createFontPanel(pnl.font, ini);
-  pnl.font.label.text = _MT_STRING_LABEL_FONT;
+  pnl.font.label.text = " ";
   pnl.font.family.enabled = false;
   pnl.font.style.enabled = false;
   pnl.font.fontSize.enabled = false;
   pnl.font.family.selection = pnl.font.family.find("SimSun");
 
   xx = xOfs;
-  yy += 20;
+  yy += 25;
 
   // 输出横排文字
   pnl.outputHorizontalCheckBox = pnl.add('checkbox', [xx,yy,xx+250,yy+22],

@@ -18,7 +18,6 @@ const _MT_STRING_LABEL_TIP_STYLE_AUTO = "> 格式 / 自动化";
 const _MT_STRING_LABEL_TEXTFILE = "LabelPlus文本:";
 const _MT_STRING_LABEL_SOURCE = "图源文件夹:";
 const _MT_STRING_LABEL_TARGET = "输出PSD文件夹:";
-const _MT_STRING_LABEL_FONT = "字体:";
 const _MT_STRING_LABEL_SETTING = "存取配置";
 const _MT_STRING_LABEL_SELECTIMAGE = "导入图片选择";
 const _MT_STRING_LABEL_SELECTGROUP = "导入分组选择";
@@ -32,7 +31,7 @@ const _MT_STRING_CHECKBOX_SETSOURCETYPE = "指定图源后缀名";
 const _MT_STRING_CHECKBOX_RUNACTION = "导入文本后，执行以分组名命名的动作；打开图片时执行_start，关闭前执行_end动作";
 const _MT_STRING_CHECKBOX_NOTCLOSE = "导入后不关闭文档";
 const _MT_STRING_CHECKBOX_SETFONT = "修改默认字体";
-const _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT = "输出横排文字";
+const _MT_STRING_CHECKBOX_OUTPUTHORIZONTALTEXT = "使文字方向为横向";
 const _MT_STRING_CHECKBOX_LAYERNOTGROUP = "不对图层进行分组";
 const _MT_STRING_CHECKBOX_OVERLAY = "对指定分组执行涂白动作(实验性功能)";
 
