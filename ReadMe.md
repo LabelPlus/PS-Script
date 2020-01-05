@@ -48,4 +48,4 @@ P.S.关于[xtools](http://ps-scripts.sourceforge.net/xtools.html)
 1. 修改`my_include.js`中的`//@includepath`一行为`{XTOOLS_ROOT}`
 2. 在Photoshop中执行`{XTOOLS_ROOT}/apps/Flatten.js`，弹出的界面中，Mode设为`Folder`，Source设为本仓库的src文件夹，点击`Process`，等待处理完毕
 3. 将`LabelPlus_Ps_Script.jsx`加上语言后缀，如`LabelPlus_Ps_Script_EN.jsx`
-4. 手动转换编码为UTF8
+4. 手动转换编码为UTF8-BOM
