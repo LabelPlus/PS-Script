@@ -7,6 +7,8 @@
 该ps脚本基于xtools编写。
 直接执行src文件夹中的jsx文件 需要在本地安装xtools
 
+调试时，需要修改`my_include.js`中的`//@includepath`一行为xtools工具集安装目录。
+
 P.S.关于[xtools](http://ps-scripts.sourceforge.net/xtools.html)
 `xtools is a JavaScript toolkit that facilitates scripting Adobe Photoshop.`
 
@@ -42,10 +44,5 @@ P.S.关于[xtools](http://ps-scripts.sourceforge.net/xtools.html)
 
 该项目未实现自动化发布，为了减少错误，记录一下发布流程：
 
-> 假设xtools工具集安装目录为{XTOOLS_ROOT}
-
 0. 修改`LabelPlus_Ps_Script.jsx`中的版本号；设置要发布的语言包，如`global_const_en.js`
-1. 修改`my_include.js`中的`//@includepath`一行为`{XTOOLS_ROOT}`
-2. 在Photoshop中执行`{XTOOLS_ROOT}/apps/Flatten.js`，弹出的界面中，Mode设为`Folder`，Source设为本仓库的src文件夹，点击`Process`，等待处理完毕
-3. 将`LabelPlus_Ps_Script.jsx`加上语言后缀，如`LabelPlus_Ps_Script_EN.jsx`
-4. 手动转换编码为UTF8-BOM
+1. `./flatten_jsx.py src/LabelPlus_Ps_Script.jsx ./LabelPlus_Ps_Script_EN.jsx -I $XTOOLS_ROOT`
