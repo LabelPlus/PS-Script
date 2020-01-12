@@ -1085,6 +1085,34 @@ let textReplaceReader = function (str: string) {
 //
 // 写入配置
 //
+let iniToString = function (ini) {
+    var str = '';
+    for (var idx in ini) {
+        if (idx.charAt(0) == '_') {         // private stuff
+            continue;
+        }
+        if (idx == 'typename') {
+            continue;
+        }
+        if (idx == "noUI") {                // GenericUI property
+            continue;
+        }
+        var val = ini[idx];
+
+        if (val == undefined) {
+            continue;
+        }
+
+        if (val.constructor == String) {
+            str += (idx + ": \"" + val.toString() + "\"\n");
+        }
+        else if (val.constructor == Number || val.constructor == Boolean) {
+            str += (idx + ": " + val.toString() + "\n");
+        }
+    }
+    return str;
+};
+
 let writeIni = function (iniFile: string, ini: LabelPlusInputOptions) {
     //$.level = 1; debugger;
     if (!ini || !iniFile) {
@@ -1099,7 +1127,7 @@ let writeIni = function (iniFile: string, ini: LabelPlusInputOptions) {
     if (file.open("w", "TEXT", "????")) {
         file.lineFeed = "unix";
         file.encoding = 'UTF-8';
-        let str = GenericUI.iniToString(ini);
+        let str = iniToString(ini);
         file.write(str);
         file.close();
     }
@@ -1134,7 +1162,8 @@ let readIni = function (iniFile: string, ini ?: LabelPlusInputOptions): LabelPlu
         file.lineFeed = "unix";
         file.encoding = 'UTF-8';
         let str = file.read();
-        ini = GenericUI.iniFileToFile(str);
+        str = str.replace(/\n/g, ',');
+        ini = (Function('return {' + str + '}'))(); // note: 不使用GenericUI.iniFileToFile是因为它的实现读出的项均为string类型
         file.close();
     }
 
