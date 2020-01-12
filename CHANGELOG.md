@@ -5,6 +5,12 @@
 ### Changed
 ### Removed
 
+
+## [1.3.1] - 2020-01-12
+### Added
+### Changed
+### Removed
+
 ## [1.3.0] - 2020-01-05
 ### Added
 - 增加设置行距功能
