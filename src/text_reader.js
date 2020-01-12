@@ -7,9 +7,6 @@
 //
 // License: http://noodlefighter.com/label_plus/license
 //
-//@show include
-//@include "my_include.js"
-//
 
 // LabelPlus专用格式的TextReader
 LabelPlusTextReader = function(path) {

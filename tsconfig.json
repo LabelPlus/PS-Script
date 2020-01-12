@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "preserveConstEnums": true,
+        "sourceMap": true
+    },
+    "files": [
+        "src/main.ts",
+        "src/i18n.ts",
+        "src/version.ts"
+    ]
+}

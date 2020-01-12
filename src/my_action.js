@@ -7,8 +7,7 @@
 //
 // License: http://noodlefighter.com/label_plus/license
 //
-//@show include
-//@include "my_include.js"
+//-include "stdlib.js"
 
 //
 // 动作库

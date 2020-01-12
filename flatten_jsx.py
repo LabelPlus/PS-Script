@@ -56,8 +56,12 @@ def flatten(file):
     line_idx = 0
     for line in data.splitlines():
         line_idx += 1
-        if line.startswith("//@include "):
+        if line.startswith("exports."): # delete
+            continue
+        elif line.startswith("//@include ") or line.startswith("require(") or line.startswith("/// <reference path="):
             in_file = line.split('"')[1]
+            if in_file.endswith('.ts'):
+                in_file = in_file.replace('.ts', '.js')
             in_path = search_include_file(in_file)
             if in_path is None:
                 print("error: file %s(%s, line %d) notfound.." % (in_file, file, line_idx))

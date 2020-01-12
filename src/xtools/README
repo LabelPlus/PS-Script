@@ -1,0 +1,28 @@
+README for xtools
+$Id: README,v 1.8 2015/02/09 22:45:39 anonymous Exp $
+
+This is the README file for XToolkit. I (xbytor, that is) am the author and
+maintainer of the package. There are a couple of things that I bundled in
+from other open source packages, and there are several ideas or code that
+came from the good people at adobeforums.com on the Photoshop Script forums
+as well as others on ps-scripts.com.
+
+COPYRIGHT
+This file contains copyright, copyleft, and license information for the files
+in this package. There is nothing scary in there. Basically, you can use this
+stuff however you want as long as you give credit where credit is due.
+
+INSTALLATION
+The instructions for installing this toolkit are here. It's pretty simple,
+really. Just extract the zip file to a temp directory and run
+xtools/xapps/Install.js from inside Photoshop and you'll be all set.
+If not, you can just move the unzipped xtools folder to a folder of
+your choosing.
+On OS X, the default installation folder is /Developer/xtools.
+On Windows, the default installation folder is C:\Program Files\Adobe\xtools.
+
+Enjoy. And remember:
+"The Software shall be used for Good, not Evil."
+
+xbytor@gmail.com
+December, 2004
