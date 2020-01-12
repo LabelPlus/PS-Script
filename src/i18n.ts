@@ -12,7 +12,7 @@ namespace i18n {
     export var BUTTON_RESET: string = "还原配置";
 
     export var LABEL_TIP_FILE: string = "> 文件 / 预处理";
-    export var LABEL_TIP_INPUTITEM: string = "> 导入项目";
+    export var LABEL_TIP_Behavior: string = "> 脚本行为";
     export var LABEL_TIP_STYLE_AUTO: string = "> 格式 / 自动化";
 
     export var LABEL_TEXTFILE: string = "LabelPlus文本:";
@@ -24,15 +24,16 @@ namespace i18n {
 
 
     export var CHECKBOX_OUTPUTLABELNUMBER: string = "导出标号";
-    export var CHECKBOX_TEXTREPLACE: string = "文本替换(例:\"A->B|C->D\")";
+    export var CHECKBOX_TextReplace: string = "文本替换(格式:\"A->B|C->D\")";
     export var CHECKBOX_OUTPUTNOSIGNPSD: string = "导出没有标号的文档";
-    export var CHECKBOX_IGNOREIMGFILENAME: string = "无视翻译文本中指定的图片文件名";
-    export var CHECKBOX_SETSOURCETYPE: string = "指定图源后缀名";
+    export var CHECKBOX_AutoMatchImgFile: string = "按顺序自动匹配图片文件";
+    export var BUTTON_AutoMatchImgFilePreview: string = "预览匹配结果";
+    export var CHECKBOX_SetSourceType: string = "替换图片后缀名";
     export var CHECKBOX_RUNACTION: string = "导入文本后，执行以分组名命名的动作；打开图片时执行_start，关闭前执行_end动作";
     export var CHECKBOX_NOTCLOSE: string = "导入后不关闭文档";
-    export var CHECKBOX_SETFONT: string = "修改默认字体";
-    export var CHECKBOX_CUSTOMLEADING: string = "自定义行距";
-    export var CHECKBOX_OUTPUTHORIZONTALTEXT: string = "使文字方向为横向";
+    export var CHECKBOX_SetFont: string = "字体";
+    export var CHECKBOX_SetLeading: string = "行距";
+    export var CHECKBOX_OutputHorizontalText: string = "输出横向文本";
     export var CHECKBOX_LAYERNOTGROUP: string = "不对图层进行分组";
     export var CHECKBOX_OVERLAY: string = "对指定分组执行涂白动作(实验性功能)";
 
@@ -47,16 +48,17 @@ namespace i18n {
     export var ERROR_NOTCHOOSEGROUP: string = "未选择导入分组";
 
     declare var app: any;
+    // if (true) {
     if (!(app.locale in {"zh_CN":1, "zh_TW":1, "zh_HK":1})) {
         TIP_TITLE = "Note";
-        TIP_TEXT = "Help: http://noodlefighter.com/label_plus/";
+        TIP_TEXT = "Help: https://noodlefighter.com/label_plus/";
         BUTTON_RUN = "Run";
         BUTTON_CANCEL = "Cancel";
         BUTTON_LOAD = "Load";
         BUTTON_SAVE = "Save";
         BUTTON_RESET = "Reset";
         LABEL_TIP_FILE = "> File / Preprocessing";
-        LABEL_TIP_INPUTITEM = "> Input Item";
+        LABEL_TIP_Behavior = "> Behavior";
         LABEL_TIP_STYLE_AUTO = "> Format / Automation";
         LABEL_TEXTFILE = "LabelPlus Text:";
         LABEL_SOURCE = "Image Source:";
@@ -65,15 +67,16 @@ namespace i18n {
         LABEL_SELECTIMAGE = "Select Image";
         LABEL_SELECTGROUP = "Select Group";
         CHECKBOX_OUTPUTLABELNUMBER = "Output Label Number";
-        CHECKBOX_TEXTREPLACE = "Text Replace(e.g. \"A->B|C->D\")";
+        CHECKBOX_TextReplace = "Text Replace(e.g. \"A->B|C->D\")";
         CHECKBOX_OUTPUTNOSIGNPSD = "Output no label file";
-        CHECKBOX_IGNOREIMGFILENAME = "Ignore filename in LabelPlus Text";
-        CHECKBOX_SETSOURCETYPE = "Replace file extension";
+        CHECKBOX_AutoMatchImgFile = "Auto Match Imgage Source File";
+        BUTTON_AutoMatchImgFilePreview = "Preview Match Result";
+        CHECKBOX_SetSourceType = "Replace file extension";
         CHECKBOX_RUNACTION = "Execute actions named of group name;\"_start\" after open, \"_end\" before close";
         CHECKBOX_NOTCLOSE = "Do not close the file";
-        CHECKBOX_SETFONT = "Set default font";
-        CHECKBOX_CUSTOMLEADING = "Set leading size";
-        CHECKBOX_OUTPUTHORIZONTALTEXT = "Output horizontal text";
+        CHECKBOX_SetFont = "Set default font";
+        CHECKBOX_SetLeading = "Set leading size";
+        CHECKBOX_OutputHorizontalText = "Output horizontal text";
         CHECKBOX_LAYERNOTGROUP = "Layer not grouping";
         CHECKBOX_OVERLAY = "Execute \"Text Overlay\" on specified group";
         COMPLETE = "Export completed!";
