@@ -119,7 +119,7 @@ class LabelPlusInput extends GenericUI {
 //
 // 用户界面构建
 //
-LabelPlusInput.prototype.createPanel = function (pnl: any, ini: LabelPlusInputOptions) {
+LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     let self = this;
     let opts = new LabelPlusInputOptions(ini);// default values
 
@@ -465,82 +465,78 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: LabelPlusInputOp
     pnl.overlayGroupTextBox = pnl.add('edittext', [xx, yy, xx + 180, yy + 20]);
     pnl.overlayGroupTextBox.enabled = false;
 
-    if (ini == undefined) {   // if there was an ini object
-        ini = new LabelPlusInputOptions(undefined);
-    }
-
     //------------------读取配置区------------------
     //文本替换
-    if (ini.textReplace) {
+    if (opts.textReplace) {
         pnl.textReplaceCheckBox.value = true;
         pnl.textReplaceTextBox.enabled = true;
         pnl.textReplaceTextBox.text = opts.textReplace;
     }
 
     // 字体
-    if (ini.setFont) {
+    if (opts.setFont) {
         pnl.setFontCheckBox.value = true;
         pnl.font.family.enabled = true;
         pnl.font.style.enabled = true;
         pnl.font.fontSize.enabled = true;
-        pnl.font.setFont(ini.font, ini.fontSize);
+        pnl.font.setFont(opts.font, opts.fontSize);
     }
 
     // 行距
-    if (ini.setTextLeading) {
-        pnl.setTextLeadingCheckBox.value = ini.setTextLeading;
-        pnl.textLeadingTextBox.enabled = ini.setTextLeading;
+    if (opts.setTextLeading) {
+        pnl.setTextLeadingCheckBox.value = opts.setTextLeading;
+        pnl.textLeadingTextBox.enabled = opts.setTextLeading;
     }
-    if (ini.textLeading) {
-        pnl.textLeadingTextBox.text = ini.textLeading;
+    if (opts.textLeading) {
+        pnl.textLeadingTextBox.text = opts.textLeading;
     }
 
     // 导出标号选项
-    if (ini.outputLabelNumber) {
-        pnl.outputLabelNumberCheckBox.value = ini.outputLabelNumber;
+    if (opts.outputLabelNumber) {
+        pnl.outputLabelNumberCheckBox.value = opts.outputLabelNumber;
     }
 
     // 输出横排文字
-    if (ini.horizontalText) {
-        pnl.outputHorizontalCheckBox.value = ini.horizontalText;
+    if (opts.horizontalText) {
+        pnl.outputHorizontalCheckBox.value = opts.horizontalText;
     }
     // 处理无标号文档
-    if (ini.outputNoSignPsd) {
-        pnl.outputNoSignPsdCheckBox.value = ini.outputNoSignPsd;
+    if (opts.outputNoSignPsd) {
+        pnl.outputNoSignPsdCheckBox.value = opts.outputNoSignPsd;
     }
 
     // 无视LabelPlus文本中的图源文件名
-    if (ini.ignoreImgFileName) {
+    if (opts.ignoreImgFileName) {
         pnl.ignoreImgFileNameCheckBox.value = true;
     }
 
     // 使用指定类型图源
-    if (ini.sourceFileType) {
+    if (opts.sourceFileType) {
         pnl.setSourceFileTypeCheckBox.value = true;
         pnl.setSourceFileTypeList.enabled = true;
-        pnl.setSourceFileTypeList.selection.text = ini.sourceFileType;
+        pnl.setSourceFileTypeList.selection.text = opts.sourceFileType;
     }
 
     // 执行动作GroupN
-    if (ini.runActionGroup) {
+    if (opts.runActionGroup) {
         pnl.runActionGroupCheckBox.value = true;
         pnl.runActionGroupList.enabled = true;
-        pnl.runActionGroupList.selection.text = ini.runActionGroup;
+        pnl.runActionGroupList.selection.text = opts.runActionGroup;
     }
 
     // 导入后不关闭文档
-    if (ini.notClose)
+    if (opts.notClose)
         pnl.notCloseCheckBox.value = true;
 
     // 不对图层进行分组
-    if (ini.layerNotGroup)
+    if (opts.layerNotGroup)
         pnl.layerNotGroupCheckBox.value = true;
 
     // 涂白
-    if (ini.overloayGroup) {
+    if (opts.overloayGroup) {
         pnl.overlayCheckBox.value = true;
         pnl.overlayGroupTextBox.enabled = true;
-        pnl.overlayGroupTextBox.text = ini.overloayGroup;
+        pnl.overlayGroupTextBox.text = opts.overloayGroup;
     }
 
     return pnl;
@@ -549,7 +545,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: LabelPlusInputOp
 //
 // 自定义读取配框
 //
-let createSettingsPanel = function (pnl: any, ini: LabelPlusInputOptions) {
+let createSettingsPanel = function (pnl: any, ini: any) {
     let win = GenericUI.getWindow(pnl.parent);
 
     pnl.text = i18n.LABEL_SETTING;
@@ -662,7 +658,7 @@ let createSettingsPanel = function (pnl: any, ini: LabelPlusInputOptions) {
 //
 // 读出用户UI数据
 //
-LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: LabelPlusInputOptions, tofile: boolean) :LabelPlusInputOptions {
+LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: boolean) :LabelPlusInputOptions {
     let self = this;
     let opts = new LabelPlusInputOptions(ini);
 
@@ -717,7 +713,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: LabelPlusInput
             return self.errorPrompt(i18n.ERROR_NOTCHOOSEIMAGE);
         else {
             let sortedImgSelection = pnl.chooseImageListBox.selection.sort();
-            opts.imageSelected = []; //new Array(); //todo:
+            opts.imageSelected = [];
 
             for (let i = 0; i < sortedImgSelection.length; i++) {
                 opts.imageSelected[i] = {
@@ -1113,7 +1109,7 @@ let iniToString = function (ini) {
     return str;
 };
 
-let writeIni = function (iniFile: string, ini: LabelPlusInputOptions) {
+let writeIni = function (iniFile: string, ini: any) {
     //$.level = 1; debugger;
     if (!ini || !iniFile) {
         return;
@@ -1137,7 +1133,7 @@ let writeIni = function (iniFile: string, ini: LabelPlusInputOptions) {
 //
 // 读出配置
 //
-let readIni = function (iniFile: string, ini ?: LabelPlusInputOptions): LabelPlusInputOptions {
+let readIni = function (iniFile: string, ini ?: any): LabelPlusInputOptions {
     //$.level = 1; debugger;
 
     if (!ini) {
