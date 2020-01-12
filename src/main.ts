@@ -67,8 +67,8 @@ class LabelPlusInputOptions {
     font: any; // 设置的字体
     fontSize: number; // 字体大小
 
-    setTextLeading: boolean;
-    textLeading: number;
+    setTextLeading: boolean = true; // 是否设置行距
+    textLeading: number; // 行距值，百分比
 
     textReplace: string; // 文本替换规则
 
@@ -1038,12 +1038,10 @@ let newTextLayer = function (
 
     textItemRef.contents = text;
 
-    if (lending == 0) {
+    textItemRef.useAutoLeading = true;
+    if (lending != 0) {
         textItemRef.useAutoLeading = true;
-    }
-    else {
-        textItemRef.useAutoLeading = false;
-        textItemRef.leading = lending;
+        textItemRef.autoLeadingAmount = lending;
     }
 
     return artLayerRef;
