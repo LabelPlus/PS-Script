@@ -520,7 +520,9 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     if (opts.runActionGroup) {
         pnl.runActionGroupCheckBox.value = true;
         pnl.runActionGroupList.enabled = true;
-        pnl.runActionGroupList.selection.text = opts.runActionGroup;
+        let item = pnl.runActionGroupList.find(opts.runActionGroup);
+        if (item != undefined)
+            pnl.runActionGroupList.selection = item;
     }
 
     // 导入后不关闭文档
@@ -778,7 +780,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
 
     // 执行动作GroupN
     if (pnl.runActionGroupCheckBox.value)
-        opts.runActionGroup = pnl.runActionGroupList.selection;
+        opts.runActionGroup = pnl.runActionGroupList.selection.text;
     else
         opts.runActionGroup = undefined;
 
