@@ -243,9 +243,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             let pnl = this.parent;
             let def :string = (pnl.sourceTextBox.text ?
                 pnl.sourceTextBox.text : Folder.desktop);
-            let f = new Folder(def);
-            f.selectDlg(i18n.LABEL_SOURCE);
-
+            let f = Stdlib.selectFolder(i18n.LABEL_SOURCE, def);
             if (f) {
                 pnl.sourceTextBox.text = decodeURI(f.fsName);
                 if (!pnl.targetTextBox.text) {
