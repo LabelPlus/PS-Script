@@ -8,19 +8,6 @@
 // License: http://noodlefighter.com/label_plus/license
 //
 
-declare var $: any;
-declare var app: any;
-declare var File: any;
-declare var Folder: any;
-declare var LayerKind: any;
-declare var Direction: any;
-declare var AntiAlias: any;
-declare var Extension: any;
-declare var ElementPlacement: any;
-declare var PhotoshopSaveOptions: any;
-declare var DocumentMode: any;
-declare var ChangeMode: any;
-
 import "./xtools/xlib/stdlib.js";
 declare var Stdlib: any;
 declare function isMac(): any;
@@ -159,12 +146,12 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             let f = File.openDialog(i18n.LABEL_TEXTFILE, fmask);
 
             if (f && f.exists) {
-                pnl.lpTextFileTextBox.text = f.toUIString();
+                pnl.lpTextFileTextBox.text = decodeURI(f.fsName);
 
                 //图源、输出文件夹赋上目录
                 let fl = new Folder(f.path);
-                pnl.sourceTextBox.text = fl.toUIString();
-                pnl.targetTextBox.text = fl.toUIString() + dirSeparator + 'output';
+                pnl.sourceTextBox.text = decodeURI(fl.fsName);
+                pnl.targetTextBox.text = decodeURI(fl.fsName) + dirSeparator + 'output';
 
             }
             else {
@@ -254,12 +241,13 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     pnl.sourceBrowse.onClick = function () {
         try {
             let pnl = this.parent;
-            let def = (pnl.sourceTextBox.text ?
-                new Folder(pnl.sourceTextBox.text) : Folder.desktop);
-            let f = Folder.selectDialog(i18n.LABEL_SOURCE, def);
+            let def :string = (pnl.sourceTextBox.text ?
+                pnl.sourceTextBox.text : Folder.desktop);
+            let f = new Folder(def);
+            f.selectDlg(i18n.LABEL_SOURCE);
 
             if (f) {
-                pnl.sourceTextBox.text = f.toUIString();
+                pnl.sourceTextBox.text = decodeURI(f.fsName);
                 if (!pnl.targetTextBox.text) {
                     pnl.targetTextBox.text = pnl.sourceTextBox.text;
                 }
@@ -294,7 +282,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             f = Stdlib.selectFolder(i18n.LABEL_TARGET, def);
 
             if (f) {
-                pnl.targetTextBox.text = f.toUIString();
+                pnl.targetTextBox.text = decodeURI(f.fsName);
             }
         } catch (e) {
             alert(Stdlib.exceptionMessage(e));
@@ -678,7 +666,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         if (!f || !f.exists) {
             return self.errorPrompt(i18n.ERROR_NOTFOUNDSOURCE);
         }
-        opts.source = f.toUIString();
+        opts.source = decodeURI(f.fsName)
 
         // 输出目录
         if (pnl.targetTextBox.text) {
@@ -697,7 +685,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         if (!f || !f.exists) {
             return self.errorPrompt(i18n.ERROR_NOTFOUNDTARGET);
         }
-        opts.target = f.toUIString();
+        opts.target = decodeURI(f.fsName)
 
         // LabelPlus文本
         f = new File(pnl.lpTextFileTextBox.text);
@@ -707,7 +695,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         opts.labelFilename = pnl.lpTextFileTextBox.text;
 
         let fl = new Folder(f.path);
-        opts.labelFilePath = fl.toUIString();
+        opts.labelFilePath = decodeURI(fl.fsName)
 
         // Image选择
         if (!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0)
@@ -854,7 +842,7 @@ LabelPlusInput.prototype.process = function (opts, doc) {
             continue;
 
         // 打开图片文件
-        let bgFile = File(opts.source + dirSeparator + filename);
+        let bgFile = new File(opts.source + dirSeparator + filename);
         if (!bgFile || !bgFile.exists) {
             let msg = "Image " + filename + " Not Found.";
             Stdlib.log(msg);

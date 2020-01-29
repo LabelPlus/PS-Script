@@ -33,5 +33,6 @@ $ sudo npm install -g typescript
 
 ```
 $ cd PS-Script
+$ npm install
 $ ./build.sh
 ```
