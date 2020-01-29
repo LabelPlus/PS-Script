@@ -820,22 +820,27 @@ LabelPlusInput.prototype.process = function (opts, doc) {
 
     //遍历所选图片 导入数据= =
     for (let i = 0; i < opts.imageSelected.length; i++) {
-        let originName = opts.imageSelected[i].text;
-        let filename;
+        let originName :string = opts.imageSelected[i].text; // 翻译文件中的图片文件名
+        let filename :string; // 实际打开的图片文件名
+        let filetype :string; // 实际的图片类型，如“.psd”
         let labelData = lpFile.LabelData[originName];
         let gourpData = lpFile.GroupData;
 
-        // 根据sourceFileType替换文件后缀名
+        // 根据sourceFileType替换文件后缀名 && 忽略原始图片名
         if (opts.sourceFileType) {
             filename = originName.substring(0, originName.lastIndexOf(".")) + opts.sourceFileType;
+            filetype = opts.sourceFileType;
         }
-        else
-            filename = originName;
-
-        // 忽略原始图片名
-        if (opts.ignoreImgFileName) {
+        else if (opts.ignoreImgFileName) {
             filename = originFileList[opts.imageSelected[i].index];
+            filetype = filename.substring(filename.lastIndexOf("."), filename.length);
         }
+        else {
+            filename = originName;
+            filetype = originName.substring(originName.lastIndexOf("."), originName.length);
+        }
+        Stdlib.log("open filename: " + filename);
+        Stdlib.log("open filetype: " + filetype);
 
         // 不处理无标号文档
         if (!opts.outputNoSignPsd && labelData.length == 0)
@@ -850,11 +855,22 @@ LabelPlusInput.prototype.process = function (opts, doc) {
             continue;
         }
 
-        // 在PS中打开文件
-
-        let bg;
+        // 在PS中打开图片文件，如果是PS专用格式（PSD/TIFF）则直接打开，否则先新建PSD再将图片导入为一个图层
+        let doc: Document;
         try {
-            bg = app.open(bgFile);
+            if ((filetype == ".psd") || (filetype == ".tif") || ((filetype == ".tiff"))) {
+                doc = app.open(bgFile);
+            }
+            else {
+                let bg :Document = app.open(bgFile);
+                bg.selection.selectAll();
+                bg.selection.copy();
+                doc = app.documents.add(bg.width, bg.height, bg.resolution, bg.name, NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
+                let bgLayer :ArtLayer = doc.activeLayer;
+                bgLayer.name = "bg";
+                doc.paste();
+                bg.close(SaveOptions.DONOTSAVECHANGES);
+            }
         } catch (e) {
             let msg = "open file " + filename + " fail";
             Stdlib.log(msg);
@@ -863,8 +879,8 @@ LabelPlusInput.prototype.process = function (opts, doc) {
         }
 
         // 若文档类型为索引色模式 更改为RGB模式
-        if (bg.mode == DocumentMode.INDEXEDCOLOR) {
-            bg.changeMode(ChangeMode.RGB);
+        if (doc.mode == DocumentMode.INDEXEDCOLOR) {
+            doc.changeMode(ChangeMode.RGB);
         }
 
         let layerGroups = new Array();
@@ -872,7 +888,7 @@ LabelPlusInput.prototype.process = function (opts, doc) {
         // 文件打开时执行一次动作"_start"
         if (opts.runActionGroup) {
             try {
-                bg.activeLayer = bg.layers[bg.layers.length - 1];
+                doc.activeLayer = doc.layers[doc.layers.length - 1];
                 this.doAction("_start", opts.runActionGroup);
             }
             catch (e) { }
@@ -895,7 +911,7 @@ LabelPlusInput.prototype.process = function (opts, doc) {
             }
 
             //执行涂白
-            MyAction.lp_dialogClear(labelArr, bg.width, bg.height, 16, 1);
+            MyAction.lp_dialogClear(labelArr, doc.width, doc.height, 16, 1);
         }
 
         // 遍历LabelData
@@ -913,17 +929,17 @@ LabelPlusInput.prototype.process = function (opts, doc) {
 
             // 创建分组
             if (!opts.layerNotGroup && !layerGroups[labelGroup]) {
-                layerGroups[labelGroup] = bg.layerSets.add();
+                layerGroups[labelGroup] = doc.layerSets.add();
                 layerGroups[labelGroup].name = labelGroup;
             }
             if (opts.outputLabelNumber && !layerGroups["_Label"]) {
-                layerGroups["_Label"] = bg.layerSets.add();
+                layerGroups["_Label"] = doc.layerSets.add();
                 layerGroups["_Label"].name = "Label";
             }
 
             // 导出标号
             if (opts.outputLabelNumber) {
-                newTextLayer(bg,
+                newTextLayer(doc,
                     String(labelNum),
                     labelX,
                     labelY,
@@ -946,7 +962,7 @@ LabelPlusInput.prototype.process = function (opts, doc) {
 
             // 导出文本
             if (labelString && labelString != "") {
-                artLayer = newTextLayer(bg,
+                artLayer = newTextLayer(doc,
                     labelString,
                     labelX,
                     labelY,
@@ -962,7 +978,7 @@ LabelPlusInput.prototype.process = function (opts, doc) {
             // 执行动作,名称为分组名
             if (opts.runActionGroup) {
                 try {
-                    bg.activeLayer = artLayer;
+                    doc.activeLayer = artLayer;
                     this.doAction(labelGroup, opts.runActionGroup);
                 }
                 catch (e) {
@@ -976,7 +992,7 @@ LabelPlusInput.prototype.process = function (opts, doc) {
         // 文件关闭时执行一次动作"_end"
         if (opts.runActionGroup) {
             try {
-                bg.activeLayer = bg.layers[bg.layers.length - 1];
+                doc.activeLayer = doc.layers[doc.layers.length - 1];
                 this.doAction("_end", opts.runActionGroup);
             }
             catch (e) { }
@@ -987,11 +1003,11 @@ LabelPlusInput.prototype.process = function (opts, doc) {
         let options = PhotoshopSaveOptions;
         let asCopy = false;
         let extensionType = Extension.LOWERCASE;
-        bg.saveAs(fileOut, options, asCopy, extensionType);
+        doc.saveAs(fileOut, options, asCopy, extensionType);
 
         // 关闭文件
         if (!opts.notClose)
-            bg.close();
+            doc.close();
     }
     alert(i18n.COMPLETE);
     if (errorMsg != "") {
