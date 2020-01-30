@@ -15,6 +15,11 @@ namespace i18n {
     export var LABEL_TIP_Behavior: string = "> 脚本行为";
     export var LABEL_TIP_STYLE_AUTO: string = "> 格式 / 自动化";
 
+    export var PANEL_DocTempleteSetting: string = "文档模板设置";
+    export var RB_AutoTemplete: string = "自动";
+    export var RB_NoTemplete: string = "不使用模板（直接新建文件）";
+    export var RB_CustomTemplete: string = "自定义模板";
+
     export var LABEL_TEXTFILE: string = "LabelPlus文本:";
     export var LABEL_SOURCE: string = "图源文件夹:";
     export var LABEL_TARGET: string = "输出PSD文件夹:";
@@ -60,6 +65,10 @@ namespace i18n {
         LABEL_TIP_FILE = "> File / Preprocessing";
         LABEL_TIP_Behavior = "> Behavior";
         LABEL_TIP_STYLE_AUTO = "> Format / Automation";
+        PANEL_DocTempleteSetting = "Document Templete Setting";
+        RB_AutoTemplete = "Auto";
+        RB_NoTemplete = "No Templete";
+        RB_CustomTemplete = "Custom Templete";
         LABEL_TEXTFILE = "LabelPlus Text:";
         LABEL_SOURCE = "Image Source:";
         LABEL_TARGET = "Output PSD:";

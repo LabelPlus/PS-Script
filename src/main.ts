@@ -36,6 +36,9 @@ let GetScriptPath = function (): string {
 //
 // 初始设置
 //
+
+enum OptionDocTemplete { Auto, No, Custom }; // 自动选择模板、不使用模板、自定义模板文件
+
 class LabelPlusInputOptions {
     constructor(obj: Object) {
         let self = this;
@@ -50,6 +53,9 @@ class LabelPlusInputOptions {
     groupSelected: string[]; // 被选中的分组列表
 
     // ------------------------------------可保存设置，均为string
+    docTemplete: OptionDocTemplete; // 模板设置
+    docTempleteCustomPath: string;  // 自定义模板文件路径
+
     setFont: boolean; // 是否设置字体
     font: any; // 设置的字体
     fontSize: number; // 字体大小
@@ -380,6 +386,52 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     pnl.add('statictext', [xx, yy, xx + 120, yy + 20], i18n.LABEL_TIP_STYLE_AUTO);
     yy += 20;
 
+    // 文档模板设置
+    pnl.docTempletePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 65], i18n.PANEL_DocTempleteSetting);
+    {
+        let pnll: any = pnl.docTempletePnl;
+        let xxxOfs: number = 5;
+        let xxx: number = xxxOfs;
+        let yyy: number = 5;
+        pnll.autoTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 22], i18n.RB_AutoTemplete); xxx += 200;
+        pnll.autoTempleteRb.value = true;
+        pnll.noTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 22], i18n.RB_NoTemplete); xxx += 200;
+        xxx = xxxOfs;
+        yyy += 22;
+        pnll.customTempleteRb = pnll.add('radiobutton', [xxx, yyy, xxx + 120, yyy + 22], i18n.RB_CustomTemplete); xxx += 120;
+        pnll.customTempleteTextbox = pnll.add('edittext', [xxx, yyy, xxx + 180, yyy + 22]); xxx += 185;
+        pnll.customTempleteTextButton = pnll.add('button', [xxx, yyy, xxx + 30, yyy + 22], '...'); xxx += 30;
+        let rbclick = function () {
+            let custom_enable: boolean = pnll.customTempleteRb.value;
+            pnll.customTempleteTextbox.enabled = custom_enable;
+            pnll.customTempleteTextButton.enabled = custom_enable;
+        };
+        pnll.autoTempleteRb.onClick = rbclick;
+        pnll.noTempleteRb.onClick = rbclick;
+        pnll.customTempleteRb.onClick = rbclick;
+        rbclick();
+
+        pnll.customTempleteTextButton.onClick = function () {
+            try {
+                let def: string;
+                if (pnll.customTempleteTextbox.text !== "") {
+                    def = pnll.customTempleteTextbox.text;
+                } else if (pnl.sourceTextBox.text !== "") {
+                    def = pnl.sourceTextBox.text;
+                } else {
+                    def = Folder.desktop.path;
+                }
+                let f = Stdlib.selectFileOpen(i18n.RB_CustomTemplete, "*.psd;*.tif;*.tiff", def);
+                if (f)
+                    pnll.customTempleteTextbox.text = decodeURI(f.fsName);
+            } catch (e) {
+                alert(Stdlib.exceptionMessage(e));
+            }
+        };
+    }
+    xx = xOfs;
+    yy += 65;
+
     // 使用自定义字体设置
     pnl.setFontCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_SetFont);
     pnl.setFontCheckBox.onClick = function () {
@@ -457,6 +509,22 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         pnl.textReplaceTextBox.enabled = true;
         pnl.textReplaceTextBox.text = opts.textReplace;
     }
+
+    // 文档模板
+    switch (opts.docTemplete) {
+    case OptionDocTemplete.No:
+        pnl.docTempletePnl.noTempleteRb.value = true;
+        break;
+    case OptionDocTemplete.Custom:
+        pnl.docTempletePnl.customTempleteRb.value = true;
+        pnl.docTempletePnl.customTempleteTextbox.text = opts.docTempleteCustomPath;
+        break;
+    case OptionDocTemplete.Auto:
+    default:
+        pnl.docTempletePnl.autoTempleteRb.value = true;
+        break;
+    }
+    pnl.docTempletePnl.autoTempleteRb.onClick();
 
     // 字体
     if (opts.setFont) {
@@ -723,6 +791,15 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
     if (pnl.textReplaceCheckBox.value)
         opts.textReplace = pnl.textReplaceTextBox.text;
 
+    // 文档模板
+    opts.docTemplete =
+    pnl.docTempletePnl.autoTempleteRb.value ? OptionDocTemplete.Auto : (
+        pnl.docTempletePnl.noTempleteRb.value ? OptionDocTemplete.No : (
+            pnl.docTempletePnl.customTempleteRb.value ? OptionDocTemplete.Custom : OptionDocTemplete.Auto
+        )
+    );
+    opts.docTempleteCustomPath = pnl.docTempletePnl.customTempleteTextbox.text;
+
     // 字体
     if (pnl.setFontCheckBox.value) {
         opts.setFont = true;
@@ -796,7 +873,7 @@ LabelPlusInput.prototype.doAction = function (action, actionSet) {
 //
 // 执行用户UI功能
 //
-LabelPlusInput.prototype.process = function (opts, doc) {
+LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
     let self = this;
     let errorMsg = "";
 
@@ -853,8 +930,9 @@ LabelPlusInput.prototype.process = function (opts, doc) {
             continue;
         }
 
-        // 在PS中打开图片文件，如果是PS专用格式（PSD/TIFF）则直接打开，否则先新建PSD再将图片导入为一个图层
+        // 在PS中打开图片文件，如果是PS专用格式（PSD/TIFF）则直接打开；否则根据配置使用PSD模板或新建PSD，再将图片导入为bg图层
         let doc: Document;
+        let textTempleteLayer: ArtLayer;
         try {
             if ((filetype == ".psd") || (filetype == ".tif") || ((filetype == ".tiff"))) {
                 doc = app.open(bgFile);
@@ -863,12 +941,62 @@ LabelPlusInput.prototype.process = function (opts, doc) {
                 let bg :Document = app.open(bgFile);
                 bg.selection.selectAll();
                 bg.selection.copy();
-                doc = app.documents.add(bg.width, bg.height, bg.resolution, bg.name, NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
-                let bgLayer :ArtLayer = doc.activeLayer;
-                bgLayer.name = "bg";
+
+                switch (opts.docTemplete) {
+                case OptionDocTemplete.No:
+                    doc = app.documents.add(bg.width, bg.height, bg.resolution, bg.name, NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
+                    break;
+                case OptionDocTemplete.Custom:
+                case OptionDocTemplete.Auto:
+                default:
+                    let docFile: File;
+                    if (opts.docTemplete == OptionDocTemplete.Custom) {
+                        docFile = new File(opts.docTempleteCustomPath);
+                    } else {
+                        throw "no implement!!!"  //todo: 默认模板存入资源文件
+                    }
+
+                    if (!docFile || !docFile.exists) {
+                        let errmsg: string = "error: docTemplete" + opts.docTemplete + "notfound";
+                        Stdlib.log(errmsg);
+                        throw errmsg;
+                    }
+                    doc = app.open(docFile);
+                    doc.resizeImage(bg.width, bg.height, bg.resolution);
+                    break;
+                }
+
+                // 选中bg图层，将图片粘贴进去
+                let bgLayer :ArtLayer;
+                try {
+                    bgLayer = doc.artLayers.getByName("bg");
+                }
+                catch {
+                    Stdlib.log("bg templete layer not found, copy one.");
+                    bgLayer = doc.artLayers.add();
+                    bgLayer.name = "bg";
+                }
+                doc.activeLayer = bgLayer;
                 doc.paste();
                 bg.close(SaveOptions.DONOTSAVECHANGES);
             }
+
+            // 寻找文本模板，即名为text的图层；若text图层不存在，复制一个文本图层
+            try { textTempleteLayer = doc.artLayers.getByName("text"); }
+            catch {
+                Stdlib.log("text templete layer not found, copy one.");
+                for (let i = 0; i < doc.artLayers.length; i++) {
+                    let layer: ArtLayer = <ArtLayer> doc.artLayers[i];
+                    if (layer.kind == LayerKind.TEXT) {
+                        /// @ts-ignore ts声明文件有误，duplicate()返回ArtLayer对象，而不是void
+                        textTempleteLayer = <ArtLayer> textLayer.duplicate();
+                        textTempleteLayer.textItem.contents = "text";
+                        textTempleteLayer.name = "text";
+                        break;
+                    }
+                }
+            }
+
         } catch (e) {
             let msg = "open file " + filename + " fail";
             Stdlib.log(msg);
@@ -938,13 +1066,13 @@ LabelPlusInput.prototype.process = function (opts, doc) {
             // 导出标号
             if (opts.outputLabelNumber) {
                 newTextLayer(doc,
+                    textTempleteLayer,
                     String(labelNum),
                     labelX,
                     labelY,
                     "Arial",
                     opts.setFont ? opts.fontSize : undefined,
                     false,
-                    90,
                     layerGroups["_Label"],
                     0
                 );
@@ -961,15 +1089,15 @@ LabelPlusInput.prototype.process = function (opts, doc) {
             // 导出文本
             if (labelString && labelString != "") {
                 artLayer = newTextLayer(doc,
+                    textTempleteLayer,
                     labelString,
                     labelX,
                     labelY,
                     opts.setFont ? opts.font : "SimSun",
                     opts.setFont ? opts.fontSize : undefined,
                     !opts.horizontalText,
-                    90,
                     opts.layerNotGroup ? undefined : layerGroups[labelGroup],
-                    opts.textLeading ? parseFloat(opts.textLeading) : 0
+                    opts.textLeading ? opts.textLeading : 0
                 );
             }
 
@@ -986,6 +1114,10 @@ LabelPlusInput.prototype.process = function (opts, doc) {
                 }
             }
         }
+
+        // 如果text模板存在，删除
+        if (textTempleteLayer)
+            textTempleteLayer.remove();
 
         // 文件关闭时执行一次动作"_end"
         if (opts.runActionGroup) {
@@ -1018,27 +1150,41 @@ LabelPlusInput.prototype.process = function (opts, doc) {
 // 创建文本图层
 //
 let newTextLayer = function (
-        doc: any, text: string, x: number, y: number, font: any, size: any,
-        isVertical: boolean, opacity: number, group: string, lending: number) {
-    let artLayerRef = doc.artLayers.add();
-    artLayerRef.kind = LayerKind.TEXT;
-    let textItemRef = artLayerRef.textItem;
+        doc: Document, templete: ArtLayer,
+        text: string, x: number, y: number, font: any, size: any,
+        isVertical: boolean, group: LayerSet, lending: number)
+{
+    let artLayerRef: ArtLayer;
+    let textItemRef: TextItem;
+
+    // 从模板创建，可以保证图层的所有格式与模板一致
+    if (templete) {
+        /// @ts-ignore ts声明文件有误，duplicate()返回ArtLayer对象，而不是void
+        artLayerRef = <ArtLayer> templete.duplicate();
+        textItemRef = artLayerRef.textItem;
+    }
+    else {
+        artLayerRef = doc.artLayers.add();
+        artLayerRef.kind = LayerKind.TEXT;
+        textItemRef = artLayerRef.textItem;
+    }
 
     if (size)
         textItemRef.size = size;
     else
-        textItemRef.size = doc.height / 90.0;
+        textItemRef.size = new UnitValue(doc.height.as("pt") / 90.0, "pt");
 
     textItemRef.font = font;
     if (isVertical)
         textItemRef.direction = Direction.VERTICAL;
 
     textItemRef.antiAliasMethod = AntiAlias.SMOOTH;
-    textItemRef.position = Array(doc.width * x, doc.height * y);
+    textItemRef.position = Array(UnitValue(doc.width.as("px") * x, "px"), UnitValue(doc.height.as("px") * y, "px"));
 
     if (group)
         artLayerRef.move(group, ElementPlacement.PLACEATBEGINNING);
 
+    artLayerRef.name     = text;
     textItemRef.contents = text;
 
     textItemRef.useAutoLeading = true;
