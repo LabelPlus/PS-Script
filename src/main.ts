@@ -104,7 +104,7 @@ class LabelPlusInput extends GenericUI {
             x: 200,
             y: 200,
             w: 875,
-            h: 630
+            h: 685
         };
 
         self.title = i18n.APPNAME + " " + Global.VER;	// our window title
