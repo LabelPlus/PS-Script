@@ -25,6 +25,7 @@ declare var LabelPlusTextReader: any;
 
 /// <reference path="i18n.ts" />
 /// <reference path="version.ts" />
+/// <reference path="res.ts" />
 
 // Operating System related
 let dirSeparator = $.os.search(/windows/i) === -1 ? '/' : '\\';
@@ -933,7 +934,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
         // 在PS中打开图片文件，如果是PS专用格式（PSD/TIFF）则直接打开；否则根据配置使用PSD模板或新建PSD，再将图片导入为bg图层
         let doc: Document;
         let textTempleteLayer: ArtLayer;
-        try {
+        // try {
             if ((filetype == ".psd") || (filetype == ".tif") || ((filetype == ".tiff"))) {
                 doc = app.open(bgFile);
             }
@@ -953,7 +954,13 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                     if (opts.docTemplete == OptionDocTemplete.Custom) {
                         docFile = new File(opts.docTempleteCustomPath);
                     } else {
-                        throw "no implement!!!"  //todo: 默认模板存入资源文件
+                        let temp_name = "zh.psd";
+                        let temp_path = opts.labelFilePath + dirSeparator + temp_name;
+                        if (!res.to_file(temp_name, temp_path)) {
+                            let errmsg = "error: release resource(" + temp_name + ") failed";
+                            throw errmsg;
+                        }
+                        docFile = new File(temp_path);
                     }
 
                     if (!docFile || !docFile.exists) {
@@ -997,12 +1004,13 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 }
             }
 
-        } catch (e) {
-            let msg = "open file " + filename + " fail";
-            Stdlib.log(msg);
-            errorMsg = errorMsg + msg + "\r\n";
-            continue;
-        }
+        // } catch (e) {
+        //     let msg = "open file " + filename + " fail";
+        //     Stdlib.log(msg);
+        //     Stdlib.log(e);
+        //     errorMsg = errorMsg + msg + "\r\n";
+        //     continue;
+        // }
 
         // 若文档类型为索引色模式 更改为RGB模式
         if (doc.mode == DocumentMode.INDEXEDCOLOR) {
