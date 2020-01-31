@@ -33,6 +33,14 @@ let GetScriptPath = function (): string {
     return <string>$.fileName;
 }
 
+let GetScriptFolder = function (): string {
+    return (new Folder(GetScriptPath())).path;
+}
+
+function FileIsExists(path: string): boolean {
+    return (new File(path)).exists;
+}
+
 //
 // 初始设置
 //
@@ -893,6 +901,34 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
     if (opts.textReplace)
         textReplace = textReplaceReader(opts.textReplace);
 
+    // 确定doc模板文件
+    let templete_path: string = "";
+    switch (opts.docTemplete) {
+    case OptionDocTemplete.Custom:
+        templete_path = opts.docTempleteCustomPath;
+    case OptionDocTemplete.Auto:
+        let tempdir = GetScriptFolder() + dirSeparator + "ps_script_res" + dirSeparator;
+        let tempname = app.locale.split("_")[0].toLocaleLowerCase() + ".psd"; // such as "zh_CN" -> zh.psd
+
+        let try_list: string[] = [
+            tempdir + tempname,
+            tempdir + "en.psd"
+        ];
+        for (let i = 0; i < try_list.length; i++) {
+            if (FileIsExists(try_list[i])) {
+                templete_path = try_list[i];
+                break;
+            }
+        }
+        if (templete_path === "") {
+            let errmsg = "error: " + i18n.ERROR_NotAutoMatchTemplete;
+            Stdlib.log(errmsg);
+            throw errmsg;
+        }
+        break;
+    default:
+    }
+
     //遍历所选图片 导入数据= =
     for (let i = 0; i < opts.imageSelected.length; i++) {
         let originName :string = opts.imageSelected[i].text; // 翻译文件中的图片文件名
@@ -942,28 +978,12 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 bg.selection.selectAll();
                 bg.selection.copy();
 
-                switch (opts.docTemplete) {
-                case OptionDocTemplete.No:
+                if (opts.docTemplete == OptionDocTemplete.No) {
                     doc = app.documents.add(bg.width, bg.height, bg.resolution, bg.name, NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
-                    break;
-                case OptionDocTemplete.Custom:
-                case OptionDocTemplete.Auto:
-                default:
-                    let docFile: File;
-                    if (opts.docTemplete == OptionDocTemplete.Custom) {
-                        docFile = new File(opts.docTempleteCustomPath);
-                    } else {
-                        throw "no implement!!!"  //todo: 默认模板存入资源文件
-                    }
-
-                    if (!docFile || !docFile.exists) {
-                        let errmsg: string = "error: docTemplete" + opts.docTemplete + "notfound";
-                        Stdlib.log(errmsg);
-                        throw errmsg;
-                    }
+                } else {
+                    let docFile = new File(templete_path);
                     doc = app.open(docFile);
                     doc.resizeImage(bg.width, bg.height, bg.resolution);
-                    break;
                 }
 
                 // 选中bg图层，将图片粘贴进去

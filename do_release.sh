@@ -71,6 +71,7 @@ date=`date +%Y-%m-%d`
 sed -i "s/\[Unreleased\]/\[${version}\] - ${date}/" $PACK_DIR/CHANGELOG.md
 
 p build/LabelPlus_Ps_Script.jsx
+p build/ps_script_res
 p LICENSE.txt
 p README.md
 7z a -t7z build/LabelPlus_PS-Script_${version}.7z ${PACK_DIR}/* -m0=BCJ -m1=LZMA:d=21 -ms -mmt
