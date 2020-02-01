@@ -983,7 +983,8 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 } else {
                     let docFile = new File(templete_path);
                     doc = app.open(docFile);
-                    doc.resizeImage(bg.width, bg.height, bg.resolution);
+                    doc.resizeImage(undefined, undefined, bg.resolution);
+                    doc.resizeCanvas(bg.width, bg.height);
                 }
 
                 // 选中bg图层，将图片粘贴进去
