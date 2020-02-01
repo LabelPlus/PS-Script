@@ -41,50 +41,49 @@ function FileIsExists(path: string): boolean {
     return (new File(path)).exists;
 }
 
+function Emit(func: Function): void {
+    if (func !== undefined)
+        func();
+}
+
 //
 // 初始设置
 //
 
 enum OptionDocTemplete { Auto, No, Custom }; // 自动选择模板、不使用模板、自定义模板文件
-
+enum OptionTextDirection { Keep, Horizontal, Vertical };
 class LabelPlusInputOptions {
     constructor(obj: Object) {
         let self = this;
         Stdlib.copyFromTo(obj, self);
     }
 
-    source: string; // 图源文件夹
-    target: string; // 输出文件夹
-    labelFilename: string; // 翻译文本的文件名
-    labelFilePath: string; // 翻译文本所在文件夹
-    imageSelected: { text: string, index: number }[]; // 被选中的图片列表
-    groupSelected: string[]; // 被选中的分组列表
+    source: string = ""; // 图源文件夹
+    target: string = ""; // 输出文件夹
+    labelFilename: string = ""; // 翻译文本的文件名
+    labelFilePath: string = ""; // 翻译文本所在文件夹
+    imageSelected: { text: string, index: number }[] = []; // 被选中的图片列表
+    groupSelected: string[] = []; // 被选中的分组列表
 
     // ------------------------------------可保存设置，均为string
-    docTemplete: OptionDocTemplete; // 模板设置
-    docTempleteCustomPath: string;  // 自定义模板文件路径
+    docTemplete: OptionDocTemplete = OptionDocTemplete.Auto; // 模板设置
+    docTempleteCustomPath: string = "";  // 自定义模板文件路径
 
-    setFont: boolean; // 是否设置字体
-    font: any; // 设置的字体
-    fontSize: number; // 字体大小
+    ignoreImgFileName: boolean = false; // 按文件顺序输出，忽略翻译文件中的图片文件名，便于更换图源
+    sourceFileType: string = ""; // 更改图源文件类型，用于更换图源，为空时不更改
+    outputNoSignPsd: boolean = true; // 是否输出未标号的图片
+    layerNotGroup: boolean = false; // 图层不分组
+    notClose: boolean = false; // 导入图片后不关闭文档
 
-    setTextLeading: boolean = true; // 是否设置行距
-    textLeading: number; // 行距值，百分比
+    font: string = ""; // 设置的字体，为空时不设置
+    fontSize: number = 0; // 字体大小，为0时不设置
+    textLeading: number = 0; // 行距值，百分比，为0时不设置
+    textReplace: string = ""; // 文本替换规则，为空时不替换
+    outputLabelNumber: boolean = false; // 是否输出标号
+    horizontalText: OptionTextDirection = OptionTextDirection.Keep; // 输出文本的阅读方向
 
-    textReplace: string; // 文本替换规则
-
-    outputLabelNumber: boolean; // 输出标号
-    horizontalText: boolean; // 输出文本的阅读方向为横向
-    outputNoSignPsd: boolean = true; // 输出未标号的图片，默认为真
-
-    ignoreImgFileName: boolean; // 按文件顺序输出，忽略翻译文件中的图片文件名，便于更换图源
-    sourceFileType: string; // 更改图源文件类型，用于更换图源
-
-    runActionGroup: string; // 导入文本图层后执行的动作组的名字
-    notClose: boolean; // 导入图片后不关闭文档
-    layerNotGroup: boolean; // 图层不分组
-
-    overloayGroup: boolean; // 执行简易涂白
+    runActionGroup: string = ""; // 导入文本图层后执行的动作组的名字
+    overloayGroup: string = ""; // 执行简易涂白的分组
 };
 
 //
@@ -511,95 +510,105 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     pnl.overlayGroupTextBox.enabled = false;
 
     //------------------读取配置区------------------
+    //note: opts由外部传入，可能为undefined，必须检验
+
     //文本替换
-    if (opts.textReplace) {
-        pnl.textReplaceCheckBox.value = true;
-        pnl.textReplaceTextBox.enabled = true;
+    if (opts.textReplace !== undefined) {
+        pnl.textReplaceCheckBox.value = (opts.textReplace !== "");
         pnl.textReplaceTextBox.text = opts.textReplace;
+        Emit(pnl.textReplaceCheckBox.onClick);
     }
-
     // 文档模板
-    switch (opts.docTemplete) {
-    case OptionDocTemplete.No:
-        pnl.docTempletePnl.noTempleteRb.value = true;
-        break;
-    case OptionDocTemplete.Custom:
-        pnl.docTempletePnl.customTempleteRb.value = true;
-        pnl.docTempletePnl.customTempleteTextbox.text = opts.docTempleteCustomPath;
-        break;
-    case OptionDocTemplete.Auto:
-    default:
-        pnl.docTempletePnl.autoTempleteRb.value = true;
-        break;
+    if (opts.docTemplete !== undefined) {
+        pnl.docTempletePnl.autoTempleteRb = false;
+        pnl.docTempletePnl.noTempleteRb.value = false;
+        pnl.docTempletePnl.customTempleteRb = false;
+        switch (opts.docTemplete) {
+        case OptionDocTemplete.No:
+            pnl.docTempletePnl.noTempleteRb.value = true;
+            break;
+        case OptionDocTemplete.Custom:
+            pnl.docTempletePnl.customTempleteRb.value = true;
+            pnl.docTempletePnl.customTempleteTextbox.text = opts.docTempleteCustomPath;
+            break;
+        case OptionDocTemplete.Auto:
+        default:
+            pnl.docTempletePnl.autoTempleteRb.value = true;
+            break;
+        }
+        Emit(pnl.docTempletePnl.autoTempleteRb.onClick);
     }
-    pnl.docTempletePnl.autoTempleteRb.onClick();
-
     // 字体
-    if (opts.setFont) {
-        pnl.setFontCheckBox.value = true;
-        pnl.font.family.enabled = true;
-        pnl.font.style.enabled = true;
-        pnl.font.fontSize.enabled = true;
-        pnl.font.setFont(opts.font, opts.fontSize);
+    if (opts.font !== undefined) {
+        if (opts.font === "") {
+            pnl.setFontCheckBox.value = false;
+        } else {
+            pnl.setFontCheckBox.value = true;
+            pnl.font.setFont(opts.font, opts.fontSize);
+        }
+        Emit(pnl.setFontCheckBox.onClick);
     }
-
     // 行距
-    if (opts.setTextLeading) {
-        pnl.setTextLeadingCheckBox.value = opts.setTextLeading;
-        pnl.textLeadingTextBox.enabled = opts.setTextLeading;
+    if (opts.textLeading !== undefined) {
+        if (opts.textLeading === 0) {
+            pnl.setTextLeadingCheckBox.value = false;
+        } else {
+            pnl.setTextLeadingCheckBox.value = true;
+            pnl.textLeadingTextBox.text = opts.textLeading;
+        }
+        Emit(pnl.setTextLeadingCheckBox.onClick);
     }
-    if (opts.textLeading) {
-        pnl.textLeadingTextBox.text = opts.textLeading;
-    }
-
     // 导出标号选项
-    if (opts.outputLabelNumber) {
+    if (opts.outputLabelNumber !== undefined) {
         pnl.outputLabelNumberCheckBox.value = opts.outputLabelNumber;
+        Emit(pnl.outputLabelNumberCheckBox.onClick);
     }
-
     // 输出横排文字
-    if (opts.horizontalText) {
+    if (opts.horizontalText !== undefined) {
         pnl.outputHorizontalCheckBox.value = opts.horizontalText;
+        Emit(pnl.outputHorizontalCheckBox.onClick);
     }
     // 处理无标号文档
-    if (opts.outputNoSignPsd) {
+    if (opts.outputNoSignPsd !== undefined) {
         pnl.outputNoSignPsdCheckBox.value = opts.outputNoSignPsd;
+        Emit(pnl.outputNoSignPsdCheckBox.onClick);
     }
-
     // 无视LabelPlus文本中的图源文件名
-    if (opts.ignoreImgFileName) {
-        pnl.ignoreImgFileNameCheckBox.value = true;
+    if (opts.ignoreImgFileName !== undefined) {
+        pnl.ignoreImgFileNameCheckBox.value = opts.ignoreImgFileName;
+        Emit(pnl.ignoreImgFileNameCheckBox.onClick);
     }
-
     // 使用指定类型图源
-    if (opts.sourceFileType) {
-        pnl.setSourceFileTypeCheckBox.value = true;
-        pnl.setSourceFileTypeList.enabled = true;
+    if (opts.sourceFileType !== undefined) {
+        pnl.setSourceFileTypeCheckBox.value = (opts.sourceFileType !== "");
         pnl.setSourceFileTypeList.selection.text = opts.sourceFileType;
+        Emit(pnl.setSourceFileTypeCheckBox.onClick);
     }
-
     // 执行动作GroupN
-    if (opts.runActionGroup) {
-        pnl.runActionGroupCheckBox.value = true;
-        pnl.runActionGroupList.enabled = true;
+    if (opts.runActionGroup !== undefined) {
+        pnl.runActionGroupCheckBox.value = (opts.runActionGroup !== "");
         let item = pnl.runActionGroupList.find(opts.runActionGroup);
-        if (item != undefined)
+        if (item !== undefined)
             pnl.runActionGroupList.selection = item;
+        Emit(pnl.runActionGroupCheckBox.onClick);
     }
-
     // 导入后不关闭文档
-    if (opts.notClose)
-        pnl.notCloseCheckBox.value = true;
+    if (opts.notClose !== undefined) {
+        pnl.notCloseCheckBox.value = opts.notClose;
+        Emit(pnl.notCloseCheckBox.onClick);
+    }
 
     // 不对图层进行分组
-    if (opts.layerNotGroup)
-        pnl.layerNotGroupCheckBox.value = true;
+    if (opts.layerNotGroup !== undefined) {
+        pnl.layerNotGroupCheckBox.value = opts.layerNotGroup;
+        Emit(pnl.layerNotGroupCheckBox.onClick);
+    }
 
     // 涂白
-    if (opts.overloayGroup) {
-        pnl.overlayCheckBox.value = true;
-        pnl.overlayGroupTextBox.enabled = true;
+    if (opts.overloayGroup !== undefined) {
+        pnl.overlayCheckBox.value = (opts.overloayGroup !== "");
         pnl.overlayGroupTextBox.text = opts.overloayGroup;
+        Emit(pnl.overlayCheckBox.onClick);
     }
 
     return pnl;
@@ -795,10 +804,10 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         }
 
     }
-    // 文本替换
-    if (pnl.textReplaceCheckBox.value)
-        opts.textReplace = pnl.textReplaceTextBox.text;
 
+    //----------------------可配置
+    // 文本替换
+    opts.textReplace = (pnl.textReplaceCheckBox.value) ? pnl.textReplaceTextBox.text : "";
     // 文档模板
     opts.docTemplete =
     pnl.docTempletePnl.autoTempleteRb.value ? OptionDocTemplete.Auto : (
@@ -807,66 +816,35 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         )
     );
     opts.docTempleteCustomPath = pnl.docTempletePnl.customTempleteTextbox.text;
-
     // 字体
     if (pnl.setFontCheckBox.value) {
-        opts.setFont = true;
         let font = pnl.font.getFont()
         opts.font = font.font;
         opts.fontSize = font.size;
+    } else {
+        opts.font = "";
+        opts.fontSize = 0;
     }
-
     // 行距
-    if (pnl.setTextLeadingCheckBox.value) {
-        opts.setTextLeading = true;
-        opts.textLeading = pnl.textLeadingTextBox.text;
-    }
-    else {
-        opts.setTextLeading = false;
-    }
-
+    opts.textLeading = (pnl.setTextLeadingCheckBox.value) ? pnl.textLeadingTextBox.text : 0;
     // 导出标号选项
-    if (pnl.outputLabelNumberCheckBox.value)
-        opts.outputLabelNumber = true;
-
+    opts.outputLabelNumber = pnl.outputLabelNumberCheckBox.value;
     // 输出横排文字
-    if (pnl.outputHorizontalCheckBox.value)
-        opts.horizontalText = true;
-
+    opts.horizontalText = pnl.outputHorizontalCheckBox.value;
     // 处理无标号文档
-    if (pnl.outputNoSignPsdCheckBox.value)
-        opts.outputNoSignPsd = true;
-
+    opts.outputNoSignPsd = pnl.outputNoSignPsdCheckBox.value;
     // 无视LabelPlus文本中的图源文件名
-    if (pnl.ignoreImgFileNameCheckBox.value) {
-        opts.ignoreImgFileName = true;
-    }
-
+    opts.ignoreImgFileName = pnl.ignoreImgFileNameCheckBox.value
     // 使用指定类型图源
-    if (pnl.setSourceFileTypeCheckBox.value) {
-        opts.sourceFileType = pnl.setSourceFileTypeList.selection.text;
-    }
-    else
-        opts.sourceFileType = undefined;
-
+    opts.sourceFileType = (pnl.setSourceFileTypeCheckBox.value) ? pnl.setSourceFileTypeList.selection.text : "";
     // 执行动作GroupN
-    if (pnl.runActionGroupCheckBox.value)
-        opts.runActionGroup = pnl.runActionGroupList.selection.text;
-    else
-        opts.runActionGroup = undefined;
-
+    opts.runActionGroup = (pnl.runActionGroupCheckBox.value) ? pnl.runActionGroupList.selection.text : "";
     // 导入后不关闭文档
-    if (pnl.notCloseCheckBox.value)
-        opts.notClose = true;
-
+    opts.notClose = pnl.notCloseCheckBox.value;
     // 不对图层进行分组
-    if (pnl.layerNotGroupCheckBox.value)
-        opts.layerNotGroup = true;
-
+    opts.layerNotGroup = pnl.layerNotGroupCheckBox.value;
     // 涂白
-    if (pnl.overlayCheckBox.value) {
-        opts.overloayGroup = pnl.overlayGroupTextBox.text;
-    }
+    opts.overloayGroup = (pnl.overlayCheckBox.value)? pnl.overlayGroupTextBox.text : "";
 
     return opts;
 };
@@ -968,7 +946,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
 
         // 在PS中打开图片文件，如果是PS专用格式（PSD/TIFF）则直接打开；否则根据配置使用PSD模板或新建PSD，再将图片导入为bg图层
         let doc: Document;
-        let textTempleteLayer: ArtLayer;
+        let textTempleteLayer: ArtLayer | undefined;
         try {
             if ((filetype == ".psd") || (filetype == ".tif") || ((filetype == ".tiff"))) {
                 doc = app.open(bgFile);
@@ -1089,7 +1067,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 let o = new TextInputOptions();
                 o.templete = textTempleteLayer;
                 o.font = "Arial";
-                o.size = opts.setFont ? UnitValue(opts.fontSize, "pt") : undefined;
+                o.size = (opts.fontSize !== 0) ? UnitValue(opts.fontSize, "pt") : undefined;
                 o.group = layerGroups["_Label"];
                 newTextLayer(doc, String(labelNum), labelX, labelY, o);
             }
@@ -1106,15 +1084,15 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
             if (labelString && labelString != "") {
                 let o = new TextInputOptions();
                 o.templete = textTempleteLayer;
-                o.font = opts.setFont ? opts.font : undefined;
-                if (opts.setFont) {
+                o.font = (opts.font != "") ? opts.font : undefined;
+                if (opts.fontSize !== 0) {
                     o.size = UnitValue(opts.fontSize, "pt");
                 } else if (opts.docTemplete !== OptionDocTemplete.No) {
                     o.size = UnitValue(doc.height.as("pt") / 90.0, "pt");
                 } else {
                     o.size = undefined;
                 }
-                o.size = opts.setFont ?  new UnitValue(opts.fontSize, "pt") : undefined;
+                o.size = (opts.fontSize !== 0) ?  new UnitValue(opts.fontSize, "pt") : undefined;
                 o.direction = opts.horizontalText ? Direction.HORIZONTAL : Direction.VERTICAL;
                 o.group = opts.layerNotGroup ? undefined : layerGroups[labelGroup];
                 o.lending = opts.textLeading ? opts.textLeading : undefined;
@@ -1136,7 +1114,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
         }
 
         // 如果text模板存在，删除
-        if (textTempleteLayer)
+        if (textTempleteLayer !== undefined)
             textTempleteLayer.remove();
 
         // 文件关闭时执行一次动作"_end"
@@ -1167,12 +1145,12 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
 };
 
 class TextInputOptions {
-    templete: ArtLayer;     // 文本图层模板
-    font: string;
-    size: UnitValue;
-    direction: Direction;
-    group: LayerSet;
-    lending: number;        // 自动行距
+    templete: ArtLayer | undefined;     // 文本图层模板
+    font: string | undefined;
+    size: UnitValue | undefined;
+    direction: Direction | undefined;
+    group: LayerSet | undefined;
+    lending: number | undefined;        // 自动行距
 };
 
 //
@@ -1344,10 +1322,10 @@ let readIni = function (iniFile: string, ini ?: any): LabelPlusInputOptions {
 //
 // 获取文件夹下文件的文件名字符串列表
 //
-let getFilesListOfPath = function (path: string) {
+let getFilesListOfPath = function (path: string): string[] {
     let folder = new Folder(path);
     if (!folder.exists) {
-        return null;
+        return new Array<string>();
     }
 
     let fileList = folder.getFiles();

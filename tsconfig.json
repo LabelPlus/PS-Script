@@ -2,6 +2,8 @@
     "compilerOptions": {
         "preserveConstEnums": true,
         "sourceMap": true,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": true,
         "lib": ["es5"], // exclude DOM and ScriptHost
         "types": ["./node_modules/photoshop.d.ts/dist/cc"]
     },
