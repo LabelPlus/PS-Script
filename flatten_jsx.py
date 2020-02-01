@@ -56,9 +56,10 @@ def flatten(file):
     line_idx = 0
     for line in data.splitlines():
         line_idx += 1
-        if line.startswith("exports."): # delete
+        stripline = line.strip()
+        if stripline.startswith("exports."): # delete
             continue
-        elif line.startswith("//@include ") or line.startswith("require(") or line.startswith("/// <reference path="):
+        elif stripline.startswith("//@include ") or stripline.startswith("require(") or stripline.startswith("/// <reference path="):
             in_file = line.split('"')[1]
             if in_file.endswith('.ts'):
                 in_file = in_file.replace('.ts', '.js')
@@ -73,6 +74,8 @@ def flatten(file):
 
             included_path[in_file] = True
             new += flatten(in_path)
+        elif stripline.startswith("//") and not stripline.startswith("//>"): # delete all comments
+            continue
         else:
             new += line
         new += '\n'

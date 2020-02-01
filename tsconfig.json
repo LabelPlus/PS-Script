@@ -2,6 +2,7 @@
     "compilerOptions": {
         "preserveConstEnums": true,
         "sourceMap": true,
+        "removeComments": false,
         "strictNullChecks": true,
         "strictPropertyInitialization": true,
         "lib": ["es5"], // exclude DOM and ScriptHost

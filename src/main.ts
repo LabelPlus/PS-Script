@@ -1,12 +1,9 @@
-//
-//   LabelPlus_Ps_Script.jsx
-//   This is a Input Text Tool for LabelPlus Text File.
-//
-// Copyright 2015, Noodlefighter
-// Released under GPL License.
-//
-// License: http://noodlefighter.com/label_plus/license
-//
+//>
+//> LabelPlus PS-Script
+//> Home Page: http://noodlefighter.com/label_plus
+//> Author: Noodlefighter
+//> Released under GPL-2.0 License.
+//>
 
 import "./xtools/xlib/stdlib.js";
 declare var Stdlib: any;
