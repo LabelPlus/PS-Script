@@ -39,7 +39,8 @@ namespace i18n {
     export var CHECKBOX_NOTCLOSE: string = "导入后不关闭文档";
     export var CHECKBOX_SetFont: string = "字体";
     export var CHECKBOX_SetLeading: string = "行距";
-    export var CHECKBOX_OutputHorizontalText: string = "输出横向文本";
+    export var LABEL_TextDirection: string = "文字方向：";
+    export var LIST_SetTextDirItems: string[] = [ "默认", "横向", "纵向" ];
     export var CHECKBOX_LAYERNOTGROUP: string = "不对图层进行分组";
     export var CHECKBOX_OVERLAY: string = "对指定分组执行涂白动作(实验性功能)";
 
@@ -88,7 +89,8 @@ namespace i18n {
         CHECKBOX_NOTCLOSE = "Do Not Close File";
         CHECKBOX_SetFont = "Set Default Font";
         CHECKBOX_SetLeading = "Set Leading Size";
-        CHECKBOX_OutputHorizontalText = "Output Horizontal Text";
+        LABEL_TextDirection = "Text Direction:";
+        LIST_SetTextDirItems = [ "Default", "Horizontal", "Vertical" ];
         CHECKBOX_LAYERNOTGROUP = "Layer Not Grouping";
         CHECKBOX_OVERLAY = "Execute \"Text Overlay\" On Specified Group";
         COMPLETE = "Export completed!";

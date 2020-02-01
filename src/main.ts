@@ -77,7 +77,7 @@ class LabelPlusInputOptions {
     textLeading: number = 0; // 行距值，百分比，为0时不设置
     textReplace: string = ""; // 文本替换规则，为空时不替换
     outputLabelNumber: boolean = false; // 是否输出标号
-    horizontalText: OptionTextDirection = OptionTextDirection.Keep; // 输出文本的阅读方向
+    textDirection: OptionTextDirection = OptionTextDirection.Keep; // 输出文本的阅读方向
 
     runActionGroup: string = ""; // 导入文本图层后执行的动作组的名字
     overloayGroup: string = ""; // 执行简易涂白的分组
@@ -439,7 +439,15 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         };
     }
     xx = xOfs;
-    yy += 65;
+    yy += 70;
+
+    // 设置文字方向
+    pnl.textDirLabel = pnl.add('statictext', [xx, yy, xx + 100, yy + 20], i18n.LABEL_TextDirection);
+    xx += 100;
+    pnl.textDirList = pnl.add('dropdownlist', [xx, yy, xx + 100, yy + 22], i18n.LIST_SetTextDirItems);
+    pnl.textDirList.selection = pnl.textDirList.find(i18n.LIST_SetTextDirItems[0]);
+    xx = xOfs;
+    yy += 20;
 
     // 使用自定义字体设置
     pnl.setFontCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_SetFont);
@@ -474,11 +482,6 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     pnl.textLeadingTextBox.text = "120";
     xx += 55;
     pnl.add('statictext', [xx, yy, xx + 40, yy + 20], "%");
-    xx = xOfs;
-    yy += 20;
-
-    // 输出横排文字
-    pnl.outputHorizontalCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_OutputHorizontalText);
     xx = xOfs;
     yy += 20;
 
@@ -540,6 +543,10 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         }
         Emit(pnl.docTempletePnl.autoTempleteRb.onClick);
     }
+    // 文字方向
+    if (opts.textDirection !== undefined) {
+        pnl.textDirList.selection = pnl.textDirList.find(i18n.LIST_SetTextDirItems[opts.textDirection]);
+    }
     // 字体
     if (opts.font !== undefined) {
         if (opts.font === "") {
@@ -564,11 +571,6 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     if (opts.outputLabelNumber !== undefined) {
         pnl.outputLabelNumberCheckBox.value = opts.outputLabelNumber;
         Emit(pnl.outputLabelNumberCheckBox.onClick);
-    }
-    // 输出横排文字
-    if (opts.horizontalText !== undefined) {
-        pnl.outputHorizontalCheckBox.value = opts.horizontalText;
-        Emit(pnl.outputHorizontalCheckBox.onClick);
     }
     // 处理无标号文档
     if (opts.outputNoSignPsd !== undefined) {
@@ -831,8 +833,8 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
     opts.textLeading = (pnl.setTextLeadingCheckBox.value) ? pnl.textLeadingTextBox.text : 0;
     // 导出标号选项
     opts.outputLabelNumber = pnl.outputLabelNumberCheckBox.value;
-    // 输出横排文字
-    opts.horizontalText = pnl.outputHorizontalCheckBox.value;
+    // 文字方向
+    opts.textDirection = <OptionTextDirection> i18n.LIST_SetTextDirItems.indexOf(pnl.textDirList.selection.text);
     // 处理无标号文档
     opts.outputNoSignPsd = pnl.outputNoSignPsdCheckBox.value;
     // 无视LabelPlus文本中的图源文件名
@@ -907,6 +909,14 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
         }
         break;
     default:
+    }
+
+    // 确定文字方向
+    let textDir: Direction | undefined;
+    switch (opts.textDirection) {
+    case OptionTextDirection.Keep:       textDir = undefined; break;
+    case OptionTextDirection.Horizontal: textDir = Direction.HORIZONTAL; break;
+    case OptionTextDirection.Vertical:   textDir = Direction.VERTICAL; break;
     }
 
     //遍历所选图片 导入数据= =
@@ -1095,7 +1105,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                     o.size = undefined;
                 }
                 o.size = (opts.fontSize !== 0) ?  new UnitValue(opts.fontSize, "pt") : undefined;
-                o.direction = opts.horizontalText ? Direction.HORIZONTAL : Direction.VERTICAL;
+                o.direction = textDir;
                 o.group = opts.layerNotGroup ? undefined : layerGroups[labelGroup];
                 o.lending = opts.textLeading ? opts.textLeading : undefined;
                 artLayer = newTextLayer(doc, labelString, labelX, labelY, o);
