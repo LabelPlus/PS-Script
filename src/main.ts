@@ -888,6 +888,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
     switch (opts.docTemplete) {
     case OptionDocTemplete.Custom:
         templete_path = opts.docTempleteCustomPath;
+        break;
     case OptionDocTemplete.Auto:
         let tempdir = GetScriptFolder() + dirSeparator + "ps_script_res" + dirSeparator;
         let tempname = app.locale.split("_")[0].toLocaleLowerCase() + ".psd"; // such as "zh_CN" -> zh.psd
