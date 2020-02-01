@@ -26,6 +26,11 @@ declare var LabelPlusTextReader: any;
 // Operating System related
 let dirSeparator = $.os.search(/windows/i) === -1 ? '/' : '\\';
 
+var TEMPLETE_LAYER = {
+    TEXT:  "text",
+    IMAGE: "bg",
+};
+
 let GetScriptPath = function (): string {
     return <string>$.fileName;
 }
@@ -981,12 +986,12 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 // 选中bg图层，将图片粘贴进去
                 let bgLayer :ArtLayer;
                 try {
-                    bgLayer = doc.artLayers.getByName("bg");
+                    bgLayer = doc.artLayers.getByName(TEMPLETE_LAYER.IMAGE);
                 }
                 catch {
                     Stdlib.log("bg templete layer not found, copy one.");
                     bgLayer = doc.artLayers.add();
-                    bgLayer.name = "bg";
+                    bgLayer.name = TEMPLETE_LAYER.IMAGE;
                 }
                 doc.activeLayer = bgLayer;
                 doc.paste();
@@ -994,7 +999,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
             }
 
             // 寻找文本模板，即名为text的图层；若text图层不存在，复制一个文本图层
-            try { textTempleteLayer = doc.artLayers.getByName("text"); }
+            try { textTempleteLayer = doc.artLayers.getByName(TEMPLETE_LAYER.TEXT); }
             catch {
                 Stdlib.log("text templete layer not found, copy one.");
                 for (let i = 0; i < doc.artLayers.length; i++) {
@@ -1002,8 +1007,8 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                     if (layer.kind == LayerKind.TEXT) {
                         /// @ts-ignore ts声明文件有误，duplicate()返回ArtLayer对象，而不是void
                         textTempleteLayer = <ArtLayer> textLayer.duplicate();
-                        textTempleteLayer.textItem.contents = "text";
-                        textTempleteLayer.name = "text";
+                        textTempleteLayer.textItem.contents = TEMPLETE_LAYER.TEXT;
+                        textTempleteLayer.name = TEMPLETE_LAYER.TEXT;
                         break;
                     }
                 }
@@ -1021,7 +1026,37 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
             doc.changeMode(ChangeMode.RGB);
         }
 
-        let layerGroups = new Array();
+        // 分组
+        class Group {
+            layerSet: LayerSet | undefined;
+            templete: ArtLayer | undefined;
+        };
+        let group: { [key: string]: Group } = {};
+        for (let i = 0; i < opts.groupSelected.length; i++) {
+            let name = opts.groupSelected[i];
+            let tmp = new Group();
+
+            // 创建PS中图层分组
+            if (!opts.layerNotGroup) {
+                tmp.layerSet = doc.layerSets.add();
+                tmp.layerSet.name = name;
+            }
+            // 尝试寻找分组模板，找不到则使用默认文本模板
+            if (opts.docTemplete !== OptionDocTemplete.No) {
+                let l: ArtLayer | undefined;
+                try {
+                    l = doc.artLayers.getByName(name);
+                } catch { };
+                tmp.templete = (l !== undefined) ? l : textTempleteLayer;
+            }
+            group[name] = tmp; // add
+        }
+        if (opts.outputLabelNumber) {
+            let tmp = new Group();
+            tmp.layerSet = doc.layerSets.add();
+            tmp.layerSet.name = "Label";
+            group["_Label"] = tmp;
+        }
 
         // 文件打开时执行一次动作"_start"
         if (opts.runActionGroup) {
@@ -1041,7 +1076,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 let labelX = labelData[j].LabelheadValue[0];
                 let labelY = labelData[j].LabelheadValue[1];
                 let labelXY = { x: labelX, y: labelY };
-                let labelGroup = gourpData[labelData[j].LabelheadValue[2]];
+                let labelGroup: string = gourpData[labelData[j].LabelheadValue[2]];
 
                 if (labelGroup == opts.overloayGroup) {
                     labelArr.push(labelXY);
@@ -1059,21 +1094,10 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
             let labelY = labelData[j].LabelheadValue[1];
             let labelGroup = gourpData[labelData[j].LabelheadValue[2]];
             let labelString = labelData[j].LabelString;
-            let artLayer;
 
             // 所在分组是否需要导入
             if (opts.groupSelected.indexOf(labelGroup) == -1)
                 continue;
-
-            // 创建分组
-            if (!opts.layerNotGroup && !layerGroups[labelGroup]) {
-                layerGroups[labelGroup] = doc.layerSets.add();
-                layerGroups[labelGroup].name = labelGroup;
-            }
-            if (opts.outputLabelNumber && !layerGroups["_Label"]) {
-                layerGroups["_Label"] = doc.layerSets.add();
-                layerGroups["_Label"].name = "Label";
-            }
 
             // 导出标号
             if (opts.outputLabelNumber) {
@@ -1081,7 +1105,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 o.templete = textTempleteLayer;
                 o.font = "Arial";
                 o.size = (opts.fontSize !== 0) ? UnitValue(opts.fontSize, "pt") : undefined;
-                o.group = layerGroups["_Label"];
+                o.group = group["_Label"].layerSet;
                 newTextLayer(doc, String(labelNum), labelX, labelY, o);
             }
 
@@ -1094,9 +1118,10 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
             }
 
             // 导出文本，设置的优先级大于模板，无模板时做部分额外处理
+            let textLayer: ArtLayer;
             if (labelString && labelString != "") {
                 let o = new TextInputOptions();
-                o.templete = textTempleteLayer;
+                o.templete = group[labelGroup].templete;
                 o.font = (opts.font != "") ? opts.font : undefined;
                 if (opts.fontSize !== 0) {
                     o.size = UnitValue(opts.fontSize, "pt");
@@ -1107,15 +1132,17 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 }
                 o.size = (opts.fontSize !== 0) ?  new UnitValue(opts.fontSize, "pt") : undefined;
                 o.direction = textDir;
-                o.group = opts.layerNotGroup ? undefined : layerGroups[labelGroup];
+                o.group = group[labelGroup].layerSet;
                 o.lending = opts.textLeading ? opts.textLeading : undefined;
-                artLayer = newTextLayer(doc, labelString, labelX, labelY, o);
+                textLayer = newTextLayer(doc, labelString, labelX, labelY, o);
+            } else {
+                continue;
             }
 
             // 执行动作,名称为分组名
             if (opts.runActionGroup) {
                 try {
-                    doc.activeLayer = artLayer;
+                    doc.activeLayer = textLayer;
                     this.doAction(labelGroup, opts.runActionGroup);
                 }
                 catch (e) {
@@ -1126,9 +1153,24 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
             }
         }
 
-        // 如果text模板存在，删除
-        if (textTempleteLayer !== undefined)
+        // 删除多余的图层、分组
+        if (textTempleteLayer !== undefined) {
             textTempleteLayer.remove();
+        }
+        for (let k in group) { //note: 可能重复删除实例，所以这里用catch语句捕获错误
+            try {
+                if (group[k].layerSet !== undefined) {
+                    if (group[k].layerSet?.artLayers.length === 0) {
+                        group[k].layerSet?.remove();
+                    }
+                }
+            } catch {}
+            try {
+                if (group[k].templete !== undefined) {
+                    group[k].templete?.remove();
+                }
+            } catch {}
+        }
 
         // 文件关闭时执行一次动作"_end"
         if (opts.runActionGroup) {
