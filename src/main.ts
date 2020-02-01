@@ -221,17 +221,22 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     // 选择需要导入的图片
     pnl.chooseImageLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 22], i18n.LABEL_SELECTIMAGE);
     yy += 20;
-    pnl.chooseImageListBox = pnl.add('listbox', [xx, yy, xx + 150, yy + 285], [], { multiselect: true });
+    pnl.chooseImageListBox = pnl.add('listbox', [xx, yy, xx + 150, yy + 320], [], { multiselect: true });
 
     //------------------分组选择区------------------
     yy = yOfs + 35;
-    xOfs += 170;
-    xx = xOfs;
+    // xOfs += 170;
+    xx = xOfs + 170;
 
     //选择需要导入的分组
     pnl.chooseGroupLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 22], i18n.LABEL_SELECTGROUP);
     yy += 20;
-    pnl.chooseGroupListBox = pnl.add('listbox', [xx, yy, xx + 150, yy + 285], [], { multiselect: true });
+    pnl.chooseGroupListBox = pnl.add('listbox', [xx, yy, xx + 150, yy + 320], [], { multiselect: true });
+    xx = xOfs;
+    yy += 325;
+
+    // 列表框没有复选框功能，这里提示使用方法
+    pnl.add('statictext', [xx, yy, xx + 320, yy + 44], i18n.LABEL_SelectTip, { multiline: true });
 
     //------------------设置区------------------
     yy = yOfs;

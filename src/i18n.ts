@@ -26,6 +26,7 @@ namespace i18n {
     export var LABEL_SETTING: string = "存取配置";
     export var LABEL_SELECTIMAGE: string = "导入图片选择";
     export var LABEL_SELECTGROUP: string = "导入分组选择";
+    export var LABEL_SelectTip: string = "提示：列表框中，按住Ctrl键选中/取消单个项目，按住Shift键批量选择项目。";
 
 
     export var CHECKBOX_OUTPUTLABELNUMBER: string = "导出标号";
@@ -76,6 +77,7 @@ namespace i18n {
         LABEL_SETTING = "Setting";
         LABEL_SELECTIMAGE = "Select Image";
         LABEL_SELECTGROUP = "Select Group";
+        LABEL_SelectTip = "Tip: In ListBox, push Ctrl key to select/cancel one item, push Shift key to select multiple items.";
         CHECKBOX_OUTPUTLABELNUMBER = "Output Label Number";
         CHECKBOX_TextReplace = "Text Replace(e.g. \"A->B|C->D\")";
         CHECKBOX_OUTPUTNOSIGNPSD = "Output no label file";
