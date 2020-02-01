@@ -1085,17 +1085,12 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
 
             // 导出标号
             if (opts.outputLabelNumber) {
-                newTextLayer(doc,
-                    textTempleteLayer,
-                    String(labelNum),
-                    labelX,
-                    labelY,
-                    "Arial",
-                    opts.setFont ? opts.fontSize : undefined,
-                    false,
-                    layerGroups["_Label"],
-                    0
-                );
+                let o = new TextInputOptions();
+                o.templete = textTempleteLayer;
+                o.font = "Arial";
+                o.size = opts.setFont ? UnitValue(opts.fontSize, "pt") : undefined;
+                o.group = layerGroups["_Label"];
+                newTextLayer(doc, String(labelNum), labelX, labelY, o);
             }
 
             // 替换文本
@@ -1106,19 +1101,23 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 }
             }
 
-            // 导出文本
+            // 导出文本，设置的优先级大于模板，无模板时做部分额外处理
             if (labelString && labelString != "") {
-                artLayer = newTextLayer(doc,
-                    textTempleteLayer,
-                    labelString,
-                    labelX,
-                    labelY,
-                    opts.setFont ? opts.font : "SimSun",
-                    opts.setFont ? opts.fontSize : undefined,
-                    !opts.horizontalText,
-                    opts.layerNotGroup ? undefined : layerGroups[labelGroup],
-                    opts.textLeading ? opts.textLeading : 0
-                );
+                let o = new TextInputOptions();
+                o.templete = textTempleteLayer;
+                o.font = opts.setFont ? opts.font : undefined;
+                if (opts.setFont) {
+                    o.size = UnitValue(opts.fontSize, "pt");
+                } else if (opts.docTemplete !== OptionDocTemplete.No) {
+                    o.size = UnitValue(doc.height.as("pt") / 90.0, "pt");
+                } else {
+                    o.size = undefined;
+                }
+                o.size = opts.setFont ?  new UnitValue(opts.fontSize, "pt") : undefined;
+                o.direction = opts.horizontalText ? Direction.HORIZONTAL : Direction.VERTICAL;
+                o.group = opts.layerNotGroup ? undefined : layerGroups[labelGroup];
+                o.lending = opts.textLeading ? opts.textLeading : undefined;
+                artLayer = newTextLayer(doc, labelString, labelX, labelY, o);
             }
 
             // 执行动作,名称为分组名
@@ -1166,21 +1165,31 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
     Stdlib.log("Complete!");
 };
 
+class TextInputOptions {
+    templete: ArtLayer;     // 文本图层模板
+    font: string;
+    size: UnitValue;
+    direction: Direction;
+    group: LayerSet;
+    lending: number;        // 自动行距
+};
+
 //
-// 创建文本图层
+// 创建文本图层，参数为undefined时表示不设置该项
 //
-let newTextLayer = function (
-        doc: Document, templete: ArtLayer,
-        text: string, x: number, y: number, font: any, size: any,
-        isVertical: boolean, group: LayerSet, lending: number)
+function newTextLayer(doc: Document, text: string, x: number, y: number, topts: TextInputOptions): ArtLayer
 {
     let artLayerRef: ArtLayer;
     let textItemRef: TextItem;
 
+    // 不使用选项时，创建一个全为undefined的opts
+    if (!topts)
+        topts = new TextInputOptions();
+
     // 从模板创建，可以保证图层的所有格式与模板一致
-    if (templete) {
+    if (topts.templete) {
         /// @ts-ignore ts声明文件有误，duplicate()返回ArtLayer对象，而不是void
-        artLayerRef = <ArtLayer> templete.duplicate();
+        artLayerRef = <ArtLayer> topts.templete.duplicate();
         textItemRef = artLayerRef.textItem;
     }
     else {
@@ -1189,29 +1198,27 @@ let newTextLayer = function (
         textItemRef = artLayerRef.textItem;
     }
 
-    if (size)
-        textItemRef.size = size;
-    else
-        textItemRef.size = new UnitValue(doc.height.as("pt") / 90.0, "pt");
+    if (topts.size)
+        textItemRef.size = topts.size;
 
-    textItemRef.font = font;
-    if (isVertical)
-        textItemRef.direction = Direction.VERTICAL;
+    if (topts.font)
+        textItemRef.font = topts.font;
 
-    textItemRef.antiAliasMethod = AntiAlias.SMOOTH;
+    if (topts.direction)
+        textItemRef.direction = topts.direction;
+
     textItemRef.position = Array(UnitValue(doc.width.as("px") * x, "px"), UnitValue(doc.height.as("px") * y, "px"));
 
-    if (group)
-        artLayerRef.move(group, ElementPlacement.PLACEATBEGINNING);
+    if (topts.group)
+        artLayerRef.move(topts.group, ElementPlacement.PLACEATBEGINNING);
+
+    if ((topts.lending) && (topts.lending != 0)) {
+        textItemRef.useAutoLeading = true;
+        textItemRef.autoLeadingAmount = topts.lending;
+    }
 
     artLayerRef.name     = text;
     textItemRef.contents = text;
-
-    textItemRef.useAutoLeading = true;
-    if (lending != 0) {
-        textItemRef.useAutoLeading = true;
-        textItemRef.autoLeadingAmount = lending;
-    }
 
     return artLayerRef;
 }
