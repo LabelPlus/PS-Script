@@ -519,7 +519,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     if (opts.docTemplete !== undefined) {
         pnl.docTempletePnl.autoTempleteRb = false;
         pnl.docTempletePnl.noTempleteRb.value = false;
-        pnl.docTempletePnl.customTempleteRb = false;
+        pnl.docTempletePnl.customTempleteRb.value = false;
         switch (opts.docTemplete) {
         case OptionDocTemplete.No:
             pnl.docTempletePnl.noTempleteRb.value = true;
