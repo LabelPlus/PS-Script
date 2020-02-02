@@ -135,7 +135,7 @@ MyAction.fill = function(use, opct) {
 };
 
 // 对话框涂白动作(标签数据, 图像宽度, 图像高度, 魔棒容差, 收缩保护像素)
-MyAction.lp_dialogClear = function(labelArr, imgWidht, imgHeight, tolerance, contract) {
+MyAction.lp_dialogClear = function(labelArr, imgWidht, imgHeight, tolerance, contract, layer) {
 
     // 参数检查
     if (labelArr.length == 0) {
@@ -171,7 +171,11 @@ MyAction.lp_dialogClear = function(labelArr, imgWidht, imgHeight, tolerance, con
 
     // 删除辅助图层 建立涂白图层 并填充背景色
     MyAction.delLyr();
-    MyAction.newLyr();
+    if (layer) {
+        app.activeDocument.activeLayer = layer;
+    } else {
+        MyAction.newLyr();
+    }
     MyAction.fill('BckC', 100);
 
     MyAction.selectNone();

@@ -29,6 +29,7 @@ let dirSeparator = $.os.search(/windows/i) === -1 ? '/' : '\\';
 var TEMPLETE_LAYER = {
     TEXT:  "text",
     IMAGE: "bg",
+    DIALOG_OVERLAY: "dialog-overlay",
 };
 
 let GetScriptPath = function (): string {
@@ -969,6 +970,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
         // 在PS中打开图片文件，如果是PS专用格式（PSD/TIFF）则直接打开；否则根据配置使用PSD模板或新建PSD，再将图片导入为bg图层
         let doc: Document;
         let textTempleteLayer: ArtLayer | undefined;
+        let bgLayer :ArtLayer | undefined;
         try {
             if ((filetype == ".psd") || (filetype == ".tif") || ((filetype == ".tiff"))) {
                 doc = app.open(bgFile);
@@ -989,7 +991,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 }
 
                 // 选中bg图层，将图片粘贴进去
-                let bgLayer :ArtLayer = doc.artLayers.getByName(TEMPLETE_LAYER.IMAGE);
+                bgLayer = doc.artLayers.getByName(TEMPLETE_LAYER.IMAGE);
                 doc.activeLayer = bgLayer;
                 doc.paste();
                 bg.close(SaveOptions.DONOTSAVECHANGES);
@@ -1016,6 +1018,14 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
             Stdlib.log(msg);
             errorMsg = errorMsg + msg + "\r\n";
             continue;
+        }
+
+        // 确定涂白模板
+        let dialogOverlayLayer: ArtLayer;
+        try { dialogOverlayLayer = doc.artLayers.getByName(TEMPLETE_LAYER.DIALOG_OVERLAY); }
+        catch {
+            dialogOverlayLayer = doc.artLayers.add();
+            dialogOverlayLayer.name = TEMPLETE_LAYER.DIALOG_OVERLAY;
         }
 
         // 若文档类型为索引色模式 更改为RGB模式
@@ -1081,7 +1091,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
             }
 
             //执行涂白
-            MyAction.lp_dialogClear(labelArr, doc.width, doc.height, 16, 1);
+            MyAction.lp_dialogClear(labelArr, doc.width, doc.height, 16, 1, dialogOverlayLayer);
         }
 
         // 遍历LabelData
@@ -1149,6 +1159,14 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 }
             }
         }
+
+        // 调整图层顺序
+        if (bgLayer && (opts.overloayGroup !== "")) {
+            // 涂白图层 在 bg层之上
+            //todo: 未处理打开文件为psd/tiff的情况，考虑将这类文件中的所有图层放到一个分组里，来实现排序
+            dialogOverlayLayer.move(bgLayer, ElementPlacement.PLACEBEFORE);
+        }
+
 
         // 删除多余的图层、分组
         if (textTempleteLayer !== undefined) {
