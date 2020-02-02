@@ -980,6 +980,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
 
                 if (opts.docTemplete == OptionDocTemplete.No) {
                     doc = app.documents.add(bg.width, bg.height, bg.resolution, bg.name, NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
+                    doc.activeLayer.name = TEMPLETE_LAYER.IMAGE;
                 } else {
                     let docFile = new File(templete_path);
                     doc = app.open(docFile);
@@ -988,15 +989,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 }
 
                 // 选中bg图层，将图片粘贴进去
-                let bgLayer :ArtLayer;
-                try {
-                    bgLayer = doc.artLayers.getByName(TEMPLETE_LAYER.IMAGE);
-                }
-                catch {
-                    Stdlib.log("bg templete layer not found, copy one.");
-                    bgLayer = doc.artLayers.add();
-                    bgLayer.name = TEMPLETE_LAYER.IMAGE;
-                }
+                let bgLayer :ArtLayer = doc.artLayers.getByName(TEMPLETE_LAYER.IMAGE);
                 doc.activeLayer = bgLayer;
                 doc.paste();
                 bg.close(SaveOptions.DONOTSAVECHANGES);
