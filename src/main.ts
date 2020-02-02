@@ -995,7 +995,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                 bg.close(SaveOptions.DONOTSAVECHANGES);
             }
 
-            // 寻找文本模板，即名为text的图层；若text图层不存在，复制一个文本图层
+            // 寻找文本模板，即名为text的图层；若text图层不存在，复制一个文本图层，若文本图层不存在，让textTempleteLayer保持undefined
             try { textTempleteLayer = doc.artLayers.getByName(TEMPLETE_LAYER.TEXT); }
             catch {
                 Stdlib.log("text templete layer not found, copy one.");
@@ -1003,7 +1003,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                     let layer: ArtLayer = <ArtLayer> doc.artLayers[i];
                     if (layer.kind == LayerKind.TEXT) {
                         /// @ts-ignore ts声明文件有误，duplicate()返回ArtLayer对象，而不是void
-                        textTempleteLayer = <ArtLayer> textLayer.duplicate();
+                        textTempleteLayer = <ArtLayer> layer.duplicate();
                         textTempleteLayer.textItem.contents = TEMPLETE_LAYER.TEXT;
                         textTempleteLayer.name = TEMPLETE_LAYER.TEXT;
                         break;
