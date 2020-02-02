@@ -971,6 +971,7 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
         let doc: Document;
         let textTempleteLayer: ArtLayer | undefined;
         let bgLayer :ArtLayer | undefined;
+        let pendingDelLayerList:{ [key: string]: ArtLayer } = {}; // 待删除图层列表，导入完毕时删除该列表中的图层
         try {
             if ((filetype == ".psd") || (filetype == ".tif") || ((filetype == ".tiff"))) {
                 doc = app.open(bgFile);
@@ -989,12 +990,18 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                     doc.resizeImage(undefined, undefined, bg.resolution);
                     doc.resizeCanvas(bg.width, bg.height);
                 }
+                // 将模板中所有图层加入待删除列表
+                for (let i = 0; i < doc.artLayers.length; i++) {
+                    let layer: ArtLayer = doc.artLayers[i];
+                    pendingDelLayerList[layer.name] = layer;
+                }
 
                 // 选中bg图层，将图片粘贴进去
                 bgLayer = doc.artLayers.getByName(TEMPLETE_LAYER.IMAGE);
                 doc.activeLayer = bgLayer;
                 doc.paste();
                 bg.close(SaveOptions.DONOTSAVECHANGES);
+                delete pendingDelLayerList[TEMPLETE_LAYER.IMAGE]; // keep bg layer
             }
 
             // 寻找文本模板，即名为text的图层；若text图层不存在，复制一个文本图层，若文本图层不存在，让textTempleteLayer保持undefined
@@ -1008,6 +1015,8 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
                         textTempleteLayer = <ArtLayer> layer.duplicate();
                         textTempleteLayer.textItem.contents = TEMPLETE_LAYER.TEXT;
                         textTempleteLayer.name = TEMPLETE_LAYER.TEXT;
+
+                        pendingDelLayerList[TEMPLETE_LAYER.TEXT] = layer; // 导入完成后删除该图层
                         break;
                     }
                 }
@@ -1092,6 +1101,8 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
 
             //执行涂白
             MyAction.lp_dialogClear(labelArr, doc.width, doc.height, 16, 1, dialogOverlayLayer);
+
+            delete pendingDelLayerList[TEMPLETE_LAYER.DIALOG_OVERLAY];
         }
 
         // 遍历LabelData
@@ -1169,22 +1180,15 @@ LabelPlusInput.prototype.process = function (opts: LabelPlusInputOptions, doc) {
 
 
         // 删除多余的图层、分组
-        if (textTempleteLayer !== undefined) {
-            textTempleteLayer.remove();
+        for (let k in pendingDelLayerList) { // 删除模板中无用的图层
+            pendingDelLayerList[k].remove();
         }
-        for (let k in group) { //note: 可能重复删除实例，所以这里用catch语句捕获错误
-            try {
-                if (group[k].layerSet !== undefined) {
-                    if (group[k].layerSet?.artLayers.length === 0) {
-                        group[k].layerSet?.remove();
-                    }
+        for (let k in group) { // 删除分组LayerSet
+            if (group[k].layerSet !== undefined) {
+                if (group[k].layerSet?.artLayers.length === 0) {
+                    group[k].layerSet?.remove();
                 }
-            } catch {}
-            try {
-                if (group[k].templete !== undefined) {
-                    group[k].templete?.remove();
-                }
-            } catch {}
+            }
         }
 
         // 文件关闭时执行一次动作"_end"
