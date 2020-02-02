@@ -313,7 +313,10 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     // 无视LabelPlus文本中的图源文件名
     pnl.ignoreImgFileNameCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_AutoMatchImgFile);
     pnl.ignoreImgFileNameCheckBox.onClick = function () {
-        pnl.setSourceFileTypeCheckBox.value = false;	// 与指定图源互斥
+        if (pnl.ignoreImgFileNameCheckBox.value) {
+            pnl.setSourceFileTypeCheckBox.value = false;	// 与指定图源互斥
+            Emit(pnl.setSourceFileTypeCheckBox.onClick);
+        }
         pnl.ignoreImgFileNameTestButton.enabled = pnl.ignoreImgFileNameCheckBox.value;
     }
     xx += 260;
@@ -345,7 +348,10 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     // 使用指定类型图源
     pnl.setSourceFileTypeCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_SetSourceType);
     pnl.setSourceFileTypeCheckBox.onClick = function () {
-        pnl.ignoreImgFileNameCheckBox.value = false;	//与无视图源文件名互斥
+        if (pnl.setSourceFileTypeCheckBox.value) {
+            pnl.ignoreImgFileNameCheckBox.value = false;	//与无视图源文件名互斥
+            Emit(pnl.ignoreImgFileNameCheckBox.onClick);
+        }
         pnl.setSourceFileTypeList.enabled = pnl.setSourceFileTypeCheckBox.value;
     }
     xx += 260;
@@ -365,8 +371,6 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     };
     xx += 260;
     pnl.textReplaceTextBox = pnl.add('edittext', [xx, yy, xx + 180, yy + 20]);
-    pnl.textReplaceTextBox.text = "！？->!?|...->…";
-    pnl.textReplaceTextBox.enabled = false;
     xx = xOfs;
     yy += 20;
 
@@ -525,7 +529,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     //文本替换
     if (opts.textReplace !== undefined) {
         pnl.textReplaceCheckBox.value = (opts.textReplace !== "");
-        pnl.textReplaceTextBox.text = opts.textReplace;
+        pnl.textReplaceTextBox.text = (opts.textReplace !== "") ? opts.textReplace : "！？->!?|...->…";
         Emit(pnl.textReplaceCheckBox.onClick);
     }
     // 文档模板
