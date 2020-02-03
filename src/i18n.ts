@@ -54,6 +54,7 @@ namespace i18n {
     export var ERROR_NOTCHOOSEIMAGE: string = "未选择输出图片";
     export var ERROR_NOTCHOOSEGROUP: string = "未选择导入分组";
     export var ERROR_NotAutoMatchTemplete: string = "无法自动匹配模板文件，请确认脚本所在目录是否存在ps_script_res目录";
+    export var ERROR_TextReplaceExpression: string = "文本替换表达式解析错误，请检查！";
 
     declare var app: any;
     // if (true) {
@@ -102,5 +103,6 @@ namespace i18n {
         ERROR_NOTCHOOSEIMAGE = "Please select more than one image";
         ERROR_NOTCHOOSEGROUP = "Please select more than one group";
         ERROR_NotAutoMatchTemplete = "Cannot match templete file, please make sure \"ps_script_res\" folder exsit.";
+        ERROR_TextReplaceExpression = "Expression of text replacing is wrong, please check again.";
     }
 }

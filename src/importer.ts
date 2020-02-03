@@ -8,6 +8,7 @@ namespace LabelPlus {
 // global var
 let opts: CustomOptions | null = null;
 let errorMsg: string = ""; // error message collection, shown after all done
+let textReplace: TextReplaceInfo = [];
 
 interface Group {
     layerSet?: LayerSet;
@@ -60,10 +61,9 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
 
     // 替换文本
     if (opts.textReplace) {
-        let textReplace: any = textReplaceReader(opts.textReplace); //todo: 应该在上层直接完成替换
         for (let k = 0; k < textReplace.length; k++) {
-            while (label.contents.indexOf(textReplace[k].From) != -1)
-                label.contents = label.contents.replace(textReplace[k].From, textReplace[k].To);
+            while (label.contents.indexOf(textReplace[k].from) != -1)
+                label.contents = label.contents.replace(textReplace[k].from, textReplace[k].to);
         }
     }
 
@@ -348,6 +348,18 @@ export function importFiles(custom_opts: CustomOptions): boolean
         return false;
     }
 
+    // 替换文本解析
+    if (opts.textReplace) {
+        let tmp = textReplaceReader(opts.textReplace);
+        if (tmp === null) {
+            let errmsg = "error: " + i18n.ERROR_TextReplaceExpression;
+            Stdlib.log(errmsg);
+            alert(errmsg);
+            return false;
+        }
+        textReplace = tmp;
+    }
+
     // 确定doc模板文件
     let templete_path: string = "";
     switch (opts.docTemplete) {
@@ -485,34 +497,28 @@ function newTextLayer(doc: Document, text: string, x: number, y: number, topts: 
     return artLayerRef;
 }
 
-//
-// 文本替换字符串解析程序
-//
-function textReplaceReader(str: string)
+type TextReplaceInfo = { from: string; to: string; }[];
+
+// 文本替换表达式解析
+function textReplaceReader(str: string): TextReplaceInfo | null
 {
-    let arr = new Array();
+    let arr: TextReplaceInfo = [];
+
     let strs = str.split('|');
     if (!strs)
-        return; //解析失败
+        return null; //解析失败
 
     for (let i = 0; i < strs.length; i++) {
-        if (!strs[i] || strs[i] == "")
+        if (strs[i] === "")
             continue;
 
         let strss = strs[i].split("->");
         if ((strss.length != 2) || (strss[0] == ""))
-            return; //解析失败
+            return null; //解析失败
 
-        arr.push({
-            From: strss[0],
-            To: strss[1],
-        });
+        arr.push({ from: strss[0], to: strss[1] });
     }
-
-    if (arr.length != 0)
-        return arr;
-    else
-        return;
+    return arr;
 }
 
 } // namespace LabelPlus
