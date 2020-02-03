@@ -2,13 +2,13 @@
 //@include "./xtools/xlib/stdlib.js";
 //@include "./xtools/xlib/GenericUI.jsx";
 //@include  "my_action.js"
-//@include  "text_reader.js"
 
 /// <reference path="legacy.d.ts" />
 /// <reference path="i18n.ts" />
 /// <reference path="version.ts" />
 /// <reference path="custom_options.ts" />
 /// <reference path="importer.ts" />
+/// <reference path="text_parser.ts" />
 /// <reference path="common.ts" />
 
 namespace LabelPlus {
@@ -102,41 +102,32 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             pnl.chooseGroupListBox.removeAll();
 
             // 读取LabelPlus文件
-            let labelFile;
-            try {
-                labelFile = new LabelPlusTextReader(pnl.lpTextFileTextBox.text);
-            }
-            catch (err) {
-                alert(err);
+            let lpFile = lpTextParser(pnl.lpTextFileTextBox.text);
+            if (lpFile === null) {
+                alert(i18n.ERROR_READLABELTEXTFILEFAILL);
                 return;
             }
 
             // 填充图片选择列表
-            let iarr = labelFile.ImageList;
-            if (iarr) {
-                for (let i = 0; i < iarr.length; i++) {
-                    pnl.chooseImageListBox[i] = pnl.chooseImageListBox.add('item', iarr[i], i);
-                    pnl.chooseImageListBox[i].selected = true;
-                }
+            for (let key in lpFile.images) {
+                // let count = 0;
+                let item = pnl.chooseImageListBox.add('item', key);//, count++);
+                item.selected = true;
             }
 
             // 填充分组选择列表
-            let garr = labelFile.GroupData;
-            if (garr) {
-                for (let i = 0; i < garr.length; i++) {
-                    if (garr[i] == "")
-                        continue;
-                    pnl.chooseGroupListBox[i] = pnl.chooseGroupListBox.add('item', garr[i], i);
-                    pnl.chooseGroupListBox[i].selected = true;
+            for (let i = 0; i < lpFile.groups.length; i++) {
+                let g = lpFile.groups[i];
+                pnl.chooseGroupListBox[i] = pnl.chooseGroupListBox.add('item', g, i);
+                pnl.chooseGroupListBox[i].selected = true;
 
-                    // 涂白 指定分组文本框若空 填第一个分组
-                    if (pnl.overlayGroupTextBox.text == "") {
-                        pnl.overlayGroupTextBox.text = garr[i];
-                    }
+                // 涂白 指定分组文本框若空 填第一个分组
+                if (pnl.overlayGroupTextBox.text == "") {
+                    pnl.overlayGroupTextBox.text = g;
                 }
             }
 
-            pnl.labelFile = labelFile;  //返回LabelPlusTextReader对象
+            pnl.labelFile = lpFile;  //返回LabelPlusTextReader对象
 
         } catch (e) {
             alert(Stdlib.exceptionMessage(e));
@@ -726,7 +717,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
 
             for (let i = 0; i < sortedImgSelection.length; i++) {
                 opts.imageSelected[i] = {
-                    text: sortedImgSelection[i].text,
+                    file: sortedImgSelection[i].text,
                     index: sortedImgSelection[i].index
                 };
             }

@@ -2,6 +2,12 @@
 
 namespace LabelPlus {
 
+export function assert(condition: any, msg?: string): asserts condition {
+    if (!condition) {
+        throw "error: assert " + condition;
+    }
+}
+
 // Operating System related
 export let dirSeparator = $.os.search(/windows/i) === -1 ? '/' : '\\';
 
@@ -47,6 +53,25 @@ export function getFilesListOfPath(path: string): string[] {
     }
 
     return fileNameList.sort();
+}
+
+export function getFileSuffix(filename: string) {
+	return filename.substring(filename.lastIndexOf("."), filename.length)
+}
+
+export function doAction(action, actionSet): boolean
+{
+    if (Stdlib.hasAction(action, actionSet.toString())) {
+        app.doAction(action, actionSet.toString());
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+export function min(a: number, b: number): number {
+    return (a < b) ? a : b;
 }
 
 } // namespace LabelPlus

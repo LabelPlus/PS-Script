@@ -15,7 +15,7 @@ export class CustomOptions {
     target: string = ""; // 输出文件夹
     labelFilename: string = ""; // 翻译文本的文件名
     labelFilePath: string = ""; // 翻译文本所在文件夹
-    imageSelected: { text: string, index: number }[] = []; // 被选中的图片列表
+    imageSelected: { file: string, index: number }[] = []; // 被选中的图片列表
     groupSelected: string[] = []; // 被选中的分组列表
 
     // ------------------------------------可保存设置，均为string
