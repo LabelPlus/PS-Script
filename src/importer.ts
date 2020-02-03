@@ -23,7 +23,6 @@ interface LabelInfo {
     y: number;
     group: string;
     contents: string;
-    direction?: Direction; // undefined时不进行设置
 };
 
 interface ImageWorkspace {
@@ -68,12 +67,20 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
         }
     }
 
+    // 确定文字方向
+    let textDir: Direction | undefined;
+    switch (opts.textDirection) {
+    case OptionTextDirection.Keep:       textDir = undefined; break;
+    case OptionTextDirection.Horizontal: textDir = Direction.HORIZONTAL; break;
+    case OptionTextDirection.Vertical:   textDir = Direction.VERTICAL; break;
+    }
+
     // 导出文本，设置的优先级大于模板，无模板时做部分额外处理
     let textLayer: ArtLayer;
     let o: TextInputOptions = {
         templete: img.ws.groups[label.group].templete,
         font: (opts.font != "") ? opts.font : undefined,
-        direction: label.direction,
+        direction: textDir,
         lgroup: img.ws.groups[label.group].layerSet,
         lending: opts.textLeading ? opts.textLeading : undefined,
     };
@@ -368,14 +375,6 @@ export function importFiles(custom_opts: CustomOptions): boolean
         }
         break;
     default:
-    }
-
-    // 确定文字方向
-    let textDir: Direction | undefined;
-    switch (opts.textDirection) {
-    case OptionTextDirection.Keep:       textDir = undefined; break;
-    case OptionTextDirection.Horizontal: textDir = Direction.HORIZONTAL; break;
-    case OptionTextDirection.Vertical:   textDir = Direction.VERTICAL; break;
     }
 
     // 遍历所选图片
