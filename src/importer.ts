@@ -51,6 +51,7 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
     if (opts.outputLabelNumber) {
         let o: TextInputOptions = {
             templete: img.ws.textTempleteLayer,
+            direction: Direction.HORIZONTAL,
             font: "Arial",
             size: (opts.fontSize !== 0) ? UnitValue(opts.fontSize, "pt") : undefined,
             lgroup: img.ws.groups["_Label"].layerSet,
