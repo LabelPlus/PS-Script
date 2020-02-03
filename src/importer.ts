@@ -183,94 +183,79 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
 {
     assert(opts !== null);
 
-    let doc: Document;
+    // open background image
+    let bgDoc: Document;
+    try {
+        let bgFile = new File(opts.source + dirSeparator + img_filename);
+        bgDoc = app.open(bgFile);
+    } catch {
+        return null; //note: do not exit if image not exist
+    }
+
+    // if templete is enabled, open templete; or create a new file
+    let wsDoc: Document; // workspace document
+    if (opts.docTemplete == OptionDocTemplete.No) {
+        wsDoc = app.documents.add(bgDoc.width, bgDoc.height, bgDoc.resolution, bgDoc.name, NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
+        wsDoc.activeLayer.name = TEMPLETE_LAYER.IMAGE;
+    } else {
+        let docFile = new File(templete_path);  //note: if templete must do not exist, crash
+        wsDoc = app.open(docFile);
+        wsDoc.resizeImage(undefined, undefined, bgDoc.resolution);
+        wsDoc.resizeCanvas(bgDoc.width, bgDoc.height);
+    }
+
+    // wsDoc is clean, check templete elements, if a element not exist
     let bgLayer: ArtLayer;
     let textTempleteLayer: ArtLayer;
     let dialogOverlayLayer: ArtLayer;
     let pendingDelLayerList: ArtLayerDict = {};
-
-    // 打开图片文件
-    let bgFile = new File(opts.source + dirSeparator + img_filename);
-    if (!bgFile || !bgFile.exists) {
-        return null;
-    }
-
-    // 在PS中打开图片文件，如果是PS专用格式（PSD/TIFF）则直接打开；否则根据配置使用PSD模板或新建PSD，再将图片导入为bg图层
-    let file_type: string = getFileSuffix(img_filename);
-    if ((file_type == ".psd") || (file_type == ".tif") || ((file_type == ".tiff"))) {
-        return null; //todo: 暂时不支持专用格式，待修复
-
-        try { doc = app.open(bgFile); }
-        catch (e) {
-            return null; //note: do not exit if image not exsit
-        }
-    }
-    else {
-        let bg: Document;
-        try { bg = app.open(bgFile); }
-        catch (e) {
-            return null; //note: do not exit if image not exsit
-        }
-        bg.selection.selectAll();
-        bg.selection.copy();
-
-        if (opts.docTemplete == OptionDocTemplete.No) {
-            doc = app.documents.add(bg.width, bg.height, bg.resolution, bg.name, NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
-            doc.activeLayer.name = TEMPLETE_LAYER.IMAGE;
-        } else {
-            let docFile = new File(templete_path);  //note: templete must exsit, if not, just let it crash
-            doc = app.open(docFile);
-            doc.resizeImage(undefined, undefined, bg.resolution);
-            doc.resizeCanvas(bg.width, bg.height);
-        }
-        // 将模板中所有图层加入待删除列表
-        for (let i = 0; i < doc.artLayers.length; i++) {
-            let layer: ArtLayer = doc.artLayers[i];
+    {
+        // add all artlayers to the pending delete list
+        for (let i = 0; i < wsDoc.artLayers.length; i++) {
+            let layer: ArtLayer = wsDoc.artLayers[i];
             pendingDelLayerList[layer.name] = layer;
         }
 
-        // 选中bg图层，将图片粘贴进去
-        bgLayer = doc.artLayers.getByName(TEMPLETE_LAYER.IMAGE);
-        doc.activeLayer = bgLayer;
-        doc.paste();
-        bg.close(SaveOptions.DONOTSAVECHANGES);
-        delete pendingDelLayerList[TEMPLETE_LAYER.IMAGE]; // keep bg layer
-    }
-
-    // 寻找文本模板，即名为text的图层；若text图层不存在，复制一个文本图层，若文本图层不存在，直接创建一个
-    try { textTempleteLayer = doc.artLayers.getByName(TEMPLETE_LAYER.TEXT); }
-    catch {
-        Stdlib.log("text templete layer not found, copy one.");
-        for (let i = 0; i < doc.artLayers.length; i++) {
-            let layer: ArtLayer = <ArtLayer> doc.artLayers[i];
-            if (layer.kind == LayerKind.TEXT) {
-                /// @ts-ignore ts声明文件有误，duplicate()返回ArtLayer对象，而不是void
-                textTempleteLayer = <ArtLayer> layer.duplicate();
-                textTempleteLayer.textItem.contents = TEMPLETE_LAYER.TEXT;
-                textTempleteLayer.name = TEMPLETE_LAYER.TEXT;
-
-                pendingDelLayerList[TEMPLETE_LAYER.TEXT] = layer; // 导入完成后删除该图层
-                break;
-            }
+        // bg layer templete
+        try { bgLayer = wsDoc.artLayers.getByName(TEMPLETE_LAYER.IMAGE); }
+        catch {
+            bgLayer = wsDoc.artLayers.add();
+            bgLayer.name = TEMPLETE_LAYER.DIALOG_OVERLAY;
         }
-        if (textTempleteLayer! !== undefined) {
-            textTempleteLayer = doc.artLayers.add();
+        // text layer templete
+        try { textTempleteLayer = wsDoc.artLayers.getByName(TEMPLETE_LAYER.TEXT); }
+        catch {
+            textTempleteLayer = wsDoc.artLayers.add();
             textTempleteLayer.name = TEMPLETE_LAYER.TEXT;
-            pendingDelLayerList[TEMPLETE_LAYER.TEXT] = textTempleteLayer; // 导入完成后删除该图层
+            pendingDelLayerList[TEMPLETE_LAYER.TEXT] = textTempleteLayer; // pending delete
         }
-        assert(textTempleteLayer! !== undefined);
+        // dialog overlay layer templete
+        try { dialogOverlayLayer = wsDoc.artLayers.getByName(TEMPLETE_LAYER.DIALOG_OVERLAY); }
+        catch {
+            dialogOverlayLayer = wsDoc.artLayers.add();
+            dialogOverlayLayer.name = TEMPLETE_LAYER.DIALOG_OVERLAY;
+        }
     }
 
-    // 确定涂白模板
-    try { dialogOverlayLayer = doc.artLayers.getByName(TEMPLETE_LAYER.DIALOG_OVERLAY); }
-    catch {
-        dialogOverlayLayer = doc.artLayers.add();
-        dialogOverlayLayer.name = TEMPLETE_LAYER.DIALOG_OVERLAY;
+    // import bgDoc to wsDoc:
+    // if bgDoc has only a layer, select all and copy to bg layer, for applying bg layer templete
+    // if bgDoc has multiple layers, bg layer templete would not be used, remove all layers into a LayerSet
+    if ((bgDoc.artLayers.length == 1) && (bgDoc.layerSets.length == 0)) {
+        app.activeDocument = bgDoc;
+        bgDoc.selection.selectAll();
+        bgDoc.selection.copy();
+        app.activeDocument = wsDoc;
+        wsDoc.activeLayer = bgLayer;
+        wsDoc.paste();
+        delete pendingDelLayerList[TEMPLETE_LAYER.IMAGE]; // keep bg layer
+    } else {
+        return null; //todo: copy layerset
     }
+    bgDoc.close(SaveOptions.DONOTSAVECHANGES);
 
     // 若文档类型为索引色模式 更改为RGB模式
-    if (doc.mode == DocumentMode.INDEXEDCOLOR) {
-        doc.changeMode(ChangeMode.RGB);
+    if (wsDoc.mode == DocumentMode.INDEXEDCOLOR) {
+        wsDoc.changeMode(ChangeMode.RGB);
     }
 
     // 分组
@@ -281,14 +266,14 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
 
         // 创建PS中图层分组
         if (!opts.layerNotGroup) {
-            tmp.layerSet = doc.layerSets.add();
+            tmp.layerSet = wsDoc.layerSets.add();
             tmp.layerSet.name = name;
         }
         // 尝试寻找分组模板，找不到则使用默认文本模板
         if (opts.docTemplete !== OptionDocTemplete.No) {
             let l: ArtLayer | undefined;
             try {
-                l = doc.artLayers.getByName(name);
+                l = wsDoc.artLayers.getByName(name);
             } catch { };
             tmp.templete = (l !== undefined) ? l : textTempleteLayer;
         }
@@ -296,13 +281,13 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
     }
     if (opts.outputLabelNumber) {
         let tmp: Group = {};
-        tmp.layerSet = doc.layerSets.add();
+        tmp.layerSet = wsDoc.layerSets.add();
         tmp.layerSet.name = "Label";
         groups["_Label"] = tmp;
     }
 
     let ws: ImageWorkspace = {
-        doc: doc,
+        doc: wsDoc,
         bgLayer: bgLayer,
         textTempleteLayer: textTempleteLayer,
         dialogOverlayLayer: dialogOverlayLayer,
