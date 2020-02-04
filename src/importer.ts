@@ -149,11 +149,9 @@ function importImage(img: ImageInfo): boolean
         importLabel(img, label_info);
     }
 
-    // 调整图层顺序
+    // adjust layer order
     if (img.ws.bgLayer && (opts.overloayGroup !== "")) {
-        // 涂白图层 在 bg层之上
-        //todo: 未处理打开文件为psd/tiff的情况，考虑将这类文件中的所有图层放到一个分组里，来实现排序
-        img.ws.dialogOverlayLayer.move(img.ws.bgLayer, ElementPlacement.PLACEBEFORE);
+        img.ws.dialogOverlayLayer.move(img.ws.bgLayer, ElementPlacement.PLACEBEFORE); // "dialog-overlay" before "bg"
     }
 
     // 删除多余的图层、分组
@@ -239,7 +237,7 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
 
     // import bgDoc to wsDoc:
     // if bgDoc has only a layer, select all and copy to bg layer, for applying bg layer templete
-    // if bgDoc has multiple layers, bg layer templete would not be used, remove all layers into a LayerSet
+    // if bgDoc has multiple layers, move all layers after bg layer (bg layer templete is invalid)
     if ((bgDoc.artLayers.length == 1) && (bgDoc.layerSets.length == 0)) {
         app.activeDocument = bgDoc;
         bgDoc.selection.selectAll();
@@ -249,7 +247,11 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
         wsDoc.paste();
         delete pendingDelLayerList[TEMPLETE_LAYER.IMAGE]; // keep bg layer
     } else {
-        return null; //todo: copy layerset
+        app.activeDocument = bgDoc;
+        let item = bgLayer;
+        for (let i = 0; i < bgDoc.layers.length; i++) {
+            item = bgDoc.layers[i].duplicate(item, ElementPlacement.PLACEAFTER);
+        }
     }
     bgDoc.close(SaveOptions.DONOTSAVECHANGES);
 
