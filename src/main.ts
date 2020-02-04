@@ -226,59 +226,67 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     xx = xOfs;
     yy += 25;
 
-    // 无视LabelPlus文本中的图源文件名
-    pnl.ignoreImgFileNameCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_AutoMatchImgFile);
-    pnl.ignoreImgFileNameCheckBox.onClick = function () {
-        if (pnl.ignoreImgFileNameCheckBox.value) {
-            pnl.setSourceFileTypeCheckBox.value = false;	// 与指定图源互斥
-            Emit(pnl.setSourceFileTypeCheckBox.onClick);
-        }
-        pnl.ignoreImgFileNameTestButton.enabled = pnl.ignoreImgFileNameCheckBox.value;
-    }
-    xx += 260;
-    pnl.ignoreImgFileNameTestButton = pnl.add('button', [xx, yy - 5, xx + 80, yy + 20], i18n.BUTTON_AutoMatchImgFilePreview);
-    pnl.ignoreImgFileNameTestButton.enabled = false;
-
-    // 预览无视文件名效果
-    pnl.ignoreImgFileNameTestButton.onClick = function () {
-        let originFileNameList = getFilesListOfPath(pnl.sourceTextBox.text);
-        let selectedImgFileNameList = getSelectedItemsText(pnl.chooseImageListBox);
-
-        let preview_list_string = '';
-        for (let i = 0; i < selectedImgFileNameList.length; i++) {
-            if (i >= 10) {
-                break;
+    // match image file by order
+    {
+        pnl.matchImgByOrderCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_MATCH_IMG_BY_ORDER);
+        pnl.matchImgByOrderCheckBox.onClick = function () {
+            if (pnl.matchImgByOrderCheckBox.value) {
+                pnl.replaceImgSuffixCheckBox.value = false; // incompatible to "replace image suffix"
+                Emit(pnl.replaceImgSuffixCheckBox.onClick);
             }
-            if (!originFileNameList[i]) {
-                break;
+            pnl.matchImgByOrderPreviewButton.enabled = pnl.matchImgByOrderCheckBox.value;
+        }
+        xx += 260;
+        pnl.matchImgByOrderPreviewButton = pnl.add('button', [xx, yy - 5, xx + 80, yy + 20], i18n.BUTTON_MATCH_IMG_BY_ORDER_PREVIEW);
+        pnl.matchImgByOrderPreviewButton.onClick = function () { // preview button
+            let originFileNameList = getFilesListOfPath(pnl.sourceTextBox.text);
+            let selectedImgFileNameList = getSelectedItemsText(pnl.chooseImageListBox);
+            let preview_list_string = '';
+            for (let i = 0; i < selectedImgFileNameList.length; i++) {
+                if (!originFileNameList[i]) break;
+                let src = selectedImgFileNameList[i].text;
+                let dst = originFileNameList[selectedImgFileNameList[i].index];
+                preview_list_string += src + " -> " + dst + "\n";
+                if (i >= 20) {
+                    alert(preview_list_string);
+                    preview_list_string = "";
+                }
             }
-            preview_list_string = preview_list_string + selectedImgFileNameList[i].text + " -> "
-                + originFileNameList[selectedImgFileNameList[i].index] + "\n";
+            if (preview_list_string !== "") {
+                alert(preview_list_string);
+            }
         }
-        alert(preview_list_string);
+        xx = xOfs;
+        yy += 20;
     }
 
-    xx = xOfs;
-    yy += 20;
-
-    // 使用指定类型图源
-    pnl.setSourceFileTypeCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_SetSourceType);
-    pnl.setSourceFileTypeCheckBox.onClick = function () {
-        if (pnl.setSourceFileTypeCheckBox.value) {
-            pnl.ignoreImgFileNameCheckBox.value = false;	//与无视图源文件名互斥
-            Emit(pnl.ignoreImgFileNameCheckBox.onClick);
+    // replace image suffix
+    {
+        pnl.replaceImgSuffixCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_REPLACE_IMG_SUFFIX);
+        pnl.replaceImgSuffixCheckBox.onClick = function () {
+            if (pnl.replaceImgSuffixCheckBox.value) {
+                pnl.matchImgByOrderCheckBox.value = false; // incompatible to "match image file by order"
+                Emit(pnl.matchImgByOrderCheckBox.onClick);
+            }
+            let enable = pnl.replaceImgSuffixCheckBox.value;
+            pnl.replaceImgSuffixTextbox.enabled = enable;
+            pnl.setSourceFileTypeList.enabled = enable;
         }
-        pnl.setSourceFileTypeList.enabled = pnl.setSourceFileTypeCheckBox.value;
+        xx += 260;
+        pnl.replaceImgSuffixTextbox = pnl.add('edittext', [xx, yy, xx + 120, yy + 22]);
+        xx += 130;
+        let type_list = ["", ".psd", ".png", ".jpg", ".jpeg", ".tif", ".tiff"];
+        pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx, yy, xx + 50, yy + 22], type_list);
+        let func = function () {
+            pnl.replaceImgSuffixTextbox.text = pnl.setSourceFileTypeList.selection.text;
+            pnl.setSourceFileTypeList.onChange = undefined;
+            pnl.setSourceFileTypeList.selection = pnl.setSourceFileTypeList.find("");
+            pnl.setSourceFileTypeList.onChange = func;
+        }
+        pnl.setSourceFileTypeList.onChange = func;
+        xx = xOfs;
+        yy += 20;
     }
-    xx += 260;
-    let setSourceFileTypeListItems = [".psd", ".png", ".jpg", ".jpeg", ".tif", ".tiff"];
-    pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx, yy, xx + 70, yy + 22],
-        setSourceFileTypeListItems);
-    pnl.setSourceFileTypeList.selection = pnl.setSourceFileTypeList.find(".psd");
-    pnl.setSourceFileTypeList.enabled = false;
-
-    xx = xOfs;
-    yy += 20;
 
     // 文本替换(例:"A->B|C->D")
     pnl.textReplaceCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_TextReplace);
@@ -502,16 +510,14 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         pnl.outputNoSignPsdCheckBox.value = opts.outputNoSignPsd;
         Emit(pnl.outputNoSignPsdCheckBox.onClick);
     }
-    // 无视LabelPlus文本中的图源文件名
-    if (opts.ignoreImgFileName !== undefined) {
-        pnl.ignoreImgFileNameCheckBox.value = opts.ignoreImgFileName;
-        Emit(pnl.ignoreImgFileNameCheckBox.onClick);
+    if (opts.matchImgByOrder !== undefined) {
+        pnl.matchImgByOrderCheckBox.value = opts.matchImgByOrder;
+        Emit(pnl.matchImgByOrderCheckBox.onClick);
     }
-    // 使用指定类型图源
-    if (opts.sourceFileType !== undefined) {
-        pnl.setSourceFileTypeCheckBox.value = (opts.sourceFileType !== "");
-        pnl.setSourceFileTypeList.selection.text = opts.sourceFileType;
-        Emit(pnl.setSourceFileTypeCheckBox.onClick);
+    if (opts.replaceImgSuffix !== undefined) {
+        pnl.replaceImgSuffixCheckBox.value = (opts.replaceImgSuffix !== "");
+        pnl.replaceImgSuffixTextbox.text = opts.replaceImgSuffix;
+        Emit(pnl.replaceImgSuffixCheckBox.onClick);
     }
     // 执行动作GroupN
     if (opts.runActionGroup !== undefined) {
@@ -762,9 +768,9 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
     // 处理无标号文档
     opts.outputNoSignPsd = pnl.outputNoSignPsdCheckBox.value;
     // 无视LabelPlus文本中的图源文件名
-    opts.ignoreImgFileName = pnl.ignoreImgFileNameCheckBox.value
+    opts.matchImgByOrder = pnl.matchImgByOrderCheckBox.value
     // 使用指定类型图源
-    opts.sourceFileType = (pnl.setSourceFileTypeCheckBox.value) ? pnl.setSourceFileTypeList.selection.text : "";
+    opts.replaceImgSuffix = (pnl.replaceImgSuffixCheckBox.value) ? pnl.replaceImgSuffixCheckBox.text : "";
     // 执行动作GroupN
     opts.runActionGroup = (pnl.runActionGroupCheckBox.value) ? pnl.runActionGroupList.selection.text : "";
     // 导入后不关闭文档
@@ -872,17 +878,17 @@ let readIni = function (iniFile: string, ini ?: any): CustomOptions {
     return ini;
 };
 
-//
-// 获取ListBox选中项目text及index
-//
-function getSelectedItemsText (listBox) {
-    let selectedItems = new Array();
-
+// get text/index info from listbox ojbect
+function getSelectedItemsText(listBox: any): { text: string, index: number }[]
+{
+    let item_list = new Array();
     for (let i = 0; i < listBox.children.length; i++) {
-        if (listBox[i].selected)
-            selectedItems.push({ text: listBox[i].text, index: listBox[i].index });
+        let item = listBox.children[i];
+        if (item.selected) {
+            item_list.push({ text: item.text, index: item.index });
+        }
     }
-    return selectedItems;
+    return item_list;
 }
 
 let ui = new LabelPlusInput();

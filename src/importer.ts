@@ -385,11 +385,11 @@ export function importFiles(custom_opts: CustomOptions): boolean
         if (!opts.outputNoSignPsd && lpFile?.images[originName].length == 0) // 不处理无标号文档
             continue;
 
-        // 根据sourceFileType替换文件后缀名 && 忽略原始图片名
-        if (opts.sourceFileType) {
-            filename = originName.substring(0, originName.lastIndexOf(".")) + opts.sourceFileType;
+        // replace suffix && match by order
+        if (opts.replaceImgSuffix) {
+            filename = originName.substring(0, originName.lastIndexOf(".")) + opts.replaceImgSuffix;
         }
-        else if (opts.ignoreImgFileName) {
+        else if (opts.matchImgByOrder) {
             filename = originFileList[opts.imageSelected[i].index];
         }
         else {

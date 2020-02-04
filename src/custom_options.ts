@@ -22,8 +22,8 @@ export class CustomOptions {
     docTemplete: OptionDocTemplete = OptionDocTemplete.Auto; // 模板设置
     docTempleteCustomPath: string = "";  // 自定义模板文件路径
 
-    ignoreImgFileName: boolean = false; // 按文件顺序输出，忽略翻译文件中的图片文件名，便于更换图源
-    sourceFileType: string = ""; // 更改图源文件类型，用于更换图源，为空时不更改
+    matchImgByOrder: boolean = false; // match image by order, ignore file name in lpText, for replacing image source
+    replaceImgSuffix: string = ""; // replacing image suffix,  for replacing image source
     outputNoSignPsd: boolean = true; // 是否输出未标号的图片
     layerNotGroup: boolean = false; // 图层不分组
     notClose: boolean = false; // 导入图片后不关闭文档

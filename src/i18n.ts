@@ -32,9 +32,9 @@ namespace i18n {
     export var CHECKBOX_OUTPUTLABELNUMBER: string = "导出标号";
     export var CHECKBOX_TextReplace: string = "文本替换(格式:\"A->B|C->D\")";
     export var CHECKBOX_OUTPUTNOSIGNPSD: string = "导出没有标号的文档";
-    export var CHECKBOX_AutoMatchImgFile: string = "按顺序自动匹配图片文件";
-    export var BUTTON_AutoMatchImgFilePreview: string = "预览匹配结果";
-    export var CHECKBOX_SetSourceType: string = "替换图片后缀名";
+    export var CHECKBOX_MATCH_IMG_BY_ORDER: string = "按顺序匹配图片文件";
+    export var BUTTON_MATCH_IMG_BY_ORDER_PREVIEW: string = "预览匹配结果";
+    export var CHECKBOX_REPLACE_IMG_SUFFIX: string = "替换图片后缀名";
     export var CHECKBOX_RUNACTION: string = "导入文本后，执行以分组名命名的动作；打开图片时执行_start，关闭前执行_end动作";
     export var CHECKBOX_NOTCLOSE: string = "导入后不关闭文档";
     export var CHECKBOX_SetFont: string = "字体";
@@ -83,9 +83,9 @@ namespace i18n {
         CHECKBOX_OUTPUTLABELNUMBER = "Output Label Number";
         CHECKBOX_TextReplace = "Text Replace(e.g. \"A->B|C->D\")";
         CHECKBOX_OUTPUTNOSIGNPSD = "Output No Label File";
-        CHECKBOX_AutoMatchImgFile = "Auto Match Image Source File";
-        BUTTON_AutoMatchImgFilePreview = "Preview Match Result";
-        CHECKBOX_SetSourceType = "Replace File Extension";
+        CHECKBOX_MATCH_IMG_BY_ORDER = "Match Image Source By Order";
+        BUTTON_MATCH_IMG_BY_ORDER_PREVIEW = "Preview Match Result";
+        CHECKBOX_REPLACE_IMG_SUFFIX = "Replace Image Suffix";
         CHECKBOX_RUNACTION = "Execute Actions Named Of Group Name(\"_start\" after open, \"_end\" before close)";
         CHECKBOX_NOTCLOSE = "Do Not Close File";
         CHECKBOX_SetFont = "Set Default Font";
