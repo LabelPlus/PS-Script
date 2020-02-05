@@ -314,8 +314,7 @@ export function importFiles(custom_opts: CustomOptions): boolean
 {
     opts = custom_opts;
 
-    Stdlib.log.setFile(DEFAULT_LOG_PATH);
-    Stdlib.log("Start");
+    Stdlib.log("Start import process!!!");
     Stdlib.log("Properties:");
     Stdlib.log(Stdlib.listProps(opts));
 

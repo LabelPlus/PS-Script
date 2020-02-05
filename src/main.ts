@@ -13,6 +13,8 @@
 
 namespace LabelPlus {
 
+let opts: CustomOptions = new CustomOptions();
+
 //
 // 用户UI
 //
@@ -23,7 +25,6 @@ class LabelPlusInput extends GenericUI {
         let self = this;
         self.saveIni = false;
         self.hasBorder = true;
-        self.optionsClass = CustomOptions;
         self.settingsPanel = false; //有自己创建的设置面板
 
         self.winRect = {          // the size of our window
@@ -46,9 +47,8 @@ class LabelPlusInput extends GenericUI {
 //
 // 用户界面构建
 //
-LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
+LabelPlusInput.prototype.createPanel = function (pnl: any, ini: never) {
     let self = this;
-    let opts = new CustomOptions(ini);// default values
 
     // window's location
     self.moveWindow(100, 100);
@@ -63,7 +63,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     pnl.settingsPnl = pnl.add('panel',
         [xOfs, yy, pnl.size.width - xOfs, yy + 60]);
 
-    createSettingsPanel(pnl.settingsPnl, ini);
+    createSettingsPanel(pnl.settingsPnl);
 
     xx = xOfs;
     yy += 75;
@@ -549,7 +549,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
 //
 // 自定义读取配框
 //
-let createSettingsPanel = function (pnl: any, ini: any) {
+let createSettingsPanel = function (pnl: any) {
     let win = GenericUI.getWindow(pnl.parent);
 
     pnl.text = I18n.LABEL_SETTING;
@@ -558,7 +558,7 @@ let createSettingsPanel = function (pnl: any, ini: any) {
     pnl.fileMask = "INI Files: *.ini, All Files: *.*";
     pnl.loadPrompt = "Read Setting";
     pnl.savePrompt = "Save Setting";
-    pnl.defaultFile = undefined;
+    pnl.defaultFile = DEFAULT_INI_PATH;
 
     let w = pnl.bounds[2] - pnl.bounds[0];
     let offsets = [w * 0.2, w * 0.5, w * 0.8];
@@ -575,87 +575,44 @@ let createSettingsPanel = function (pnl: any, ini: any) {
     pnl.load.onClick = function () {
         let pnl = this.parent;
         let win = pnl.win;
-        let mgr = win.mgr;
         let def = pnl.defaultFile;
-
-        if (!def) {
-            if (mgr.iniFile) {
-                def = GenericUI.iniFileToFile(mgr.iniFile);
-            } else {
-                def = GenericUI.iniFileToFile("~/settings.ini");
-            }
-        }
-
-        let f;
         let prmpt = pnl.loadPrompt;
         let sel = Stdlib.createFileSelect(pnl.fileMask);
         if (isMac()) {
             sel = undefined;
         }
-        f = Stdlib.selectFileOpen(prmpt, sel, def);
+        let f = Stdlib.selectFileOpen(prmpt, sel, def);
         if (f) {
-            win.ini = readIni(f);
+            opts = readIni(f);
             win.close(4);
-
-            if (pnl.onLoad) {
-                pnl.onLoad(f);
-            }
         }
     };
 
     pnl.save.onClick = function () {
         let pnl = this.parent;
         let win = pnl.win;
-        let mgr = win.mgr;
         let def = pnl.defaultFile;
-
-        if (!def) {
-            if (mgr.iniFile) {
-                def = GenericUI.iniFileToFile(mgr.iniFile);
-            } else {
-                def = GenericUI.iniFileToFile("~/settings.ini");
-            }
-        }
-
-        let f;
         let prmpt = pnl.savePrompt;
         let sel = Stdlib.createFileSelect(pnl.fileMask);
 
         if (isMac()) {
             sel = undefined;
         }
-        f = Stdlib.selectFileSave(prmpt, sel, def);
 
+        let f = Stdlib.selectFileSave(prmpt, sel, def);
         if (f) {
             let mgr = win.mgr;
             let res = mgr.validatePanel(win.appPnl, win.ini, true);
 
             if (typeof (res) != 'boolean') {
                 writeIni(f, res);
-
-                if (pnl.onSave) {
-                    pnl.onSave(f);
-                }
             }
         }
     };
 
     pnl.reset.onClick = function () {
-        let pnl = this.parent;
-        let win = pnl.win;
-        let mgr = win.mgr;
-
-        if (mgr.defaultIniFile) {
-            win.ini = mgr.readIniFile(mgr.defaultIniFile);
-
-        } else if (mgr.ini) {
-            win.ini = mgr.ini;
-        }
-
+        opts = new CustomOptions();
         win.close(4);
-        if (pnl.onReset) {
-            pnl.onReset();
-        }
     };
 };
 
@@ -663,7 +620,7 @@ let createSettingsPanel = function (pnl: any, ini: any) {
 // tofile: if it is saving config to file
 LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: boolean) :CustomOptions | boolean {
     let self = this;
-    let opts = new CustomOptions(ini);
+    let opts = new CustomOptions();
     let f: Folder | File;
 
     // not saved options
@@ -756,6 +713,8 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
 //
 LabelPlusInput.prototype.process = function (opts: CustomOptions, doc)
 {
+    // auto save ini
+    writeIni(DEFAULT_INI_PATH, opts);
     importFiles(opts);
 }
 
@@ -790,8 +749,7 @@ let iniToString = function (ini) {
     return str;
 };
 
-let writeIni = function (iniFile: string, ini: any) {
-    //$.level = 1; debugger;
+let writeIni = function (iniFile: string, ini: CustomOptions) {
     if (!ini || !iniFile) {
         return;
     }
@@ -814,27 +772,13 @@ let writeIni = function (iniFile: string, ini: any) {
 //
 // 读出配置
 //
-let readIni = function (iniFile: string, ini ?: any): CustomOptions {
-    //$.level = 1; debugger;
-
-    if (!ini) {
-        ini = new CustomOptions(ini);
-    }
-    if (!iniFile) {
-        return ini;
-    }
+let readIni = function (iniFile: string): CustomOptions {
+    let ini = new CustomOptions();
     let file = GenericUI.iniFileToFile(iniFile);
 
     if (!file) {
         throw "Bad ini file specified: \"" + iniFile + "\".";
     }
-
-    if (!file.exists) {
-        //
-        // XXX Check for an ini path .ini file in the script's folder.
-        //
-    }
-
     if (file.exists && file.open("r", "TEXT", "????")) {
         file.lineFeed = "unix";
         file.encoding = 'UTF-8';
@@ -858,6 +802,15 @@ function getSelectedItemsText(listBox: any): { text: string, index: number }[]
         }
     }
     return item_list;
+}
+
+
+Stdlib.log.setFile(DEFAULT_LOG_PATH);
+try {
+    opts = readIni(DEFAULT_INI_PATH); // load ini
+    Stdlib.log("read option from " + DEFAULT_INI_PATH + "OK");
+} catch {
+    Stdlib.log("read option from " + DEFAULT_INI_PATH + "failed");
 }
 
 let ui = new LabelPlusInput();

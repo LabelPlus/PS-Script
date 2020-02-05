@@ -6,10 +6,6 @@ export enum OptionTextDirection { Keep, Horizontal, Vertical };
 export enum OptionDocTemplete { Auto, No, Custom }; // auto choose preset templete/no use templete/custom templete
 
 export class CustomOptions {
-    constructor(obj: Object) {
-        let self = this;
-        Stdlib.copyFromTo(obj, self);
-    }
 
     // ------------------------------------ not saved options
     source: string = ""; // images source folder
