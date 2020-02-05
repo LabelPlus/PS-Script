@@ -75,5 +75,6 @@ export function min(a: number, b: number): number {
 }
 
 export const DEFAULT_LOG_PATH: string = GetScriptFolder() + dirSeparator + "lp_ps_script.log";
+export const DEFAULT_INI_PATH: string = GetScriptFolder() + dirSeparator + "lp_ps_script.ini";
 
 } // namespace LabelPlus

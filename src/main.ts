@@ -22,6 +22,13 @@ class LabelPlusInput extends GenericUI {
 
         let self = this;
         self.saveIni = false;
+        self.iniFile = DEFAULT_INI_PATH;
+
+        try {
+            self.opts = readIni(DEFAULT_INI_PATH, self.ini)
+        } catch {
+            self.opts = new CustomOptions(self.ini); // default values
+        }
         self.hasBorder = true;
         self.optionsClass = CustomOptions;
         self.settingsPanel = false; //有自己创建的设置面板
@@ -48,7 +55,7 @@ class LabelPlusInput extends GenericUI {
 //
 LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     let self = this;
-    let opts = new CustomOptions(ini);// default values
+    let opts: CustomOptions = self.opts;
 
     // window's location
     self.moveWindow(100, 100);
@@ -744,6 +751,8 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
 //
 LabelPlusInput.prototype.process = function (opts: CustomOptions, doc)
 {
+    // auto save ini
+    writeIni(DEFAULT_INI_PATH, opts);
     importFiles(opts);
 }
 
