@@ -37,7 +37,7 @@ class LabelPlusInput extends GenericUI {
             x: 200,
             y: 200,
             w: 875,
-            h: 685
+            h: 700
         };
 
         self.title = I18n.APP_NAME + " " + VERSION;	// our window title
@@ -78,13 +78,12 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     //------------------LabelPlus文件区------------------
 
     // LabelPlus文本文件输入
-    pnl.lpTextFileLabel = pnl.add('statictext', [xx, yy, xx + 120, yy + 20],
-        I18n.LABEL_TEXT_FILE);
+    pnl.lpTextFileLabel = pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_TEXT_FILE);
     xx += 120;
     pnl.lpTextFileTextBox = pnl.add('edittext', [xx, yy, xx + 170, yy + 20], '');
     pnl.lpTextFileTextBox.enabled = false;
     xx += 175;
-    pnl.lpTextFileBrowseButton = pnl.add('button', [xx, yy, xx + 30, yy + 20], '...');
+    pnl.lpTextFileBrowseButton = pnl.add('button', [xx, yy - 2, xx + 30, yy + 20], '...');
 
     pnl.lpTextFileBrowseButton.onClick = function () {
         try {
@@ -147,8 +146,8 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     xx = xOfs;
 
     // 选择需要导入的图片
-    pnl.chooseImageLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 22], I18n.LABEL_SELECT_IMG);
-    yy += 20;
+    pnl.chooseImageLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 20], I18n.LABEL_SELECT_IMG);
+    yy += 23;
     pnl.chooseImageListBox = pnl.add('listbox', [xx, yy, xx + 150, yy + 320], [], { multiselect: true });
 
     //------------------分组选择区------------------
@@ -157,8 +156,8 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     xx = xOfs + 170;
 
     //选择需要导入的分组
-    pnl.chooseGroupLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 22], I18n.LABEL_SELECT_GROUP);
-    yy += 20;
+    pnl.chooseGroupLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 20], I18n.LABEL_SELECT_GROUP);
+    yy += 23;
     pnl.chooseGroupListBox = pnl.add('listbox', [xx, yy, xx + 150, yy + 320], [], { multiselect: true });
     xx = xOfs;
     yy += 325;
@@ -173,13 +172,13 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
 
     // >>>>>文件 预处理
     pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_TIP_FILE);
-    yy += 20;
+    yy += 23;
     // 图源文件夹
     pnl.sourceLabel = pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_SOURCE);
     xx += 120;
     pnl.sourceTextBox = pnl.add('edittext', [xx, yy, xx + 300, yy + 20], '');
     xx += 305;
-    pnl.sourceBrowse = pnl.add('button', [xx, yy, xx + 30, yy + 20], '...');
+    pnl.sourceBrowse = pnl.add('button', [xx, yy - 2, xx + 30, yy + 20], '...');
 
     pnl.sourceBrowse.onClick = function () {
         try {
@@ -206,7 +205,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     xx += 120;
     pnl.targetTextBox = pnl.add('edittext', [xx, yy, xx + 300, yy + 20], '');
     xx += 305;
-    pnl.targetBrowse = pnl.add('button', [xx, yy, xx + 30, yy + 20], '...');
+    pnl.targetBrowse = pnl.add('button', [xx, yy - 2, xx + 30, yy + 20], '...');
 
     pnl.targetBrowse.onClick = function () {
         try {
@@ -235,7 +234,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
 
     // match image file by order
     {
-        pnl.matchImgByOrderCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_MATCH_IMG_BY_ORDER);
+        pnl.matchImgByOrderCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_MATCH_IMG_BY_ORDER);
         pnl.matchImgByOrderCheckBox.onClick = function () {
             if (pnl.matchImgByOrderCheckBox.value) {
                 pnl.replaceImgSuffixCheckBox.value = false; // incompatible to "replace image suffix"
@@ -244,7 +243,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             pnl.matchImgByOrderPreviewButton.enabled = pnl.matchImgByOrderCheckBox.value;
         }
         xx += 260;
-        pnl.matchImgByOrderPreviewButton = pnl.add('button', [xx, yy - 5, xx + 80, yy + 20], I18n.BUTTON_MATCH_IMG_BY_ORDER_PREVIEW);
+        pnl.matchImgByOrderPreviewButton = pnl.add('button', [xx, yy - 2, xx + 80, yy + 20], I18n.BUTTON_MATCH_IMG_BY_ORDER_PREVIEW);
         pnl.matchImgByOrderPreviewButton.onClick = function () { // preview button
             let originFileNameList = getFilesListOfPath(pnl.sourceTextBox.text);
             let selectedImgFileNameList = getSelectedItemsText(pnl.chooseImageListBox);
@@ -264,12 +263,12 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             }
         }
         xx = xOfs;
-        yy += 20;
+        yy += 25;
     }
 
     // replace image suffix
     {
-        pnl.replaceImgSuffixCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_REPLACE_IMG_SUFFIX);
+        pnl.replaceImgSuffixCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_REPLACE_IMG_SUFFIX);
         pnl.replaceImgSuffixCheckBox.onClick = function () {
             if (pnl.replaceImgSuffixCheckBox.value) {
                 pnl.matchImgByOrderCheckBox.value = false; // incompatible to "match image file by order"
@@ -280,10 +279,10 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             pnl.setSourceFileTypeList.enabled = enable;
         }
         xx += 260;
-        pnl.replaceImgSuffixTextbox = pnl.add('edittext', [xx, yy, xx + 120, yy + 22]);
+        pnl.replaceImgSuffixTextbox = pnl.add('edittext', [xx, yy, xx + 120, yy + 20]);
         xx += 130;
         let type_list = ["", ".psd", ".png", ".jpg", ".jpeg", ".tif", ".tiff"];
-        pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx, yy, xx + 50, yy + 22], type_list);
+        pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx, yy - 1, xx + 50, yy + 21], type_list);
         let func = function () {
             pnl.replaceImgSuffixTextbox.text = pnl.setSourceFileTypeList.selection.text;
             pnl.setSourceFileTypeList.onChange = undefined;
@@ -292,48 +291,48 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         }
         pnl.setSourceFileTypeList.onChange = func;
         xx = xOfs;
-        yy += 20;
+        yy += 23;
     }
 
     // text replacing(example:"A->B|C->D")
-    pnl.textReplaceCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_TEXT_REPLACE);
+    pnl.textReplaceCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_TEXT_REPLACE);
     pnl.textReplaceCheckBox.onClick = function () {
         pnl.textReplaceTextBox.enabled = pnl.textReplaceCheckBox.value;
     };
     xx += 260;
     pnl.textReplaceTextBox = pnl.add('edittext', [xx, yy, xx + 180, yy + 20]);
     xx = xOfs;
-    yy += 20;
+    yy += 23;
 
 
     // >>>>> Script Behavior
     yy += 5;
     pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_TIP_BEHAVIOR);
-    yy += 20;
+    yy += 23;
 
     // ignore images with no label
-    pnl.ignoreNoLabelImgCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_IGNORE_NO_LABEL_IMG);
+    pnl.ignoreNoLabelImgCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_IGNORE_NO_LABEL_IMG);
     pnl.ignoreNoLabelImgCheckBox.value = true;
     xx += 250;
 
     // do not close image document after importing complete
-    pnl.notCloseCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_NOT_CLOSE);
+    pnl.notCloseCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_NOT_CLOSE);
     xx = xOfs;
-    yy += 20;
+    yy += 23;
 
     // output label index as text layer
-    pnl.outputLabelIndexCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_OUTPUT_LABEL_INDEX);
+    pnl.outputLabelIndexCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_OUTPUT_LABEL_INDEX);
     xx += 250;
 
     // do not create layer group
-    pnl.noLayerGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_NO_LAYER_GROUP);
-    yy += 20;
+    pnl.noLayerGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_NO_LAYER_GROUP);
+    yy += 23;
 
     // >>>>> Style / Automation
     xx = xOfs;
     yy += 5;
     pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_TIP_STYLE_AUTO);
-    yy += 20;
+    yy += 23;
 
     // 文档模板设置
     pnl.docTempletePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 65], I18n.PANEL_TEMPLETE_SETTING);
@@ -342,14 +341,14 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         let xxxOfs: number = 5;
         let xxx: number = xxxOfs;
         let yyy: number = 5;
-        pnll.autoTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 22], I18n.RB_TEMPLETE_AUTO); xxx += 200;
+        pnll.autoTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 20], I18n.RB_TEMPLETE_AUTO); xxx += 200;
         pnll.autoTempleteRb.value = true;
-        pnll.noTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 22], I18n.RB_TEMPLETE_NO); xxx += 200;
+        pnll.noTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 20], I18n.RB_TEMPLETE_NO); xxx += 200;
         xxx = xxxOfs;
-        yyy += 22;
-        pnll.customTempleteRb = pnll.add('radiobutton', [xxx, yyy, xxx + 120, yyy + 22], I18n.RB_TEMPLETE_CUSTOM); xxx += 120;
-        pnll.customTempleteTextbox = pnll.add('edittext', [xxx, yyy, xxx + 180, yyy + 22]); xxx += 185;
-        pnll.customTempleteTextButton = pnll.add('button', [xxx, yyy, xxx + 30, yyy + 22], '...'); xxx += 30;
+        yyy += 23;
+        pnll.customTempleteRb = pnll.add('radiobutton', [xxx, yyy, xxx + 120, yyy + 20], I18n.RB_TEMPLETE_CUSTOM); xxx += 120;
+        pnll.customTempleteTextbox = pnll.add('edittext', [xxx, yyy, xxx + 180, yyy + 20]); xxx += 185;
+        pnll.customTempleteTextButton = pnll.add('button', [xxx, yyy - 2, xxx + 30, yyy + 20], '...'); xxx += 30;
         let rbclick = function () {
             let custom_enable: boolean = pnll.customTempleteRb.value;
             pnll.customTempleteTextbox.enabled = custom_enable;
@@ -384,32 +383,31 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     // 设置文字方向
     pnl.textDirLabel = pnl.add('statictext', [xx, yy, xx + 100, yy + 20], I18n.LABEL_TEXT_DIRECTION);
     xx += 100;
-    pnl.textDirList = pnl.add('dropdownlist', [xx, yy, xx + 100, yy + 22], I18n.LIST_TEXT_DIT_ITEMS);
+    pnl.textDirList = pnl.add('dropdownlist', [xx, yy, xx + 100, yy + 20], I18n.LIST_TEXT_DIT_ITEMS);
     pnl.textDirList.selection = pnl.textDirList.find(I18n.LIST_TEXT_DIT_ITEMS[0]);
     xx = xOfs;
-    yy += 20;
+    yy += 23;
 
-    // 使用自定义字体设置
-    pnl.setFontCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_SET_FONT);
-    pnl.setFontCheckBox.onClick = function () {
-        let value = pnl.setFontCheckBox.value;
-        pnl.font.family.enabled = value;
-        pnl.font.style.enabled = value;
-        pnl.font.fontSize.enabled = value;
+    // set font
+    {
+        pnl.setFontCheckBox = pnl.add('checkbox', [xx, yy, xx + 50, yy + 20], I18n.CHECKBOX_SET_FONT);
+        pnl.setFontCheckBox.onClick = function () {
+            let value = pnl.setFontCheckBox.value;
+            pnl.font.family.enabled = value;
+            pnl.font.style.enabled = value;
+            pnl.font.fontSize.enabled = value;
+        }
+        xx += 60;
+        pnl.font = pnl.add('group', [xx, yy + 2, xx + 400, yy + 25]);
+        self.createFontPanel(pnl.font, ini);
+        pnl.font.label.text = " ";
+        pnl.font.family.enabled = false;
+        pnl.font.style.enabled = false;
+        pnl.font.fontSize.enabled = false;
+        pnl.font.family.selection = pnl.font.family.find("SimSun");
+        xx = xOfs;
+        yy += 25;
     }
-    xx = xOfs;
-    yy += 25;
-    // 字体
-    pnl.font = pnl.add('group', [xx, yy, xx + 400, yy + 25]);
-    self.createFontPanel(pnl.font, ini);
-    pnl.font.label.text = " ";
-    pnl.font.family.enabled = false;
-    pnl.font.style.enabled = false;
-    pnl.font.fontSize.enabled = false;
-    pnl.font.family.selection = pnl.font.family.find("SimSun");
-
-    xx = xOfs;
-    yy += 25;
 
     // 自定义行距
     pnl.setTextLeadingCheckBox = pnl.add('checkbox', [xx, yy, xx + 120, yy + 20], I18n.CHECKBOX_SET_LEADING);
@@ -423,18 +421,18 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     xx += 55;
     pnl.add('statictext', [xx, yy, xx + 40, yy + 20], "%");
     xx = xOfs;
-    yy += 20;
+    yy += 23;
 
     // 执行动作GroupN
-    pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 500, yy + 22],
+    pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 500, yy + 20],
         I18n.CHECKBOX_RUN_ACTION);
     pnl.runActionGroupCheckBox.onClick = function () {
         pnl.runActionGroupList.enabled = pnl.runActionGroupCheckBox.value;
     }
     xx = xOfs + 30;
-    yy += 20;
+    yy += 23;
     let ary = Stdlib.getActionSets();
-    pnl.runActionGroupList = pnl.add('dropdownlist', [xx, yy, xx + 180, yy + 22], ary);
+    pnl.runActionGroupList = pnl.add('dropdownlist', [xx, yy, xx + 180, yy + 20], ary);
     pnl.runActionGroupList.selection = pnl.runActionGroupList.find("LabelPlusAction");
     if (pnl.runActionGroupList.selection == undefined) {
         pnl.runActionGroupList.selection = pnl.runActionGroupList[0];
@@ -442,10 +440,10 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     pnl.runActionGroupList.enabled = false;
 
     xx = xOfs;
-    yy += 20;
+    yy += 23;
 
     // dialog overlay
-    pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 22], I18n.CHECKBOX_DIALOG_OVERLAY);
+    pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 20], I18n.CHECKBOX_DIALOG_OVERLAY);
     pnl.dialogOverlayCheckBox.onClick = function () {
         pnl.overlayGroupTextBox.enabled = pnl.dialogOverlayCheckBox.value;
     }
