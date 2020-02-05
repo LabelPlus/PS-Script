@@ -59,10 +59,10 @@ export function getFileSuffix(filename: string) {
 	return filename.substring(filename.lastIndexOf("."), filename.length)
 }
 
-export function doAction(action, actionSet): boolean
+export function doAction(action: string, actionSet: string): boolean
 {
-    if (Stdlib.hasAction(action, actionSet.toString())) {
-        app.doAction(action, actionSet.toString());
+    if (Stdlib.hasAction(action, actionSet) === true) {
+        app.doAction(action, actionSet);
         return true;
     }
     else {

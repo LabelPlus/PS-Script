@@ -96,15 +96,9 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
 
     // 执行动作,名称为分组名
     if (opts.actionGroup) {
-        try {
-            img.ws.doc.activeLayer = textLayer;
-            this.doAction(label.group, opts.actionGroup);
-        }
-        catch (e) {
-            Stdlib.log("DoAction " + label.group +
-                " in " + opts.actionGroup +
-                " Error: \r\n" + e);
-        }
+        img.ws.doc.activeLayer = textLayer;
+        let result = doAction(label.group, opts.actionGroup);
+        Stdlib.log("run action " + label.group + "[" + opts.actionGroup + "]..." + result ? "done" : "fail");
     }
     return true;
 }
@@ -113,11 +107,11 @@ function importImage(img: ImageInfo): boolean
 {
     assert(opts !== null);
 
-    // 文件打开时执行一次动作"_start"
+    // run action _start
     if (opts.actionGroup) {
         img.ws.doc.activeLayer = img.ws.doc.layers[img.ws.doc.layers.length - 1];
-        try { doAction("_start", opts.actionGroup); }
-        catch (e) { }
+        let result = doAction("_start", opts.actionGroup);
+        Stdlib.log("run action _start[" + opts.actionGroup + "]..." + result ? "done" : "fail");
     }
 
     // 找出需要涂白的标签,记录他们的坐标,执行涂白
@@ -166,13 +160,11 @@ function importImage(img: ImageInfo): boolean
         }
     }
 
-    // 文件关闭时执行一次动作"_end"
+    // run action _end
     if (opts.actionGroup) {
-        try {
-            img.ws.doc.activeLayer = img.ws.doc.layers[img.ws.doc.layers.length - 1];
-            this.doAction("_end", opts.actionGroup);
-        }
-        catch (e) { }
+        img.ws.doc.activeLayer = img.ws.doc.layers[img.ws.doc.layers.length - 1];
+        let result = doAction("_end", opts.actionGroup);
+        Stdlib.log("run action _start[" + opts.actionGroup + "]..." + result ? "done" : "fail");
     }
     return true;
 }
