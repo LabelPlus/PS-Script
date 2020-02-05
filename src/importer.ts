@@ -329,7 +329,7 @@ export function importFiles(custom_opts: CustomOptions): boolean
     //解析LabelPlus文本
     let lpFile = lpTextParser(opts.lpTextFilePath);
     if (lpFile == null) {
-        let errmsg = "error: " + i18n.ERROR_READLABELTEXTFILEFAILL;
+        let errmsg = "error: " + I18n.ERROR_PARSER_LPTEXT_FAIL;
         Stdlib.log(errmsg);
         alert(errmsg);
         return false;
@@ -339,7 +339,7 @@ export function importFiles(custom_opts: CustomOptions): boolean
     if (opts.textReplace) {
         let tmp = textReplaceReader(opts.textReplace);
         if (tmp === null) {
-            let errmsg = "error: " + i18n.ERROR_TextReplaceExpression;
+            let errmsg = "error: " + I18n.ERROR_TEXT_REPLACE_EXPRESSION;
             Stdlib.log(errmsg);
             alert(errmsg);
             return false;
@@ -368,7 +368,7 @@ export function importFiles(custom_opts: CustomOptions): boolean
             }
         }
         if (templete_path === "") {
-            let errmsg = "error: " + i18n.ERROR_NotAutoMatchTemplete;
+            let errmsg = "error: " + I18n.ERROR_PRESET_TEMPLETE_NOT_FOUND;
             Stdlib.log(errmsg);
             throw errmsg;
         }
@@ -422,7 +422,7 @@ export function importFiles(custom_opts: CustomOptions): boolean
         }
         Stdlib.log("complete file: " + filename);
     }
-    alert(i18n.COMPLETE);
+    alert(I18n.COMPLETE);
     if (errorMsg != "") {
         alert("error:\r\n" + errorMsg);
     }

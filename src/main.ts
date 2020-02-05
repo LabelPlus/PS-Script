@@ -40,13 +40,13 @@ class LabelPlusInput extends GenericUI {
             h: 685
         };
 
-        self.title = i18n.APPNAME + " " + VERSION;	// our window title
+        self.title = I18n.APP_NAME + " " + VERSION;	// our window title
         self.notesSize = 75;
-        self.notesTxt = i18n.TIP_TITLE;
-        self.documentation = i18n.TIP_TEXT;
+        self.notesTxt = I18n.TIP_TITLE;
+        self.documentation = I18n.TIP_TEXT;
 
-        self.processTxt = i18n.BUTTON_RUN;
-        self.cancelTxt = i18n.BUTTON_CANCEL;
+        self.processTxt = I18n.BUTTON_RUN;
+        self.cancelTxt = I18n.BUTTON_CANCEL;
     }
 }
 
@@ -79,7 +79,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
 
     // LabelPlus文本文件输入
     pnl.lpTextFileLabel = pnl.add('statictext', [xx, yy, xx + 120, yy + 20],
-        i18n.LABEL_TEXTFILE);
+        I18n.LABEL_TEXT_FILE);
     xx += 120;
     pnl.lpTextFileTextBox = pnl.add('edittext', [xx, yy, xx + 170, yy + 20], '');
     pnl.lpTextFileTextBox.enabled = false;
@@ -90,7 +90,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         try {
             let pnl = this.parent;
             let fmask = "*.txt;*.json";
-            let f = File.openDialog(i18n.LABEL_TEXTFILE, fmask);
+            let f = File.openDialog(I18n.LABEL_TEXT_FILE, fmask);
 
             if (f && f.exists) {
                 pnl.lpTextFileTextBox.text = decodeURI(f.fsName);
@@ -111,7 +111,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             // 读取LabelPlus文件
             let lpFile = lpTextParser(pnl.lpTextFileTextBox.text);
             if (lpFile === null) {
-                alert(i18n.ERROR_READLABELTEXTFILEFAILL);
+                alert(I18n.ERROR_PARSER_LPTEXT_FAIL);
                 return;
             }
 
@@ -147,7 +147,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     xx = xOfs;
 
     // 选择需要导入的图片
-    pnl.chooseImageLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 22], i18n.LABEL_SELECTIMAGE);
+    pnl.chooseImageLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 22], I18n.LABEL_SELECT_IMG);
     yy += 20;
     pnl.chooseImageListBox = pnl.add('listbox', [xx, yy, xx + 150, yy + 320], [], { multiselect: true });
 
@@ -157,14 +157,14 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     xx = xOfs + 170;
 
     //选择需要导入的分组
-    pnl.chooseGroupLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 22], i18n.LABEL_SELECTGROUP);
+    pnl.chooseGroupLabel = pnl.add('statictext', [xx, yy, xx + 150, yy + 22], I18n.LABEL_SELECT_GROUP);
     yy += 20;
     pnl.chooseGroupListBox = pnl.add('listbox', [xx, yy, xx + 150, yy + 320], [], { multiselect: true });
     xx = xOfs;
     yy += 325;
 
     // 列表框没有复选框功能，这里提示使用方法
-    pnl.add('statictext', [xx, yy, xx + 320, yy + 44], i18n.LABEL_SelectTip, { multiline: true });
+    pnl.add('statictext', [xx, yy, xx + 320, yy + 44], I18n.LABEL_SELECT_TIP, { multiline: true });
 
     //------------------设置区------------------
     yy = yOfs;
@@ -172,10 +172,10 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     xx = xOfs;
 
     // >>>>>文件 预处理
-    pnl.add('statictext', [xx, yy, xx + 120, yy + 20], i18n.LABEL_TIP_FILE);
+    pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_TIP_FILE);
     yy += 20;
     // 图源文件夹
-    pnl.sourceLabel = pnl.add('statictext', [xx, yy, xx + 120, yy + 20], i18n.LABEL_SOURCE);
+    pnl.sourceLabel = pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_SOURCE);
     xx += 120;
     pnl.sourceTextBox = pnl.add('edittext', [xx, yy, xx + 300, yy + 20], '');
     xx += 305;
@@ -186,7 +186,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             let pnl = this.parent;
             let def :string = (pnl.sourceTextBox.text ?
                 pnl.sourceTextBox.text : Folder.desktop);
-            let f = Stdlib.selectFolder(i18n.LABEL_SOURCE, def);
+            let f = Stdlib.selectFolder(I18n.LABEL_SOURCE, def);
             if (f) {
                 pnl.sourceTextBox.text = decodeURI(f.fsName);
                 if (!pnl.targetTextBox.text) {
@@ -202,7 +202,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     yy += 25;
 
     // 输出目录
-    pnl.targetLabel = pnl.add('statictext', [xx, yy, xx + 120, yy + 20], i18n.LABEL_TARGET);
+    pnl.targetLabel = pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_TARGET);
     xx += 120;
     pnl.targetTextBox = pnl.add('edittext', [xx, yy, xx + 300, yy + 20], '');
     xx += 305;
@@ -220,7 +220,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
                     def = Folder.desktop;
                 }
             }
-            f = Stdlib.selectFolder(i18n.LABEL_TARGET, def);
+            f = Stdlib.selectFolder(I18n.LABEL_TARGET, def);
 
             if (f) {
                 pnl.targetTextBox.text = decodeURI(f.fsName);
@@ -235,7 +235,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
 
     // match image file by order
     {
-        pnl.matchImgByOrderCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_MATCH_IMG_BY_ORDER);
+        pnl.matchImgByOrderCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_MATCH_IMG_BY_ORDER);
         pnl.matchImgByOrderCheckBox.onClick = function () {
             if (pnl.matchImgByOrderCheckBox.value) {
                 pnl.replaceImgSuffixCheckBox.value = false; // incompatible to "replace image suffix"
@@ -244,7 +244,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
             pnl.matchImgByOrderPreviewButton.enabled = pnl.matchImgByOrderCheckBox.value;
         }
         xx += 260;
-        pnl.matchImgByOrderPreviewButton = pnl.add('button', [xx, yy - 5, xx + 80, yy + 20], i18n.BUTTON_MATCH_IMG_BY_ORDER_PREVIEW);
+        pnl.matchImgByOrderPreviewButton = pnl.add('button', [xx, yy - 5, xx + 80, yy + 20], I18n.BUTTON_MATCH_IMG_BY_ORDER_PREVIEW);
         pnl.matchImgByOrderPreviewButton.onClick = function () { // preview button
             let originFileNameList = getFilesListOfPath(pnl.sourceTextBox.text);
             let selectedImgFileNameList = getSelectedItemsText(pnl.chooseImageListBox);
@@ -269,7 +269,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
 
     // replace image suffix
     {
-        pnl.replaceImgSuffixCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_REPLACE_IMG_SUFFIX);
+        pnl.replaceImgSuffixCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_REPLACE_IMG_SUFFIX);
         pnl.replaceImgSuffixCheckBox.onClick = function () {
             if (pnl.replaceImgSuffixCheckBox.value) {
                 pnl.matchImgByOrderCheckBox.value = false; // incompatible to "match image file by order"
@@ -296,7 +296,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     }
 
     // text replacing(example:"A->B|C->D")
-    pnl.textReplaceCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_TextReplace);
+    pnl.textReplaceCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_TEXT_REPLACE);
     pnl.textReplaceCheckBox.onClick = function () {
         pnl.textReplaceTextBox.enabled = pnl.textReplaceCheckBox.value;
     };
@@ -308,46 +308,46 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
 
     // >>>>> Script Behavior
     yy += 5;
-    pnl.add('statictext', [xx, yy, xx + 120, yy + 20], i18n.LABEL_TIP_Behavior);
+    pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_TIP_BEHAVIOR);
     yy += 20;
 
     // ignore images with no label
-    pnl.ignoreNoLabelImgCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_IGNORE_NO_LABEL_IMG);
+    pnl.ignoreNoLabelImgCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_IGNORE_NO_LABEL_IMG);
     pnl.ignoreNoLabelImgCheckBox.value = true;
     xx += 250;
 
     // do not close image document after importing complete
-    pnl.notCloseCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_NOTCLOSE);
+    pnl.notCloseCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_NOT_CLOSE);
     xx = xOfs;
     yy += 20;
 
     // output label index as text layer
-    pnl.outputLabelIndexCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_OUTPUTLABELNUMBER);
+    pnl.outputLabelIndexCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_OUTPUT_LABEL_INDEX);
     xx += 250;
 
     // do not create layer group
-    pnl.noLayerGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_LAYERNOTGROUP);
+    pnl.noLayerGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_NO_LAYER_GROUP);
     yy += 20;
 
     // >>>>> Style / Automation
     xx = xOfs;
     yy += 5;
-    pnl.add('statictext', [xx, yy, xx + 120, yy + 20], i18n.LABEL_TIP_STYLE_AUTO);
+    pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_TIP_STYLE_AUTO);
     yy += 20;
 
     // 文档模板设置
-    pnl.docTempletePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 65], i18n.PANEL_DocTempleteSetting);
+    pnl.docTempletePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 65], I18n.PANEL_TEMPLETE_SETTING);
     {
         let pnll: any = pnl.docTempletePnl;
         let xxxOfs: number = 5;
         let xxx: number = xxxOfs;
         let yyy: number = 5;
-        pnll.autoTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 22], i18n.RB_AutoTemplete); xxx += 200;
+        pnll.autoTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 22], I18n.RB_TEMPLETE_AUTO); xxx += 200;
         pnll.autoTempleteRb.value = true;
-        pnll.noTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 22], i18n.RB_NoTemplete); xxx += 200;
+        pnll.noTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 22], I18n.RB_TEMPLETE_NO); xxx += 200;
         xxx = xxxOfs;
         yyy += 22;
-        pnll.customTempleteRb = pnll.add('radiobutton', [xxx, yyy, xxx + 120, yyy + 22], i18n.RB_CustomTemplete); xxx += 120;
+        pnll.customTempleteRb = pnll.add('radiobutton', [xxx, yyy, xxx + 120, yyy + 22], I18n.RB_TEMPLETE_CUSTOM); xxx += 120;
         pnll.customTempleteTextbox = pnll.add('edittext', [xxx, yyy, xxx + 180, yyy + 22]); xxx += 185;
         pnll.customTempleteTextButton = pnll.add('button', [xxx, yyy, xxx + 30, yyy + 22], '...'); xxx += 30;
         let rbclick = function () {
@@ -370,7 +370,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
                 } else {
                     def = Folder.desktop.path;
                 }
-                let f = Stdlib.selectFileOpen(i18n.RB_CustomTemplete, "*.psd;*.tif;*.tiff", def);
+                let f = Stdlib.selectFileOpen(I18n.RB_TEMPLETE_CUSTOM, "*.psd;*.tif;*.tiff", def);
                 if (f)
                     pnll.customTempleteTextbox.text = decodeURI(f.fsName);
             } catch (e) {
@@ -382,15 +382,15 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     yy += 70;
 
     // 设置文字方向
-    pnl.textDirLabel = pnl.add('statictext', [xx, yy, xx + 100, yy + 20], i18n.LABEL_TextDirection);
+    pnl.textDirLabel = pnl.add('statictext', [xx, yy, xx + 100, yy + 20], I18n.LABEL_TEXT_DIRECTION);
     xx += 100;
-    pnl.textDirList = pnl.add('dropdownlist', [xx, yy, xx + 100, yy + 22], i18n.LIST_SetTextDirItems);
-    pnl.textDirList.selection = pnl.textDirList.find(i18n.LIST_SetTextDirItems[0]);
+    pnl.textDirList = pnl.add('dropdownlist', [xx, yy, xx + 100, yy + 22], I18n.LIST_TEXT_DIT_ITEMS);
+    pnl.textDirList.selection = pnl.textDirList.find(I18n.LIST_TEXT_DIT_ITEMS[0]);
     xx = xOfs;
     yy += 20;
 
     // 使用自定义字体设置
-    pnl.setFontCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_SetFont);
+    pnl.setFontCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], I18n.CHECKBOX_SET_FONT);
     pnl.setFontCheckBox.onClick = function () {
         let value = pnl.setFontCheckBox.value;
         pnl.font.family.enabled = value;
@@ -412,7 +412,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     yy += 25;
 
     // 自定义行距
-    pnl.setTextLeadingCheckBox = pnl.add('checkbox', [xx, yy, xx + 120, yy + 20], i18n.CHECKBOX_SetLeading);
+    pnl.setTextLeadingCheckBox = pnl.add('checkbox', [xx, yy, xx + 120, yy + 20], I18n.CHECKBOX_SET_LEADING);
     pnl.setTextLeadingCheckBox.onClick = function () {
         pnl.textLeadingTextBox.enabled = pnl.setTextLeadingCheckBox.value;
     }
@@ -427,7 +427,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
 
     // 执行动作GroupN
     pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 500, yy + 22],
-        i18n.CHECKBOX_RUNACTION);
+        I18n.CHECKBOX_RUN_ACTION);
     pnl.runActionGroupCheckBox.onClick = function () {
         pnl.runActionGroupList.enabled = pnl.runActionGroupCheckBox.value;
     }
@@ -445,7 +445,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     yy += 20;
 
     // dialog overlay
-    pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 22], i18n.CHECKBOX_DIALOG_OVERLAY);
+    pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 22], I18n.CHECKBOX_DIALOG_OVERLAY);
     pnl.dialogOverlayCheckBox.onClick = function () {
         pnl.overlayGroupTextBox.enabled = pnl.dialogOverlayCheckBox.value;
     }
@@ -481,7 +481,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         Emit(pnl.docTempletePnl.autoTempleteRb.onClick);
     }
     if (opts.textDirection !== undefined) {
-        pnl.textDirList.selection = pnl.textDirList.find(i18n.LIST_SetTextDirItems[opts.textDirection]);
+        pnl.textDirList.selection = pnl.textDirList.find(I18n.LIST_TEXT_DIT_ITEMS[opts.textDirection]);
     }
     if (opts.font !== undefined) {
         if (opts.font === "") {
@@ -547,7 +547,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
 let createSettingsPanel = function (pnl: any, ini: any) {
     let win = GenericUI.getWindow(pnl.parent);
 
-    pnl.text = i18n.LABEL_SETTING;
+    pnl.text = I18n.LABEL_SETTING;
     pnl.win = win;
 
     pnl.fileMask = "INI Files: *.ini, All Files: *.*";
@@ -561,11 +561,11 @@ let createSettingsPanel = function (pnl: any, ini: any) {
     let bw = 90;
 
     let x = offsets[0] - (bw / 2);
-    pnl.load = pnl.add('button', [x, y, x + bw, y + 20], i18n.BUTTON_LOAD);
+    pnl.load = pnl.add('button', [x, y, x + bw, y + 20], I18n.BUTTON_LOAD);
     x = offsets[1] - (bw / 2);
-    pnl.save = pnl.add('button', [x, y, x + bw, y + 20], i18n.BUTTON_SAVE);
+    pnl.save = pnl.add('button', [x, y, x + bw, y + 20], I18n.BUTTON_SAVE);
     x = offsets[2] - (bw / 2);
-    pnl.reset = pnl.add('button', [x, y, x + bw, y + 20], i18n.BUTTON_RESET);
+    pnl.reset = pnl.add('button', [x, y, x + bw, y + 20], I18n.BUTTON_RESET);
 
     pnl.load.onClick = function () {
         let pnl = this.parent;
@@ -666,7 +666,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         // image source folder
         f = new Folder(pnl.sourceTextBox.text);
         if (!f || !f.exists) {
-            alert(i18n.ERROR_NOTFOUNDSOURCE);
+            alert(I18n.ERROR_NOT_FOUND_SOURCE);
             return false;
         }
         opts.source = decodeURI(f.fsName)
@@ -675,7 +675,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         f = new Folder(pnl.targetTextBox.text);
         if (!f.exists) {
             if (!f.create()) {
-                alert(i18n.ERROR_CANNOTBUILDNEWFOLDER);
+                alert(I18n.ERROR_CREATE_NEW_FOLDER);
                 return false;
             }
         }
@@ -684,19 +684,19 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         // labeplus text file
         f = new File(pnl.lpTextFileTextBox.text);
         if (!f || !f.exists) {
-            alert(i18n.ERROR_NOTFOUNLABELTEXT);
+            alert(I18n.ERROR_NOT_FOUND_LPTEXT);
             return false;
         }
         let lpFile = lpTextParser(pnl.lpTextFileTextBox.text);
         if (lpFile == null) {
-            alert(i18n.ERROR_READLABELTEXTFILEFAILL);
+            alert(I18n.ERROR_PARSER_LPTEXT_FAIL);
             return false;
         }
         opts.lpTextFilePath = pnl.lpTextFileTextBox.text;
 
         // images
         if (!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0) {
-            alert(i18n.ERROR_NOTCHOOSEIMAGE);
+            alert(I18n.ERROR_NO_IMG_CHOOSED);
             return false;
         }
         opts.imageSelected = [];
@@ -707,7 +707,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
 
         // label groups
         if (!pnl.chooseGroupListBox.selection || pnl.chooseGroupListBox.selection.length == 0) {
-            alert(i18n.ERROR_NOTCHOOSEGROUP);
+            alert(I18n.ERROR_NO_LABEL_GROUP_CHOOSED);
             return false;
         }
         opts.groupSelected = [];
@@ -735,7 +735,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
     }
     opts.textLeading = (pnl.setTextLeadingCheckBox.value) ? pnl.textLeadingTextBox.text : 0;
     opts.outputLabelIndex = pnl.outputLabelIndexCheckBox.value;
-    opts.textDirection = <OptionTextDirection> i18n.LIST_SetTextDirItems.indexOf(pnl.textDirList.selection.text);
+    opts.textDirection = <OptionTextDirection> I18n.LIST_TEXT_DIT_ITEMS.indexOf(pnl.textDirList.selection.text);
     opts.ignoreNoLabelImg = pnl.ignoreNoLabelImgCheckBox.value;
     opts.matchImgByOrder = pnl.matchImgByOrderCheckBox.value
     opts.replaceImgSuffix = (pnl.replaceImgSuffixCheckBox.value) ? pnl.replaceImgSuffixCheckBox.text : "";
