@@ -31,7 +31,7 @@ class LabelPlusInput extends GenericUI {
             x: 200,
             y: 200,
             w: 875,
-            h: 725
+            h: 750
         };
 
         self.title = I18n.APP_NAME + " " + VERSION;	// our window title
@@ -288,6 +288,19 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: never) {
         yy += 23;
     }
 
+    // output file type
+    {
+        pnl.outputTypeLabel = pnl.add('statictext', [xx, yy, xx + 250, yy + 20], I18n.LABEL_OUTPUT_FILE_TYPE);
+        let type_arr: string[] = [];
+        for (let i = 0; i < OptionOutputType._count; i++) {
+            type_arr[i] = OptionOutputType[i];
+        }
+        xx += 260;
+        pnl.outputTypeList = pnl.add('dropdownlist', [xx, yy - 1, xx + 100, yy + 21], type_arr);
+        xx = xOfs;
+        yy += 23;
+    }
+
     // text replacing(example:"A->B|C->D")
     pnl.textReplaceCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_TEXT_REPLACE);
     pnl.textReplaceCheckBox.onClick = function () {
@@ -523,6 +536,9 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: never) {
         pnl.replaceImgSuffixTextbox.text = opts.replaceImgSuffix;
         Emit(pnl.replaceImgSuffixCheckBox.onClick);
     }
+    if (opts.outputType !== undefined) {
+        pnl.outputTypeList.selection = pnl.outputTypeList.find(OptionOutputType[opts.outputType]);
+    }
     if (opts.actionGroup !== undefined) {
         pnl.runActionGroupCheckBox.value = (opts.actionGroup !== "");
         let item = pnl.runActionGroupList.find(opts.actionGroup);
@@ -701,6 +717,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
     opts.ignoreNoLabelImg = pnl.ignoreNoLabelImgCheckBox.value;
     opts.matchImgByOrder = pnl.matchImgByOrderCheckBox.value
     opts.replaceImgSuffix = (pnl.replaceImgSuffixCheckBox.value) ? pnl.replaceImgSuffixCheckBox.text : "";
+    opts.outputType = <number>pnl.outputTypeList.selection.index;
     opts.actionGroup = (pnl.runActionGroupCheckBox.value) ? pnl.runActionGroupList.selection.text : "";
     opts.notClose = pnl.notCloseCheckBox.value;
     opts.noLayerGroup = pnl.noLayerGroupCheckBox.value;

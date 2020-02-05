@@ -22,7 +22,7 @@ namespace I18n {
 
     export var LABEL_TEXT_FILE: string = "LabelPlus文本:";
     export var LABEL_SOURCE: string = "图源文件夹:";
-    export var LABEL_TARGET: string = "输出PSD文件夹:";
+    export var LABEL_TARGET: string = "输出文件夹:";
     export var LABEL_SETTING: string = "存取配置";
     export var LABEL_SELECT_IMG: string = "导入图片选择";
     export var LABEL_SELECT_GROUP: string = "导入分组选择";
@@ -34,6 +34,7 @@ namespace I18n {
     export var CHECKBOX_IGNORE_NO_LABEL_IMG: string = "不输出未标号图片";
     export var CHECKBOX_MATCH_IMG_BY_ORDER: string = "按顺序匹配图片文件";
     export var BUTTON_MATCH_IMG_BY_ORDER_PREVIEW: string = "预览匹配结果";
+    export var LABEL_OUTPUT_FILE_TYPE: string = "输出文件类型：";
     export var CHECKBOX_REPLACE_IMG_SUFFIX: string = "替换图片后缀名";
     export var CHECKBOX_RUN_ACTION: string = "导入文本后，执行以分组名命名的动作；打开图片时执行_start，关闭前执行_end动作";
     export var CHECKBOX_NOT_CLOSE: string = "导入后不关闭文档";
@@ -75,7 +76,7 @@ namespace I18n {
         RB_TEMPLETE_CUSTOM = "Custom Templete";
         LABEL_TEXT_FILE = "LabelPlus Text:";
         LABEL_SOURCE = "Image Source:";
-        LABEL_TARGET = "Output PSD:";
+        LABEL_TARGET = "Output Folder:";
         LABEL_SETTING = "Setting";
         LABEL_SELECT_IMG = "Select Image";
         LABEL_SELECT_GROUP = "Select Group";
@@ -85,6 +86,7 @@ namespace I18n {
         CHECKBOX_IGNORE_NO_LABEL_IMG = "Ignore Images With No Label";
         CHECKBOX_MATCH_IMG_BY_ORDER = "Match Image Source By Order";
         BUTTON_MATCH_IMG_BY_ORDER_PREVIEW = "Preview Match Result";
+        LABEL_OUTPUT_FILE_TYPE = "Output File Type:";
         CHECKBOX_REPLACE_IMG_SUFFIX = "Replace Image Suffix";
         CHECKBOX_RUN_ACTION = "Execute Actions Named Of Group Name(\"_start\" after open, \"_end\" before close)";
         CHECKBOX_NOT_CLOSE = "Do Not Close File";

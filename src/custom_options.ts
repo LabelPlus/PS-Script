@@ -4,6 +4,7 @@ namespace LabelPlus {
 
 export enum OptionTextDirection { Keep, Horizontal, Vertical };
 export enum OptionDocTemplete { Auto, No, Custom }; // auto choose preset templete/no use templete/custom templete
+export enum OptionOutputType { PSD, TIFF, PNG, JPG, _count };
 
 export class CustomOptions {
 
@@ -20,6 +21,7 @@ export class CustomOptions {
 
     matchImgByOrder: boolean = false; // match image by order, ignore file name in lpText, for replacing image source
     replaceImgSuffix: string = ""; // replacing image suffix,  for replacing image source
+    outputType: OptionOutputType = OptionOutputType.PSD; // output image file type
     ignoreNoLabelImg: boolean = false; // ignore images with no label
     noLayerGroup: boolean = false; // do not create group in document for text layers
     notClose: boolean = false; // do not close image document

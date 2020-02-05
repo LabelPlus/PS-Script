@@ -292,20 +292,40 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
     return ws;
 }
 
-function closeImage(img: ImageInfo): boolean
+function closeImage(img: ImageInfo, saveType: OptionOutputType = OptionOutputType.PSD): boolean
 {
     assert(opts !== null);
 
     // 保存文件
     let fileOut = new File(opts.target + "//" + img.name);
-    let options = PhotoshopSaveOptions;
     let asCopy = false;
+    let options: any;
+    switch (saveType) {
+    case OptionOutputType.PSD:
+        options = PhotoshopSaveOptions;
+        break;
+    case OptionOutputType.TIFF:
+        options = TiffSaveOptions;
+        break;
+    case OptionOutputType.PNG:
+        options = PNGSaveOptions;
+        asCopy = true;
+        break;
+    case OptionOutputType.JPG:
+        options = new JPEGSaveOptions();
+        options.quality = 10;
+        asCopy = true;
+        break;
+    default:
+        throw "unkown save type";
+    }
+
     let extensionType = Extension.LOWERCASE;
     img.ws.doc.saveAs(fileOut, options, asCopy, extensionType);
 
     // 关闭文件
     if (!opts.notClose)
-        img.ws.doc.close();
+        img.ws.doc.close(SaveOptions.DONOTSAVECHANGES);
 
     return true;
 }
@@ -407,7 +427,7 @@ export function importFiles(custom_opts: CustomOptions): boolean
             Stdlib.log(msg);
             errorMsg = errorMsg + msg + "\r\n";
         }
-        if (!closeImage(img_info)) {
+        if (!closeImage(img_info, opts.outputType)) {
             let msg = filename + ": save/close file failed";
             Stdlib.log(msg);
             errorMsg = errorMsg + msg + "\r\n";
