@@ -31,7 +31,7 @@ namespace i18n {
 
     export var CHECKBOX_OUTPUTLABELNUMBER: string = "导出标号";
     export var CHECKBOX_TextReplace: string = "文本替换(格式:\"A->B|C->D\")";
-    export var CHECKBOX_OUTPUTNOSIGNPSD: string = "导出没有标号的文档";
+    export var CHECKBOX_IGNORE_NO_LABEL_IMG: string = "不输出未标号图片";
     export var CHECKBOX_MATCH_IMG_BY_ORDER: string = "按顺序匹配图片文件";
     export var BUTTON_MATCH_IMG_BY_ORDER_PREVIEW: string = "预览匹配结果";
     export var CHECKBOX_REPLACE_IMG_SUFFIX: string = "替换图片后缀名";
@@ -42,7 +42,7 @@ namespace i18n {
     export var LABEL_TextDirection: string = "文字方向：";
     export var LIST_SetTextDirItems: string[] = [ "默认", "横向", "纵向" ];
     export var CHECKBOX_LAYERNOTGROUP: string = "不对图层进行分组";
-    export var CHECKBOX_OVERLAY: string = "对指定分组执行涂白动作(实验性功能)";
+    export var CHECKBOX_DIALOG_OVERLAY: string = "对指定分组执行涂白动作(实验性功能)";
 
     export var COMPLETE: string = "导出完毕！";
 
@@ -82,7 +82,7 @@ namespace i18n {
         LABEL_SelectTip = "Tip: In ListBox, push Ctrl key to select/cancel one item, push Shift key to select multiple items.";
         CHECKBOX_OUTPUTLABELNUMBER = "Output Label Number";
         CHECKBOX_TextReplace = "Text Replace(e.g. \"A->B|C->D\")";
-        CHECKBOX_OUTPUTNOSIGNPSD = "Output No Label File";
+        CHECKBOX_IGNORE_NO_LABEL_IMG = "Ignore Images With No Label";
         CHECKBOX_MATCH_IMG_BY_ORDER = "Match Image Source By Order";
         BUTTON_MATCH_IMG_BY_ORDER_PREVIEW = "Preview Match Result";
         CHECKBOX_REPLACE_IMG_SUFFIX = "Replace Image Suffix";
@@ -93,7 +93,7 @@ namespace i18n {
         LABEL_TextDirection = "Text Direction:";
         LIST_SetTextDirItems = [ "Default", "Horizontal", "Vertical" ];
         CHECKBOX_LAYERNOTGROUP = "Layer Not Grouping";
-        CHECKBOX_OVERLAY = "Execute \"Text Overlay\" On Specified Group";
+        CHECKBOX_DIALOG_OVERLAY = "Execute \"Text Overlay\" On Specified Group";
         COMPLETE = "Export completed!";
         ERROR_NOTFOUNDSOURCE = "Image Source Folder Not Found!";
         ERROR_NOTFOUNDTARGET = "Output PSD Folder Not Found!";

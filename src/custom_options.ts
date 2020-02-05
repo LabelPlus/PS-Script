@@ -3,7 +3,7 @@
 namespace LabelPlus {
 
 export enum OptionTextDirection { Keep, Horizontal, Vertical };
-export enum OptionDocTemplete { Auto, No, Custom }; // 自动选择模板、不使用模板、自定义模板文件
+export enum OptionDocTemplete { Auto, No, Custom }; // auto choose preset templete/no use templete/custom templete
 
 export class CustomOptions {
     constructor(obj: Object) {
@@ -11,32 +11,32 @@ export class CustomOptions {
         Stdlib.copyFromTo(obj, self);
     }
 
-    source: string = ""; // 图源文件夹
-    target: string = ""; // 输出文件夹
-    labelFilename: string = ""; // 翻译文本的文件名
-    labelFilePath: string = ""; // 翻译文本所在文件夹
-    imageSelected: { file: string, index: number }[] = []; // 被选中的图片列表
-    groupSelected: string[] = []; // 被选中的分组列表
+    // ------------------------------------ not saved options
+    source: string = ""; // images source folder
+    target: string = ""; // images target folder
+    lpTextFilePath: string = ""; // path of labelplus text file
+    imageSelected: { file: string, index: number }[] = []; // selected images
+    groupSelected: string[] = [];  // selected label group
 
-    // ------------------------------------可保存设置，均为string
-    docTemplete: OptionDocTemplete = OptionDocTemplete.Auto; // 模板设置
-    docTempleteCustomPath: string = "";  // 自定义模板文件路径
+    // ------------------------------------ saved options
+    docTemplete: OptionDocTemplete = OptionDocTemplete.Auto; // image document templete option
+    docTempleteCustomPath: string = "";  // custom image document templete path
 
     matchImgByOrder: boolean = false; // match image by order, ignore file name in lpText, for replacing image source
     replaceImgSuffix: string = ""; // replacing image suffix,  for replacing image source
-    outputNoSignPsd: boolean = true; // 是否输出未标号的图片
-    layerNotGroup: boolean = false; // 图层不分组
-    notClose: boolean = false; // 导入图片后不关闭文档
+    ignoreNoLabelImg: boolean = false; // ignore images with no label
+    noLayerGroup: boolean = false; // do not create group in document for text layers
+    notClose: boolean = false; // do not close image document
 
-    font: string = ""; // 设置的字体，为空时不设置
-    fontSize: number = 0; // 字体大小，为0时不设置
-    textLeading: number = 0; // 行距值，百分比，为0时不设置
-    textReplace: string = ""; // 文本替换规则，为空时不替换
-    outputLabelNumber: boolean = false; // 是否输出标号
-    textDirection: OptionTextDirection = OptionTextDirection.Keep; // 输出文本的阅读方向
+    font: string = ""; // set font if it is not empty
+    fontSize: number = 0; // set font size if neq 0
+    textLeading: number = 0; // set auto leading value if neq 0, unit is percent
+    textReplace: string = ""; // run text replacing function, if the expression is not empty
+    outputLabelIndex: boolean = false; // if true, output label index as text layer
+    textDirection: OptionTextDirection = OptionTextDirection.Keep; // text direction option
 
-    runActionGroup: string = ""; // 导入文本图层后执行的动作组的名字
-    overloayGroup: string = ""; // 执行简易涂白的分组
+    actionGroup: string = ""; // action group name
+    dialogOverlayLabelGroup: string = ""; // the label group need dialog overlay layer
 };
 
 } // namespace LabelPlus

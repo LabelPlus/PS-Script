@@ -48,7 +48,7 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
     assert(opts !== null);
 
     // import the index of the Label
-    if (opts.outputLabelNumber) {
+    if (opts.outputLabelIndex) {
         let o: TextInputOptions = {
             templete: img.ws.textTempleteLayer,
             direction: Direction.HORIZONTAL,
@@ -95,14 +95,14 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
     textLayer = newTextLayer(img.ws.doc, label.contents, label.x, label.y, o);
 
     // 执行动作,名称为分组名
-    if (opts.runActionGroup) {
+    if (opts.actionGroup) {
         try {
             img.ws.doc.activeLayer = textLayer;
-            this.doAction(label.group, opts.runActionGroup);
+            this.doAction(label.group, opts.actionGroup);
         }
         catch (e) {
             Stdlib.log("DoAction " + label.group +
-                " in " + opts.runActionGroup +
+                " in " + opts.actionGroup +
                 " Error: \r\n" + e);
         }
     }
@@ -114,18 +114,18 @@ function importImage(img: ImageInfo): boolean
     assert(opts !== null);
 
     // 文件打开时执行一次动作"_start"
-    if (opts.runActionGroup) {
+    if (opts.actionGroup) {
         img.ws.doc.activeLayer = img.ws.doc.layers[img.ws.doc.layers.length - 1];
-        try { doAction("_start", opts.runActionGroup); }
+        try { doAction("_start", opts.actionGroup); }
         catch (e) { }
     }
 
     // 找出需要涂白的标签,记录他们的坐标,执行涂白
-    if (opts.overloayGroup) {
+    if (opts.dialogOverlayLabelGroup) {
         let points = new Array();
         for (let j = 0; j < img.labels.length; j++) {
             let l = img.labels[j];
-            if (l.group == opts.overloayGroup) {
+            if (l.group == opts.dialogOverlayLabelGroup) {
                 points.push({ x: l.x, y: l.y });
             }
         }
@@ -150,7 +150,7 @@ function importImage(img: ImageInfo): boolean
     }
 
     // adjust layer order
-    if (img.ws.bgLayer && (opts.overloayGroup !== "")) {
+    if (img.ws.bgLayer && (opts.dialogOverlayLabelGroup !== "")) {
         img.ws.dialogOverlayLayer.move(img.ws.bgLayer, ElementPlacement.PLACEBEFORE); // "dialog-overlay" before "bg"
     }
 
@@ -167,10 +167,10 @@ function importImage(img: ImageInfo): boolean
     }
 
     // 文件关闭时执行一次动作"_end"
-    if (opts.runActionGroup) {
+    if (opts.actionGroup) {
         try {
             img.ws.doc.activeLayer = img.ws.doc.layers[img.ws.doc.layers.length - 1];
-            this.doAction("_end", opts.runActionGroup);
+            this.doAction("_end", opts.actionGroup);
         }
         catch (e) { }
     }
@@ -267,7 +267,7 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
         let tmp: Group = {};
 
         // 创建PS中图层分组
-        if (!opts.layerNotGroup) {
+        if (!opts.noLayerGroup) {
             tmp.layerSet = wsDoc.layerSets.add();
             tmp.layerSet.name = name;
         }
@@ -281,7 +281,7 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
         }
         groups[name] = tmp; // add
     }
-    if (opts.outputLabelNumber) {
+    if (opts.outputLabelIndex) {
         let tmp: Group = {};
         tmp.layerSet = wsDoc.layerSets.add();
         tmp.layerSet.name = "Label";
@@ -321,13 +321,13 @@ export function importFiles(custom_opts: CustomOptions): boolean
 {
     opts = custom_opts;
 
-    Stdlib.log.setFile(opts.labelFilePath + dirSeparator + "LabelPlusInputer.log");//LabelPlusInputOptions.LOG_FILE);
+    Stdlib.log.setFile(DEFAULT_LOG_PATH);
     Stdlib.log("Start");
     Stdlib.log("Properties:");
     Stdlib.log(Stdlib.listProps(opts));
 
     //解析LabelPlus文本
-    let lpFile = lpTextParser(opts.labelFilename);
+    let lpFile = lpTextParser(opts.lpTextFilePath);
     if (lpFile == null) {
         let errmsg = "error: " + i18n.ERROR_READLABELTEXTFILEFAILL;
         Stdlib.log(errmsg);
@@ -382,7 +382,7 @@ export function importFiles(custom_opts: CustomOptions): boolean
         let originName :string = opts.imageSelected[i].file; // 翻译文件中的图片文件名
         let filename: string;
 
-        if (!opts.outputNoSignPsd && lpFile?.images[originName].length == 0) // 不处理无标号文档
+        if (opts.ignoreNoLabelImg && lpFile?.images[originName].length == 0) // ignore img with no label
             continue;
 
         // replace suffix && match by order

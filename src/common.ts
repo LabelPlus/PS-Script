@@ -74,4 +74,6 @@ export function min(a: number, b: number): number {
     return (a < b) ? a : b;
 }
 
+export const DEFAULT_LOG_PATH: string = GetScriptFolder() + dirSeparator + "lp_ps_script.log";
+
 } // namespace LabelPlus

@@ -288,7 +288,7 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         yy += 20;
     }
 
-    // 文本替换(例:"A->B|C->D")
+    // text replacing(example:"A->B|C->D")
     pnl.textReplaceCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_TextReplace);
     pnl.textReplaceCheckBox.onClick = function () {
         pnl.textReplaceTextBox.enabled = pnl.textReplaceCheckBox.value;
@@ -299,30 +299,30 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     yy += 20;
 
 
-    // >>>>>脚本行为
+    // >>>>> Script Behavior
     yy += 5;
     pnl.add('statictext', [xx, yy, xx + 120, yy + 20], i18n.LABEL_TIP_Behavior);
     yy += 20;
 
-    // 处理无标号文档
-    pnl.outputNoSignPsdCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_OUTPUTNOSIGNPSD);
-    pnl.outputNoSignPsdCheckBox.value = true;
+    // ignore images with no label
+    pnl.ignoreNoLabelImgCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_IGNORE_NO_LABEL_IMG);
+    pnl.ignoreNoLabelImgCheckBox.value = true;
     xx += 250;
 
-    // 导入后不关闭文档
+    // do not close image document after importing complete
     pnl.notCloseCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_NOTCLOSE);
     xx = xOfs;
     yy += 20;
 
-    // 导出标号选项
-    pnl.outputLabelNumberCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_OUTPUTLABELNUMBER);
+    // output label index as text layer
+    pnl.outputLabelIndexCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_OUTPUTLABELNUMBER);
     xx += 250;
 
-    // 不对图层进行分组
-    pnl.layerNotGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_LAYERNOTGROUP);
+    // do not create layer group
+    pnl.noLayerGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 22], i18n.CHECKBOX_LAYERNOTGROUP);
     yy += 20;
 
-    // >>>>>格式 / 自动化
+    // >>>>> Style / Automation
     xx = xOfs;
     yy += 5;
     pnl.add('statictext', [xx, yy, xx + 120, yy + 20], i18n.LABEL_TIP_STYLE_AUTO);
@@ -437,26 +437,23 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     xx = xOfs;
     yy += 20;
 
-    // 涂白功能选项
-    pnl.overlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 22], i18n.CHECKBOX_OVERLAY);
-    pnl.overlayCheckBox.onClick = function () {
-        pnl.overlayGroupTextBox.enabled = pnl.overlayCheckBox.value;
+    // dialog overlay
+    pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 22], i18n.CHECKBOX_DIALOG_OVERLAY);
+    pnl.dialogOverlayCheckBox.onClick = function () {
+        pnl.overlayGroupTextBox.enabled = pnl.dialogOverlayCheckBox.value;
     }
     xx += 300;
 
     pnl.overlayGroupTextBox = pnl.add('edittext', [xx, yy, xx + 180, yy + 20]);
     pnl.overlayGroupTextBox.enabled = false;
 
-    //------------------读取配置区------------------
-    //note: opts由外部传入，可能为undefined，必须检验
-
-    //文本替换
+    // read options to UI panel
+    // note: opts generated from externel file, can be undefined
     if (opts.textReplace !== undefined) {
         pnl.textReplaceCheckBox.value = (opts.textReplace !== "");
         pnl.textReplaceTextBox.text = (opts.textReplace !== "") ? opts.textReplace : "！？->!?|...->…";
         Emit(pnl.textReplaceCheckBox.onClick);
     }
-    // 文档模板
     if (opts.docTemplete !== undefined) {
         pnl.docTempletePnl.autoTempleteRb = false;
         pnl.docTempletePnl.noTempleteRb.value = false;
@@ -476,11 +473,9 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         }
         Emit(pnl.docTempletePnl.autoTempleteRb.onClick);
     }
-    // 文字方向
     if (opts.textDirection !== undefined) {
         pnl.textDirList.selection = pnl.textDirList.find(i18n.LIST_SetTextDirItems[opts.textDirection]);
     }
-    // 字体
     if (opts.font !== undefined) {
         if (opts.font === "") {
             pnl.setFontCheckBox.value = false;
@@ -490,7 +485,6 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         }
         Emit(pnl.setFontCheckBox.onClick);
     }
-    // 行距
     if (opts.textLeading !== undefined) {
         if (opts.textLeading === 0) {
             pnl.setTextLeadingCheckBox.value = false;
@@ -500,15 +494,13 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         }
         Emit(pnl.setTextLeadingCheckBox.onClick);
     }
-    // 导出标号选项
-    if (opts.outputLabelNumber !== undefined) {
-        pnl.outputLabelNumberCheckBox.value = opts.outputLabelNumber;
-        Emit(pnl.outputLabelNumberCheckBox.onClick);
+    if (opts.outputLabelIndex !== undefined) {
+        pnl.outputLabelIndexCheckBox.value = opts.outputLabelIndex;
+        Emit(pnl.outputLabelIndexCheckBox.onClick);
     }
-    // 处理无标号文档
-    if (opts.outputNoSignPsd !== undefined) {
-        pnl.outputNoSignPsdCheckBox.value = opts.outputNoSignPsd;
-        Emit(pnl.outputNoSignPsdCheckBox.onClick);
+    if (opts.ignoreNoLabelImg !== undefined) {
+        pnl.ignoreNoLabelImgCheckBox.value = opts.ignoreNoLabelImg;
+        Emit(pnl.ignoreNoLabelImgCheckBox.onClick);
     }
     if (opts.matchImgByOrder !== undefined) {
         pnl.matchImgByOrderCheckBox.value = opts.matchImgByOrder;
@@ -519,33 +511,26 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         pnl.replaceImgSuffixTextbox.text = opts.replaceImgSuffix;
         Emit(pnl.replaceImgSuffixCheckBox.onClick);
     }
-    // 执行动作GroupN
-    if (opts.runActionGroup !== undefined) {
-        pnl.runActionGroupCheckBox.value = (opts.runActionGroup !== "");
-        let item = pnl.runActionGroupList.find(opts.runActionGroup);
+    if (opts.actionGroup !== undefined) {
+        pnl.runActionGroupCheckBox.value = (opts.actionGroup !== "");
+        let item = pnl.runActionGroupList.find(opts.actionGroup);
         if (item !== undefined)
             pnl.runActionGroupList.selection = item;
         Emit(pnl.runActionGroupCheckBox.onClick);
     }
-    // 导入后不关闭文档
     if (opts.notClose !== undefined) {
         pnl.notCloseCheckBox.value = opts.notClose;
         Emit(pnl.notCloseCheckBox.onClick);
     }
-
-    // 不对图层进行分组
-    if (opts.layerNotGroup !== undefined) {
-        pnl.layerNotGroupCheckBox.value = opts.layerNotGroup;
-        Emit(pnl.layerNotGroupCheckBox.onClick);
+    if (opts.noLayerGroup !== undefined) {
+        pnl.noLayerGroupCheckBox.value = opts.noLayerGroup;
+        Emit(pnl.noLayerGroupCheckBox.onClick);
     }
-
-    // 涂白
-    if (opts.overloayGroup !== undefined) {
-        pnl.overlayCheckBox.value = (opts.overloayGroup !== "");
-        pnl.overlayGroupTextBox.text = opts.overloayGroup;
-        Emit(pnl.overlayCheckBox.onClick);
+    if (opts.dialogOverlayLabelGroup !== undefined) {
+        pnl.dialogOverlayCheckBox.value = (opts.dialogOverlayLabelGroup !== "");
+        pnl.overlayGroupTextBox.text = opts.dialogOverlayLabelGroup;
+        Emit(pnl.dialogOverlayCheckBox.onClick);
     }
-
     return pnl;
 };
 
@@ -662,87 +647,70 @@ let createSettingsPanel = function (pnl: any, ini: any) {
     };
 };
 
-//
-// 读出用户UI数据
-//
-LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: boolean) :CustomOptions {
+// validate user panel, generate CustomOptions
+// tofile: if it is saving config to file
+LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: boolean) :CustomOptions | boolean {
     let self = this;
     let opts = new CustomOptions(ini);
-    let f: any;
+    let f: Folder | File;
 
-    // 写配置项时无需存储这些
+    // not saved options
     if (!tofile) {
-        // 图源文件夹
-        if (pnl.sourceTextBox.text) {
-            f = new Folder(pnl.sourceTextBox.text);
-        }
-        else {
-            return self.errorPrompt(i18n.ERROR_NOTFOUNDSOURCE);
-        }
-
+        // image source folder
+        f = new Folder(pnl.sourceTextBox.text);
         if (!f || !f.exists) {
-            return self.errorPrompt(i18n.ERROR_NOTFOUNDSOURCE);
+            alert(i18n.ERROR_NOTFOUNDSOURCE);
+            return false;
         }
         opts.source = decodeURI(f.fsName)
 
-        // 输出目录
-        if (pnl.targetTextBox.text) {
-            f = new Folder(pnl.targetTextBox.text);
-            if (!f.exists) {
-                if (!f.create()) {
-                    return self.errorPrompt(i18n.ERROR_CANNOTBUILDNEWFOLDER);
-                }
+        // image target folder
+        f = new Folder(pnl.targetTextBox.text);
+        if (!f.exists) {
+            if (!f.create()) {
+                alert(i18n.ERROR_CANNOTBUILDNEWFOLDER);
+                return false;
             }
-        }
-        else {
-            return self.errorPrompt(i18n.ERROR_NOTFOUNDTARGET);
-        }
-
-
-        if (!f || !f.exists) {
-            return self.errorPrompt(i18n.ERROR_NOTFOUNDTARGET);
         }
         opts.target = decodeURI(f.fsName)
 
-        // LabelPlus文本
+        // labeplus text file
         f = new File(pnl.lpTextFileTextBox.text);
         if (!f || !f.exists) {
-            return self.errorPrompt(i18n.ERROR_NOTFOUNLABELTEXT);
+            alert(i18n.ERROR_NOTFOUNLABELTEXT);
+            return false;
         }
-        opts.labelFilename = pnl.lpTextFileTextBox.text;
-
-        let fl = new Folder(f.path);
-        opts.labelFilePath = decodeURI(fl.fsName)
-
-        // Image选择
-        if (!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0)
-            return self.errorPrompt(i18n.ERROR_NOTCHOOSEIMAGE);
-        else {
-            let sortedImgSelection = pnl.chooseImageListBox.selection.sort();
-            opts.imageSelected = [];
-
-            for (let i = 0; i < sortedImgSelection.length; i++) {
-                opts.imageSelected[i] = {
-                    file: sortedImgSelection[i].text,
-                    index: sortedImgSelection[i].index
-                };
-            }
+        let lpFile = lpTextParser(pnl.lpTextFileTextBox.text);
+        if (lpFile == null) {
+            alert(i18n.ERROR_READLABELTEXTFILEFAILL);
+            return false;
         }
-        // 分组选择
-        if (!pnl.chooseGroupListBox.selection || pnl.chooseGroupListBox.selection.length == 0)
-            return self.errorPrompt(i18n.ERROR_NOTCHOOSEGROUP);
-        else {
-            opts.groupSelected = [];
-            for (let i = 0; i < pnl.chooseGroupListBox.selection.length; i++)
-                opts.groupSelected[i] = pnl.chooseGroupListBox.selection[i].text;
+        opts.lpTextFilePath = pnl.lpTextFileTextBox.text;
+
+        // images
+        if (!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0) {
+            alert(i18n.ERROR_NOTCHOOSEIMAGE);
+            return false;
+        }
+        opts.imageSelected = [];
+        let items = pnl.chooseImageListBox.selection.sort();
+        for (let i = 0; i < items.length; i++) {
+            opts.imageSelected[i] = { file: items[i].text, index: items[i].index };
         }
 
+        // label groups
+        if (!pnl.chooseGroupListBox.selection || pnl.chooseGroupListBox.selection.length == 0) {
+            alert(i18n.ERROR_NOTCHOOSEGROUP);
+            return false;
+        }
+        opts.groupSelected = [];
+        for (let i = 0; i < pnl.chooseGroupListBox.selection.length; i++) {
+            opts.groupSelected[i] = pnl.chooseGroupListBox.selection[i].text;
+        }
     }
 
-    //----------------------可配置
-    // 文本替换
+    // saved options
     opts.textReplace = (pnl.textReplaceCheckBox.value) ? pnl.textReplaceTextBox.text : "";
-    // 文档模板
     opts.docTemplete =
     pnl.docTempletePnl.autoTempleteRb.value ? OptionDocTemplete.Auto : (
         pnl.docTempletePnl.noTempleteRb.value ? OptionDocTemplete.No : (
@@ -750,7 +718,6 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         )
     );
     opts.docTempleteCustomPath = pnl.docTempletePnl.customTempleteTextbox.text;
-    // 字体
     if (pnl.setFontCheckBox.value) {
         let font = pnl.font.getFont()
         opts.font = font.font;
@@ -759,34 +726,24 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
         opts.font = "";
         opts.fontSize = 0;
     }
-    // 行距
     opts.textLeading = (pnl.setTextLeadingCheckBox.value) ? pnl.textLeadingTextBox.text : 0;
-    // 导出标号选项
-    opts.outputLabelNumber = pnl.outputLabelNumberCheckBox.value;
-    // 文字方向
+    opts.outputLabelIndex = pnl.outputLabelIndexCheckBox.value;
     opts.textDirection = <OptionTextDirection> i18n.LIST_SetTextDirItems.indexOf(pnl.textDirList.selection.text);
-    // 处理无标号文档
-    opts.outputNoSignPsd = pnl.outputNoSignPsdCheckBox.value;
-    // 无视LabelPlus文本中的图源文件名
+    opts.ignoreNoLabelImg = pnl.ignoreNoLabelImgCheckBox.value;
     opts.matchImgByOrder = pnl.matchImgByOrderCheckBox.value
-    // 使用指定类型图源
     opts.replaceImgSuffix = (pnl.replaceImgSuffixCheckBox.value) ? pnl.replaceImgSuffixCheckBox.text : "";
-    // 执行动作GroupN
-    opts.runActionGroup = (pnl.runActionGroupCheckBox.value) ? pnl.runActionGroupList.selection.text : "";
-    // 导入后不关闭文档
+    opts.actionGroup = (pnl.runActionGroupCheckBox.value) ? pnl.runActionGroupList.selection.text : "";
     opts.notClose = pnl.notCloseCheckBox.value;
-    // 不对图层进行分组
-    opts.layerNotGroup = pnl.layerNotGroupCheckBox.value;
-    // 涂白
-    opts.overloayGroup = (pnl.overlayCheckBox.value)? pnl.overlayGroupTextBox.text : "";
-
+    opts.noLayerGroup = pnl.noLayerGroupCheckBox.value;
+    opts.dialogOverlayLabelGroup = (pnl.dialogOverlayCheckBox.value)? pnl.overlayGroupTextBox.text : "";
     return opts;
 };
 
 //
 // 执行用户UI功能
 //
-LabelPlusInput.prototype.process = function (opts: CustomOptions, doc) {
+LabelPlusInput.prototype.process = function (opts: CustomOptions, doc)
+{
     importFiles(opts);
 }
 
