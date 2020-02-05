@@ -42,7 +42,7 @@ namespace I18n {
     export var LABEL_TEXT_DIRECTION: string = "文字方向：";
     export var LIST_TEXT_DIT_ITEMS: string[] = [ "默认", "横向", "纵向" ];
     export var CHECKBOX_NO_LAYER_GROUP: string = "不对图层进行分组";
-    export var CHECKBOX_DIALOG_OVERLAY: string = "对指定分组执行涂白动作(实验性功能)";
+    export var CHECKBOX_DIALOG_OVERLAY: string = "对指定分组涂白(多个分组以半角逗号隔开)：";
 
     export var COMPLETE: string = "导出完毕！";
 
@@ -93,7 +93,7 @@ namespace I18n {
         LABEL_TEXT_DIRECTION = "Text Direction:";
         LIST_TEXT_DIT_ITEMS = [ "Default", "Horizontal", "Vertical" ];
         CHECKBOX_NO_LAYER_GROUP = "Layer Not Grouping";
-        CHECKBOX_DIALOG_OVERLAY = "Execute \"Text Overlay\" On Specified Group";
+        CHECKBOX_DIALOG_OVERLAY = "Execute \"Dialog Overlay\" On Specified Groups (split groups with comma):";
         COMPLETE = "Export completed!";
         ERROR_NOT_FOUND_SOURCE = "Image Source Folder Not Found!";
         ERROR_NOT_FOUND_TARGET = "Output PSD Folder Not Found!";

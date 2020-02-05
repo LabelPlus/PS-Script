@@ -115,11 +115,12 @@ function importImage(img: ImageInfo): boolean
     }
 
     // 找出需要涂白的标签,记录他们的坐标,执行涂白
-    if (opts.dialogOverlayLabelGroup) {
+    if (opts.dialogOverlayLabelGroups) {
         let points = new Array();
+        let groups = opts.dialogOverlayLabelGroups.split(",");
         for (let j = 0; j < img.labels.length; j++) {
             let l = img.labels[j];
-            if (l.group == opts.dialogOverlayLabelGroup) {
+            if (groups.indexOf(l.group) >= 0) {
                 points.push({ x: l.x, y: l.y });
             }
         }
@@ -144,7 +145,7 @@ function importImage(img: ImageInfo): boolean
     }
 
     // adjust layer order
-    if (img.ws.bgLayer && (opts.dialogOverlayLabelGroup !== "")) {
+    if (img.ws.bgLayer && (opts.dialogOverlayLabelGroups !== "")) {
         img.ws.dialogOverlayLayer.move(img.ws.bgLayer, ElementPlacement.PLACEBEFORE); // "dialog-overlay" before "bg"
     }
 

@@ -36,7 +36,7 @@ export class CustomOptions {
     textDirection: OptionTextDirection = OptionTextDirection.Keep; // text direction option
 
     actionGroup: string = ""; // action group name
-    dialogOverlayLabelGroup: string = ""; // the label group need dialog overlay layer
+    dialogOverlayLabelGroups: string = ""; // the label groups need dialog overlay layer, split by ","
 };
 
 } // namespace LabelPlus

@@ -37,7 +37,7 @@ class LabelPlusInput extends GenericUI {
             x: 200,
             y: 200,
             w: 875,
-            h: 700
+            h: 725
         };
 
         self.title = I18n.APP_NAME + " " + VERSION;	// our window title
@@ -127,10 +127,11 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
                 pnl.chooseGroupListBox[i] = pnl.chooseGroupListBox.add('item', g, i);
                 pnl.chooseGroupListBox[i].selected = true;
 
-                // 涂白 指定分组文本框若空 填第一个分组
-                if (pnl.overlayGroupTextBox.text == "") {
+                // dialog overlay
+                if (pnl.overlayGroupTextBox.text == "") { // first group
                     pnl.overlayGroupTextBox.text = g;
                 }
+                pnl.overlayGroupAddGroupList[i] = pnl.overlayGroupAddGroupList.add('item', g, i);
             }
 
             pnl.labelFile = lpFile;  //返回LabelPlusTextReader对象
@@ -443,14 +444,27 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
     yy += 23;
 
     // dialog overlay
-    pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 20], I18n.CHECKBOX_DIALOG_OVERLAY);
-    pnl.dialogOverlayCheckBox.onClick = function () {
-        pnl.overlayGroupTextBox.enabled = pnl.dialogOverlayCheckBox.value;
+    {
+        pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 20], I18n.CHECKBOX_DIALOG_OVERLAY);
+        pnl.dialogOverlayCheckBox.onClick = function () {
+            let enable = pnl.dialogOverlayCheckBox.value;
+            pnl.overlayGroupTextBox.enabled = enable;
+            pnl.overlayGroupAddGroupList.enabled = enable;
+        }
+        xx = xOfs + 30;
+        yy += 23;
+        pnl.overlayGroupTextBox = pnl.add('edittext', [xx, yy, xx + 250, yy + 20]);
+        xx += 255;
+        let arr = [""];
+        pnl.overlayGroupAddGroupList = pnl.add('dropdownlist', [xx, yy - 1, xx + 100, yy + 21], arr);
+        let func = function () {
+            pnl.overlayGroupTextBox.text += "," + pnl.overlayGroupAddGroupList.selection.text;
+            pnl.overlayGroupAddGroupList.onChange = undefined;
+            pnl.overlayGroupAddGroupList.selection = pnl.overlayGroupAddGroupList.find("");
+            pnl.overlayGroupAddGroupList.onChange = func;
+        }
+        pnl.overlayGroupAddGroupList.onChange = func;
     }
-    xx += 300;
-
-    pnl.overlayGroupTextBox = pnl.add('edittext', [xx, yy, xx + 180, yy + 20]);
-    pnl.overlayGroupTextBox.enabled = false;
 
     // read options to UI panel
     // note: opts generated from externel file, can be undefined
@@ -531,9 +545,9 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: any) {
         pnl.noLayerGroupCheckBox.value = opts.noLayerGroup;
         Emit(pnl.noLayerGroupCheckBox.onClick);
     }
-    if (opts.dialogOverlayLabelGroup !== undefined) {
-        pnl.dialogOverlayCheckBox.value = (opts.dialogOverlayLabelGroup !== "");
-        pnl.overlayGroupTextBox.text = opts.dialogOverlayLabelGroup;
+    if (opts.dialogOverlayLabelGroups !== undefined) {
+        pnl.dialogOverlayCheckBox.value = (opts.dialogOverlayLabelGroups !== "");
+        pnl.overlayGroupTextBox.text = opts.dialogOverlayLabelGroups;
         Emit(pnl.dialogOverlayCheckBox.onClick);
     }
     return pnl;
@@ -740,7 +754,7 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
     opts.actionGroup = (pnl.runActionGroupCheckBox.value) ? pnl.runActionGroupList.selection.text : "";
     opts.notClose = pnl.notCloseCheckBox.value;
     opts.noLayerGroup = pnl.noLayerGroupCheckBox.value;
-    opts.dialogOverlayLabelGroup = (pnl.dialogOverlayCheckBox.value)? pnl.overlayGroupTextBox.text : "";
+    opts.dialogOverlayLabelGroups = (pnl.dialogOverlayCheckBox.value)? pnl.overlayGroupTextBox.text : "";
     return opts;
 };
 
