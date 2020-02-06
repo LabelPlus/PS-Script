@@ -1,9 +1,5 @@
 namespace I18n {
     export var APP_NAME: string = "LabelPlus Script";
-    export var TIP_TITLE: string = "说明";
-    export var TIP_TEXT: string = "本脚本支持将LabelPlus格式的文本导入成ps图层。\r\n" +
-        "利用\“存取配置\”功能，可以方便的根据不同需求（如区分图片分辨率），快速应用配置。\r\n" +
-        "更多信息: https://noodlefighter.com/label_plus/";
 
     export var BUTTON_RUN: string = "导入";
     export var BUTTON_CANCEL: string = "关闭";
@@ -11,9 +7,10 @@ namespace I18n {
     export var BUTTON_SAVE: string = "保存配置";
     export var BUTTON_RESET: string = "还原配置";
 
-    export var LABEL_TIP_FILE: string = "> 文件 / 预处理";
-    export var LABEL_TIP_BEHAVIOR: string = "> 脚本行为";
-    export var LABEL_TIP_STYLE_AUTO: string = "> 格式 / 自动化";
+    export var PANEL_INPUT: string = "输入";
+    export var PANEL_OUTPUT: string = "输出";
+    export var PANEL_STYLE: string = "格式";
+    export var PANEL_AUTOMATION: string = "自动化";
 
     export var PANEL_TEMPLETE_SETTING: string = "文档模板设置";
     export var RB_TEMPLETE_AUTO: string = "自动";
@@ -36,7 +33,7 @@ namespace I18n {
     export var BUTTON_MATCH_IMG_BY_ORDER_PREVIEW: string = "预览匹配结果";
     export var LABEL_OUTPUT_FILE_TYPE: string = "输出文件类型：";
     export var CHECKBOX_REPLACE_IMG_SUFFIX: string = "替换图片后缀名";
-    export var CHECKBOX_RUN_ACTION: string = "导入文本后，执行以分组名命名的动作；打开图片时执行_start，关闭前执行_end动作";
+    export var CHECKBOX_RUN_ACTION: string = "执行自动化动作";
     export var CHECKBOX_NOT_CLOSE: string = "导入后不关闭文档";
     export var CHECKBOX_SET_FONT: string = "字体";
     export var CHECKBOX_SET_LEADING: string = "行距";
@@ -60,16 +57,15 @@ namespace I18n {
     declare var app: any;
     // if (true) {
     if (!(app.locale in {"zh_CN":1, "zh_TW":1, "zh_HK":1})) {
-        TIP_TITLE = "Note";
-        TIP_TEXT = "Help: https://noodlefighter.com/label_plus/";
         BUTTON_RUN = "Run";
         BUTTON_CANCEL = "Cancel";
         BUTTON_LOAD = "Load";
         BUTTON_SAVE = "Save";
         BUTTON_RESET = "Reset";
-        LABEL_TIP_FILE = "> File / Preprocessing";
-        LABEL_TIP_BEHAVIOR = "> Behavior";
-        LABEL_TIP_STYLE_AUTO = "> Format / Automation";
+        PANEL_INPUT = "Input";
+        PANEL_OUTPUT = "Output";
+        PANEL_STYLE = "Style";
+        PANEL_AUTOMATION = "Automation";
         PANEL_TEMPLETE_SETTING = "Document Templete Setting";
         RB_TEMPLETE_AUTO = "Auto";
         RB_TEMPLETE_NO = "No Templete";
@@ -80,7 +76,7 @@ namespace I18n {
         LABEL_SETTING = "Setting";
         LABEL_SELECT_IMG = "Select Image";
         LABEL_SELECT_GROUP = "Select Group";
-        LABEL_SELECT_TIP = "Tip: In ListBox, push Ctrl key to select/cancel one item, push Shift key to select multiple items.";
+        LABEL_SELECT_TIP = "Tip: Push [Ctrl] key to select/cancel one item, push [Shift] key to select multiple items.";
         CHECKBOX_OUTPUT_LABEL_INDEX = "Output Label Number";
         CHECKBOX_TEXT_REPLACE = "Text Replace(e.g. \"A->B|C->D\")";
         CHECKBOX_IGNORE_NO_LABEL_IMG = "Ignore Images With No Label";
@@ -88,10 +84,10 @@ namespace I18n {
         BUTTON_MATCH_IMG_BY_ORDER_PREVIEW = "Preview Match Result";
         LABEL_OUTPUT_FILE_TYPE = "Output File Type:";
         CHECKBOX_REPLACE_IMG_SUFFIX = "Replace Image Suffix";
-        CHECKBOX_RUN_ACTION = "Execute Actions Named Of Group Name(\"_start\" after open, \"_end\" before close)";
+        CHECKBOX_RUN_ACTION = "Execute Automation Actions";
         CHECKBOX_NOT_CLOSE = "Do Not Close File";
-        CHECKBOX_SET_FONT = "Set Default Font";
-        CHECKBOX_SET_LEADING = "Set Leading Size";
+        CHECKBOX_SET_FONT = "Font";
+        CHECKBOX_SET_LEADING = "Leading";
         LABEL_TEXT_DIRECTION = "Text Direction:";
         LIST_TEXT_DIT_ITEMS = [ "Default", "Horizontal", "Vertical" ];
         CHECKBOX_NO_LAYER_GROUP = "Layer Not Grouping";

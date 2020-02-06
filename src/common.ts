@@ -1,3 +1,4 @@
+//@include "./xtools/xlib/stdlib.js";
 /// <reference path="legacy.d.ts" />
 
 namespace LabelPlus {
@@ -76,5 +77,10 @@ export function min(a: number, b: number): number {
 
 export const DEFAULT_LOG_PATH: string = GetScriptFolder() + dirSeparator + "lp_ps_script.log";
 export const DEFAULT_INI_PATH: string = GetScriptFolder() + dirSeparator + "lp_ps_script.ini";
+export const DEFAULT_DUMP_PATH: string = GetScriptFolder() + dirSeparator + "lp_ps_script.dump";
+
+Stdlib.log.setFile(DEFAULT_LOG_PATH);
+export function log(msg: any) { Stdlib.log(msg); }
+export function showdump(o: any) { alert(Stdlib.listProps(o)); }
 
 } // namespace LabelPlus
