@@ -12,7 +12,7 @@ export function assert(condition: any, msg?: string): asserts condition {
 // Operating System related
 export let dirSeparator = $.os.search(/windows/i) === -1 ? '/' : '\\';
 
-export const TEMPLETE_LAYER = {
+export const TEMPLATE_LAYER = {
     TEXT:  "text",
     IMAGE: "bg",
     DIALOG_OVERLAY: "dialog-overlay",

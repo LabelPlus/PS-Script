@@ -12,7 +12,7 @@ let textReplace: TextReplaceInfo = [];
 
 interface Group {
     layerSet?: LayerSet;
-    templete?: ArtLayer;
+    template?: ArtLayer;
 };
 type GroupDict = { [key: string]: Group };
 
@@ -30,7 +30,7 @@ interface ImageWorkspace {
     doc: Document;
 
     bgLayer: ArtLayer;
-    textTempleteLayer: ArtLayer;
+    textTemplateLayer: ArtLayer;
     dialogOverlayLayer: ArtLayer;
 
     pendingDelLayerList: ArtLayerDict;
@@ -50,7 +50,7 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
     // import the index of the Label
     if (opts.outputLabelIndex) {
         let o: TextInputOptions = {
-            templete: img.ws.textTempleteLayer,
+            template: img.ws.textTemplateLayer,
             direction: Direction.HORIZONTAL,
             font: "Arial",
             size: (opts.fontSize !== 0) ? UnitValue(opts.fontSize, "pt") : undefined,
@@ -78,7 +78,7 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
     // 导出文本，设置的优先级大于模板，无模板时做部分额外处理
     let textLayer: ArtLayer;
     let o: TextInputOptions = {
-        templete: img.ws.groups[label.group].templete,
+        template: img.ws.groups[label.group].template,
         font: (opts.font != "") ? opts.font : undefined,
         direction: textDir,
         lgroup: img.ws.groups[label.group].layerSet,
@@ -86,7 +86,7 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
     };
 
     // 使用模板时，用户不设置字体大小，不做更改；不使用模板时，如果用户不设置大小，自动调整到合适的大小
-    if (opts.docTemplete === OptionDocTemplete.No) {
+    if (opts.docTemplate === OptionDocTemplate.No) {
         let proper_size = UnitValue(min(img.ws.doc.height.as("pt"), img.ws.doc.height.as("pt")) / 90.0, "pt");
         o.size = (opts.fontSize !== 0) ? UnitValue(opts.fontSize, "pt") : proper_size;
     } else {
@@ -125,7 +125,7 @@ function importImage(img: ImageInfo): boolean
             }
         }
         MyAction.lp_dialogClear(points, img.ws.doc.width, img.ws.doc.height, 16, 1, img.ws.dialogOverlayLayer);
-        delete img.ws.pendingDelLayerList[TEMPLETE_LAYER.DIALOG_OVERLAY]; // 不删除涂白图层
+        delete img.ws.pendingDelLayerList[TEMPLATE_LAYER.DIALOG_OVERLAY]; // 不删除涂白图层
     }
 
     // 遍历LabelData
@@ -170,7 +170,7 @@ function importImage(img: ImageInfo): boolean
     return true;
 }
 
-function openImageWorkspace(img_filename: string, templete_path: string): ImageWorkspace | null
+function openImageWorkspace(img_filename: string, template_path: string): ImageWorkspace | null
 {
     assert(opts !== null);
 
@@ -183,21 +183,21 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
         return null; //note: do not exit if image not exist
     }
 
-    // if templete is enabled, open templete; or create a new file
+    // if template is enabled, open template; or create a new file
     let wsDoc: Document; // workspace document
-    if (opts.docTemplete == OptionDocTemplete.No) {
+    if (opts.docTemplate == OptionDocTemplate.No) {
         wsDoc = app.documents.add(bgDoc.width, bgDoc.height, bgDoc.resolution, bgDoc.name, NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
-        wsDoc.activeLayer.name = TEMPLETE_LAYER.IMAGE;
+        wsDoc.activeLayer.name = TEMPLATE_LAYER.IMAGE;
     } else {
-        let docFile = new File(templete_path);  //note: if templete must do not exist, crash
+        let docFile = new File(template_path);  //note: if template must do not exist, crash
         wsDoc = app.open(docFile);
         wsDoc.resizeImage(undefined, undefined, bgDoc.resolution);
         wsDoc.resizeCanvas(bgDoc.width, bgDoc.height);
     }
 
-    // wsDoc is clean, check templete elements, if a element not exist
+    // wsDoc is clean, check template elements, if a element not exist
     let bgLayer: ArtLayer;
-    let textTempleteLayer: ArtLayer;
+    let textTemplateLayer: ArtLayer;
     let dialogOverlayLayer: ArtLayer;
     let pendingDelLayerList: ArtLayerDict = {};
     {
@@ -207,30 +207,30 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
             pendingDelLayerList[layer.name] = layer;
         }
 
-        // bg layer templete
-        try { bgLayer = wsDoc.artLayers.getByName(TEMPLETE_LAYER.IMAGE); }
+        // bg layer template
+        try { bgLayer = wsDoc.artLayers.getByName(TEMPLATE_LAYER.IMAGE); }
         catch {
             bgLayer = wsDoc.artLayers.add();
-            bgLayer.name = TEMPLETE_LAYER.DIALOG_OVERLAY;
+            bgLayer.name = TEMPLATE_LAYER.DIALOG_OVERLAY;
         }
-        // text layer templete
-        try { textTempleteLayer = wsDoc.artLayers.getByName(TEMPLETE_LAYER.TEXT); }
+        // text layer template
+        try { textTemplateLayer = wsDoc.artLayers.getByName(TEMPLATE_LAYER.TEXT); }
         catch {
-            textTempleteLayer = wsDoc.artLayers.add();
-            textTempleteLayer.name = TEMPLETE_LAYER.TEXT;
-            pendingDelLayerList[TEMPLETE_LAYER.TEXT] = textTempleteLayer; // pending delete
+            textTemplateLayer = wsDoc.artLayers.add();
+            textTemplateLayer.name = TEMPLATE_LAYER.TEXT;
+            pendingDelLayerList[TEMPLATE_LAYER.TEXT] = textTemplateLayer; // pending delete
         }
-        // dialog overlay layer templete
-        try { dialogOverlayLayer = wsDoc.artLayers.getByName(TEMPLETE_LAYER.DIALOG_OVERLAY); }
+        // dialog overlay layer template
+        try { dialogOverlayLayer = wsDoc.artLayers.getByName(TEMPLATE_LAYER.DIALOG_OVERLAY); }
         catch {
             dialogOverlayLayer = wsDoc.artLayers.add();
-            dialogOverlayLayer.name = TEMPLETE_LAYER.DIALOG_OVERLAY;
+            dialogOverlayLayer.name = TEMPLATE_LAYER.DIALOG_OVERLAY;
         }
     }
 
     // import bgDoc to wsDoc:
-    // if bgDoc has only a layer, select all and copy to bg layer, for applying bg layer templete
-    // if bgDoc has multiple layers, move all layers after bg layer (bg layer templete is invalid)
+    // if bgDoc has only a layer, select all and copy to bg layer, for applying bg layer template
+    // if bgDoc has multiple layers, move all layers after bg layer (bg layer template is invalid)
     if ((bgDoc.artLayers.length == 1) && (bgDoc.layerSets.length == 0)) {
         app.activeDocument = bgDoc;
         bgDoc.selection.selectAll();
@@ -238,7 +238,7 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
         app.activeDocument = wsDoc;
         wsDoc.activeLayer = bgLayer;
         wsDoc.paste();
-        delete pendingDelLayerList[TEMPLETE_LAYER.IMAGE]; // keep bg layer
+        delete pendingDelLayerList[TEMPLATE_LAYER.IMAGE]; // keep bg layer
     } else {
         app.activeDocument = bgDoc;
         let item = bgLayer;
@@ -265,12 +265,12 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
             tmp.layerSet.name = name;
         }
         // 尝试寻找分组模板，找不到则使用默认文本模板
-        if (opts.docTemplete !== OptionDocTemplete.No) {
+        if (opts.docTemplate !== OptionDocTemplate.No) {
             let l: ArtLayer | undefined;
             try {
                 l = wsDoc.artLayers.getByName(name);
             } catch { };
-            tmp.templete = (l !== undefined) ? l : textTempleteLayer;
+            tmp.template = (l !== undefined) ? l : textTemplateLayer;
         }
         groups[name] = tmp; // add
     }
@@ -284,7 +284,7 @@ function openImageWorkspace(img_filename: string, templete_path: string): ImageW
     let ws: ImageWorkspace = {
         doc: wsDoc,
         bgLayer: bgLayer,
-        textTempleteLayer: textTempleteLayer,
+        textTemplateLayer: textTemplateLayer,
         dialogOverlayLayer: dialogOverlayLayer,
         pendingDelLayerList: pendingDelLayerList,
         groups: groups,
@@ -360,12 +360,12 @@ export function importFiles(custom_opts: CustomOptions): boolean
     }
 
     // 确定doc模板文件
-    let templete_path: string = "";
-    switch (opts.docTemplete) {
-    case OptionDocTemplete.Custom:
-        templete_path = opts.docTempleteCustomPath;
+    let template_path: string = "";
+    switch (opts.docTemplate) {
+    case OptionDocTemplate.Custom:
+        template_path = opts.docTemplateCustomPath;
         break;
-    case OptionDocTemplete.Auto:
+    case OptionDocTemplate.Auto:
         let tempdir = GetScriptFolder() + dirSeparator + "ps_script_res" + dirSeparator;
         let tempname = app.locale.split("_")[0].toLocaleLowerCase() + ".psd"; // such as "zh_CN" -> zh.psd
 
@@ -375,12 +375,12 @@ export function importFiles(custom_opts: CustomOptions): boolean
         ];
         for (let i = 0; i < try_list.length; i++) {
             if (FileIsExists(try_list[i])) {
-                templete_path = try_list[i];
+                template_path = try_list[i];
                 break;
             }
         }
-        if (templete_path === "") {
-            let errmsg = "error: " + I18n.ERROR_PRESET_TEMPLETE_NOT_FOUND;
+        if (template_path === "") {
+            let errmsg = "error: " + I18n.ERROR_PRESET_TEMPLATE_NOT_FOUND;
             Stdlib.log(errmsg);
             throw errmsg;
         }
@@ -409,7 +409,7 @@ export function importFiles(custom_opts: CustomOptions): boolean
         }
 
         Stdlib.log("open file: " + filename);
-        let ws = openImageWorkspace(filename, templete_path);
+        let ws = openImageWorkspace(filename, template_path);
         if (ws == null) { // error, ignore
             let msg = filename + ": open file failed";
             Stdlib.log(msg);
@@ -445,7 +445,7 @@ export function importFiles(custom_opts: CustomOptions): boolean
 
 // 文本导入选项，参数为undefined时表示不设置该项
 interface TextInputOptions {
-    templete?: ArtLayer;     // 文本图层模板
+    template?: ArtLayer;     // 文本图层模板
     font?: string;
     size?: UnitValue;
     direction?: Direction;
@@ -460,9 +460,9 @@ function newTextLayer(doc: Document, text: string, x: number, y: number, topts: 
     let textItemRef: TextItem;
 
     // 从模板创建，可以保证图层的所有格式与模板一致
-    if (topts.templete) {
+    if (topts.template) {
         /// @ts-ignore ts声明文件有误，duplicate()返回ArtLayer对象，而不是void
-        artLayerRef = <ArtLayer> topts.templete.duplicate();
+        artLayerRef = <ArtLayer> topts.template.duplicate();
         textItemRef = artLayerRef.textItem;
     }
     else {

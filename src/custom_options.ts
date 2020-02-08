@@ -3,7 +3,7 @@
 namespace LabelPlus {
 
 export enum OptionTextDirection { Keep, Horizontal, Vertical };
-export enum OptionDocTemplete { Auto, No, Custom }; // auto choose preset templete/no use templete/custom templete
+export enum OptionDocTemplate { Auto, No, Custom }; // auto choose preset template/no use template/custom template
 export enum OptionOutputType { PSD, TIFF, PNG, JPG, _count };
 
 export class CustomOptions {
@@ -16,8 +16,8 @@ export class CustomOptions {
     groupSelected: string[] = [];  // selected label group
 
     // ------------------------------------ saved options
-    docTemplete: OptionDocTemplete = OptionDocTemplete.Auto; // image document templete option
-    docTempleteCustomPath: string = "";  // custom image document templete path
+    docTemplate: OptionDocTemplate = OptionDocTemplate.Auto; // image document template option
+    docTemplateCustomPath: string = "";  // custom image document template path
 
     matchImgByOrder: boolean = false; // match image by order, ignore file name in lpText, for replacing image source
     replaceImgSuffix: string = ""; // replacing image suffix,  for replacing image source

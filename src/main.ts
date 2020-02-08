@@ -465,44 +465,44 @@ class LabelPlusInput extends GenericUI {
 
         pnl.text = I18n.PANEL_STYLE;
 
-        // templete settings
-        pnl.docTempletePnl = pnl.add('panel', [xx, yy, xx + 460, yy + 65], I18n.PANEL_TEMPLETE_SETTING);
+        // template settings
+        pnl.docTemplatePnl = pnl.add('panel', [xx, yy, xx + 460, yy + 65], I18n.PANEL_TEMPLATE_SETTING);
 
-        let pnll: any = pnl.docTempletePnl;
+        let pnll: any = pnl.docTemplatePnl;
         let xxxOfs: number = 5;
         let xxx: number = xxxOfs;
         let yyy: number = 5;
-        pnll.autoTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 20], I18n.RB_TEMPLETE_AUTO); xxx += 200;
-        pnll.autoTempleteRb.value = true;
-        pnll.noTempleteRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 20], I18n.RB_TEMPLETE_NO); xxx += 200;
+        pnll.autoTemplateRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 20], I18n.RB_TEMPLATE_AUTO); xxx += 200;
+        pnll.autoTemplateRb.value = true;
+        pnll.noTemplateRb = pnll.add('radiobutton',  [xxx, yyy, xxx + 200, yyy + 20], I18n.RB_TEMPLATE_NO); xxx += 200;
         xxx = xxxOfs;
         yyy += 23;
-        pnll.customTempleteRb = pnll.add('radiobutton', [xxx, yyy, xxx + 130, yyy + 20], I18n.RB_TEMPLETE_CUSTOM); xxx += 135;
-        pnll.customTempleteTextbox = pnll.add('edittext', [xxx, yyy, xxx + 180, yyy + 20]); xxx += 185;
-        pnll.customTempleteTextButton = pnll.add('button', [xxx, yyy - 2, xxx + 30, yyy + 20], '...'); xxx += 30;
+        pnll.customTemplateRb = pnll.add('radiobutton', [xxx, yyy, xxx + 130, yyy + 20], I18n.RB_TEMPLATE_CUSTOM); xxx += 135;
+        pnll.customTemplateTextbox = pnll.add('edittext', [xxx, yyy, xxx + 180, yyy + 20]); xxx += 185;
+        pnll.customTemplateTextButton = pnll.add('button', [xxx, yyy - 2, xxx + 30, yyy + 20], '...'); xxx += 30;
         let rbclick = () => {
-            let custom_enable: boolean = pnll.customTempleteRb.value;
-            pnll.customTempleteTextbox.enabled = custom_enable;
-            pnll.customTempleteTextButton.enabled = custom_enable;
+            let custom_enable: boolean = pnll.customTemplateRb.value;
+            pnll.customTemplateTextbox.enabled = custom_enable;
+            pnll.customTemplateTextButton.enabled = custom_enable;
         };
-        pnll.autoTempleteRb.onClick = rbclick;
-        pnll.noTempleteRb.onClick = rbclick;
-        pnll.customTempleteRb.onClick = rbclick;
+        pnll.autoTemplateRb.onClick = rbclick;
+        pnll.noTemplateRb.onClick = rbclick;
+        pnll.customTemplateRb.onClick = rbclick;
         rbclick();
 
-        pnll.customTempleteTextButton.onClick = () => {
+        pnll.customTemplateTextButton.onClick = () => {
             try {
                 let def: string;
-                if (pnll.customTempleteTextbox.text !== "") {
-                    def = pnll.customTempleteTextbox.text;
+                if (pnll.customTemplateTextbox.text !== "") {
+                    def = pnll.customTemplateTextbox.text;
                 } else if (this.inputPnl.sourceTextBox.text !== "") {
                     def = this.inputPnl.sourceTextBox.text;
                 } else {
                     def = Folder.desktop.path;
                 }
-                let f = Stdlib.selectFileOpen(I18n.RB_TEMPLETE_CUSTOM, "*.psd;*.tif;*.tiff", def);
+                let f = Stdlib.selectFileOpen(I18n.RB_TEMPLATE_CUSTOM, "*.psd;*.tif;*.tiff", def);
                 if (f)
-                    pnll.customTempleteTextbox.text = decodeURI(f.fsName);
+                    pnll.customTemplateTextbox.text = decodeURI(f.fsName);
             } catch (e) {
                 alert(Stdlib.exceptionMessage(e));
             }
@@ -554,24 +554,24 @@ class LabelPlusInput extends GenericUI {
         yy += 23;
 
         let opts = this.opts;
-        if (opts.docTemplete !== undefined) {
-            pnl.docTempletePnl.autoTempleteRb = false;
-            pnl.docTempletePnl.noTempleteRb.value = false;
-            pnl.docTempletePnl.customTempleteRb.value = false;
-            switch (opts.docTemplete) {
-            case OptionDocTemplete.No:
-                pnl.docTempletePnl.noTempleteRb.value = true;
+        if (opts.docTemplate !== undefined) {
+            pnl.docTemplatePnl.autoTemplateRb = false;
+            pnl.docTemplatePnl.noTemplateRb.value = false;
+            pnl.docTemplatePnl.customTemplateRb.value = false;
+            switch (opts.docTemplate) {
+            case OptionDocTemplate.No:
+                pnl.docTemplatePnl.noTemplateRb.value = true;
                 break;
-            case OptionDocTemplete.Custom:
-                pnl.docTempletePnl.customTempleteRb.value = true;
-                pnl.docTempletePnl.customTempleteTextbox.text = opts.docTempleteCustomPath;
+            case OptionDocTemplate.Custom:
+                pnl.docTemplatePnl.customTemplateRb.value = true;
+                pnl.docTemplatePnl.customTemplateTextbox.text = opts.docTemplateCustomPath;
                 break;
-            case OptionDocTemplete.Auto:
+            case OptionDocTemplate.Auto:
             default:
-                pnl.docTempletePnl.autoTempleteRb.value = true;
+                pnl.docTemplatePnl.autoTemplateRb.value = true;
                 break;
             }
-            Emit(pnl.docTempletePnl.autoTempleteRb.onClick);
+            Emit(pnl.docTemplatePnl.autoTemplateRb.onClick);
         }
         if (opts.textDirection !== undefined) {
             pnl.textDirList.selection = pnl.textDirList.find(I18n.LIST_TEXT_DIT_ITEMS[opts.textDirection]);
@@ -596,13 +596,13 @@ class LabelPlusInput extends GenericUI {
         }
 
         let getOption = (opts: CustomOptions): CustomOptions  | null => {
-            opts.docTemplete =
-                pnl.docTempletePnl.autoTempleteRb.value ? OptionDocTemplete.Auto : (
-                    pnl.docTempletePnl.noTempleteRb.value ? OptionDocTemplete.No : (
-                        pnl.docTempletePnl.customTempleteRb.value ? OptionDocTemplete.Custom : OptionDocTemplete.Auto
+            opts.docTemplate =
+                pnl.docTemplatePnl.autoTemplateRb.value ? OptionDocTemplate.Auto : (
+                    pnl.docTemplatePnl.noTemplateRb.value ? OptionDocTemplate.No : (
+                        pnl.docTemplatePnl.customTemplateRb.value ? OptionDocTemplate.Custom : OptionDocTemplate.Auto
                     )
                 );
-            opts.docTempleteCustomPath = pnl.docTempletePnl.customTempleteTextbox.text;
+            opts.docTemplateCustomPath = pnl.docTemplatePnl.customTemplateTextbox.text;
             if (pnl.setFontCheckBox.value) {
                 let font = pnl.font.getFont()
                 opts.font = font.font;

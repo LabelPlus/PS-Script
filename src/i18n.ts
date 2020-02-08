@@ -12,10 +12,10 @@ namespace I18n {
     export var PANEL_STYLE: string = "格式";
     export var PANEL_AUTOMATION: string = "自动化";
 
-    export var PANEL_TEMPLETE_SETTING: string = "文档模板设置";
-    export var RB_TEMPLETE_AUTO: string = "自动";
-    export var RB_TEMPLETE_NO: string = "不使用模板（直接新建文件）";
-    export var RB_TEMPLETE_CUSTOM: string = "自定义模板";
+    export var PANEL_TEMPLATE_SETTING: string = "文档模板设置";
+    export var RB_TEMPLATE_AUTO: string = "自动";
+    export var RB_TEMPLATE_NO: string = "不使用模板（直接新建文件）";
+    export var RB_TEMPLATE_CUSTOM: string = "自定义模板";
 
     export var LABEL_TEXT_FILE: string = "LabelPlus文本:";
     export var LABEL_SOURCE: string = "图源文件夹:";
@@ -51,7 +51,7 @@ namespace I18n {
     export var ERROR_PARSER_LPTEXT_FAIL: string = "解析LabelPlus文本失败";
     export var ERROR_NO_IMG_CHOOSED: string = "未选择输出图片";
     export var ERROR_NO_LABEL_GROUP_CHOOSED: string = "未选择导入分组";
-    export var ERROR_PRESET_TEMPLETE_NOT_FOUND: string = "无法自动匹配模板文件，请确认脚本所在目录是否存在ps_script_res目录";
+    export var ERROR_PRESET_TEMPLATE_NOT_FOUND: string = "无法自动匹配模板文件，请确认脚本所在目录是否存在ps_script_res目录";
     export var ERROR_TEXT_REPLACE_EXPRESSION: string = "文本替换表达式解析错误，请检查！";
 
     declare var app: any;
@@ -66,10 +66,10 @@ namespace I18n {
         PANEL_OUTPUT = "Output";
         PANEL_STYLE = "Style";
         PANEL_AUTOMATION = "Automation";
-        PANEL_TEMPLETE_SETTING = "Document Templete Setting";
-        RB_TEMPLETE_AUTO = "Auto";
-        RB_TEMPLETE_NO = "No Templete";
-        RB_TEMPLETE_CUSTOM = "Custom Templete";
+        PANEL_TEMPLATE_SETTING = "Document Template Setting";
+        RB_TEMPLATE_AUTO = "Auto";
+        RB_TEMPLATE_NO = "No Template";
+        RB_TEMPLATE_CUSTOM = "Custom Template";
         LABEL_TEXT_FILE = "LabelPlus Text:";
         LABEL_SOURCE = "Image Source:";
         LABEL_TARGET = "Output Folder:";
@@ -100,7 +100,7 @@ namespace I18n {
         ERROR_PARSER_LPTEXT_FAIL = "Fail To Load LabelPlus Text File";
         ERROR_NO_IMG_CHOOSED = "Please select more than one image";
         ERROR_NO_LABEL_GROUP_CHOOSED = "Please select more than one group";
-        ERROR_PRESET_TEMPLETE_NOT_FOUND = "Cannot match templete file, please make sure \"ps_script_res\" folder exsit.";
+        ERROR_PRESET_TEMPLATE_NOT_FOUND = "Cannot match template file, please make sure \"ps_script_res\" folder exsit.";
         ERROR_TEXT_REPLACE_EXPRESSION = "Expression of text replacing is wrong, please check again.";
     }
 }
