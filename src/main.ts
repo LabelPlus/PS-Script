@@ -220,9 +220,7 @@ class LabelPlusInput extends GenericUI {
                     pnl.sourceTextBox.text : Folder.desktop);
                 let f = Stdlib.selectFolder(I18n.LABEL_SOURCE, def);
                 if (f) {
-                    let fsName = decodeURI(f.fsName);
-                    pnl.sourceTextBox.text = fsName;
-                    this.outputPnl.targetTextBox.text = fsName;
+                    pnl.sourceTextBox.text = decodeURI(f.fsName);
                 }
             } catch (e) {
                 alert(Stdlib.exceptionMessage(e));
