@@ -23,6 +23,13 @@ class LabelPlusInput extends GenericUI {
     private opts: CustomOptions;
     private lpFile: LpFile | null = null;
 
+    private settingsPnl: any;
+    private inputPnl: any;
+    private outputPnl: any;
+    private stylePnl: any;
+    private automationPnl: any;
+    private HelpPnl: any;
+
     constructor() {
         super();
         this.saveIni = false;
@@ -44,12 +51,12 @@ class LabelPlusInput extends GenericUI {
     }
 
     private optPickers: CustomOptionsPicker[] = [];
-    private addToPickerList(picker?: CustomOptionsPicker) {
+    private addToPickerList = (picker?: CustomOptionsPicker) => {
         if (picker)
             this.optPickers[this.optPickers.length] = picker;
     }
 
-    private uiLpTextSelect(pnl: any): PanelDesc {
+    private uiLpTextSelect = (pnl: any): PanelDesc => {
         let xx: number = 10, yy: number = 10;
         pnl.lpTextFileLabel = pnl.add('statictext', [xx, yy, xx + 120, yy + 20], I18n.LABEL_TEXT_FILE);
         xx += 120;
@@ -60,9 +67,9 @@ class LabelPlusInput extends GenericUI {
         xx += 30;
         yy += 20;
         pnl.lpTextFileBrowseButton.onClick = () => {
-            let inputPnl = this.win.appPanel.inputPnl;
-            let outputPnl = this.win.appPanel.outputPnl;
-            let automationPnl = this.win.appPnl.automationPnl;
+            let inputPnl = this.inputPnl;
+            let outputPnl = this.outputPnl;
+            let automationPnl = this.automationPnl;
 
             let fmask = "*.txt;*.json";
             let f = File.openDialog(I18n.LABEL_TEXT_FILE, fmask);
@@ -73,14 +80,14 @@ class LabelPlusInput extends GenericUI {
                 inputPnl.sourceTextBox.text = decodeURI(fl.fsName);
                 outputPnl.targetTextBox.text = decodeURI(fl.fsName) + dirSeparator + 'output';
             } else {
-                return;        // cancel by user
+                return {};        // cancel by user
             }
 
             // load lptext file
             let lpFile = lpTextParser(f.fsName);
             if (lpFile === null) {
                 alert(I18n.ERROR_PARSER_LPTEXT_FAIL);
-                return;
+                return {};
             }
             this.lpFile = lpFile;
             this.allPanelEnable(true);
@@ -103,9 +110,10 @@ class LabelPlusInput extends GenericUI {
                 }
                 automationPnl.overlayGroupAddGroupList[i] = automationPnl.overlayGroupAddGroupList.add('item', g, i);
             }
+            return {};
         };
 
-        function getOption(opts: CustomOptions, toFile: boolean): CustomOptions | null {
+        let getOption = (opts: CustomOptions, toFile: boolean): CustomOptions | null => {
             if (!toFile) {
                 // labeplus text file
                 let f = new File(pnl.lpTextFileTextBox.text);
@@ -127,7 +135,7 @@ class LabelPlusInput extends GenericUI {
         return {x: xx, y:yy, getOption: getOption};
     }
 
-    private uiSettingsPanel(pnl: any): PanelDesc {
+    private uiSettingsPanel = (pnl: any): PanelDesc => {
         let win = GenericUI.getWindow(pnl.parent);
 
         pnl.text = I18n.LABEL_SETTING;
@@ -150,7 +158,7 @@ class LabelPlusInput extends GenericUI {
         x = offsets[2] - (bw / 2);
         pnl.reset = pnl.add('button', [x, y, x + bw, y + 20], I18n.BUTTON_RESET);
 
-        pnl.load.onClick = function () {
+        pnl.load.onClick = () => {
             let pnl = this.parent;
             let win = pnl.win;
             let def = pnl.defaultFile;
@@ -165,7 +173,7 @@ class LabelPlusInput extends GenericUI {
                 win.close(4);
             }
         };
-        pnl.save.onClick = function () {
+        pnl.save.onClick = () => {
             let pnl = this.parent;
             let win = pnl.win;
             let def = pnl.defaultFile;
@@ -186,7 +194,7 @@ class LabelPlusInput extends GenericUI {
                 }
             }
         };
-        pnl.reset.onClick = function () {
+        pnl.reset.onClick = () => {
             this.opts = new CustomOptions();
             win.close(4);
         };
@@ -194,7 +202,7 @@ class LabelPlusInput extends GenericUI {
         return { };
     };
 
-    private uiInputPanel(pnl: any): PanelDesc {
+    private uiInputPanel = (pnl: any): PanelDesc => {
         let xOfs = 10, yOfs = 20;
         let xx = xOfs,  yy = yOfs;
 
@@ -206,17 +214,15 @@ class LabelPlusInput extends GenericUI {
         pnl.sourceTextBox = pnl.add('edittext', [xx, yy, xx + 205, yy + 20], '');
         xx += 210;
         pnl.sourceBrowse = pnl.add('button', [xx, yy - 2, xx + 30, yy + 20], '...');
-        pnl.sourceBrowse.onClick = function () {
+        pnl.sourceBrowse.onClick = () => {
             try {
-                let pnl = this.parent;
                 let def :string = (pnl.sourceTextBox.text ?
                     pnl.sourceTextBox.text : Folder.desktop);
                 let f = Stdlib.selectFolder(I18n.LABEL_SOURCE, def);
                 if (f) {
-                    pnl.sourceTextBox.text = decodeURI(f.fsName);
-                    if (!pnl.targetTextBox.text) {
-                        pnl.targetTextBox.text = pnl.sourceTextBox.text;
-                    }
+                    let fsName = decodeURI(f.fsName);
+                    pnl.sourceTextBox.text = fsName;
+                    this.outputPnl.targetTextBox.text = fsName;
                 }
             } catch (e) {
                 alert(Stdlib.exceptionMessage(e));
@@ -227,7 +233,7 @@ class LabelPlusInput extends GenericUI {
 
         // match image file by order
         pnl.matchImgByOrderCheckBox = pnl.add('checkbox', [xx, yy, xx + 190, yy + 20], I18n.CHECKBOX_MATCH_IMG_BY_ORDER);
-        pnl.matchImgByOrderCheckBox.onClick = function () {
+        pnl.matchImgByOrderCheckBox.onClick = () => {
             if (pnl.matchImgByOrderCheckBox.value) {
                 pnl.replaceImgSuffixCheckBox.value = false; // incompatible to "replace image suffix"
                 Emit(pnl.replaceImgSuffixCheckBox.onClick);
@@ -236,7 +242,7 @@ class LabelPlusInput extends GenericUI {
         }
         xx += 195;
         pnl.matchImgByOrderPreviewButton = pnl.add('button', [xx, yy - 2, xx + 80, yy + 20], I18n.BUTTON_MATCH_IMG_BY_ORDER_PREVIEW);
-        pnl.matchImgByOrderPreviewButton.onClick = function () { // preview button
+        pnl.matchImgByOrderPreviewButton.onClick = () => { // preview button
             let originFileNameList = getFilesListOfPath(pnl.sourceTextBox.text);
             let selectedImgFileNameList = getSelectedItemsText(pnl.chooseImageListBox);
             let preview_list_string = '';
@@ -259,7 +265,7 @@ class LabelPlusInput extends GenericUI {
 
         // replace image suffix
         pnl.replaceImgSuffixCheckBox = pnl.add('checkbox', [xx, yy, xx + 190, yy + 20], I18n.CHECKBOX_REPLACE_IMG_SUFFIX);
-        pnl.replaceImgSuffixCheckBox.onClick = function () {
+        pnl.replaceImgSuffixCheckBox.onClick = () => {
             if (pnl.replaceImgSuffixCheckBox.value) {
                 pnl.matchImgByOrderCheckBox.value = false; // incompatible to "match image file by order"
                 Emit(pnl.matchImgByOrderCheckBox.onClick);
@@ -273,7 +279,7 @@ class LabelPlusInput extends GenericUI {
         xx += 85;
         let type_list = ["", ".psd", ".png", ".jpg", ".jpeg", ".tif", ".tiff"];
         pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx, yy - 1, xx + 50, yy + 21], type_list);
-        let func = function () {
+        let func = () => {
             pnl.replaceImgSuffixTextbox.text = pnl.setSourceFileTypeList.selection.text;
             pnl.setSourceFileTypeList.onChange = undefined;
             pnl.setSourceFileTypeList.selection = pnl.setSourceFileTypeList.find("");
@@ -312,7 +318,7 @@ class LabelPlusInput extends GenericUI {
             Emit(pnl.replaceImgSuffixCheckBox.onClick);
         }
 
-        function getOption(opts: CustomOptions, toFile: boolean): CustomOptions | null {
+        let getOption = (opts: CustomOptions, toFile: boolean): CustomOptions | null => {
             if (!toFile) {
                 // image source folder
                 let f = new Folder(pnl.sourceTextBox.text);
@@ -351,7 +357,7 @@ class LabelPlusInput extends GenericUI {
         return {x: xx, y:yy, getOption: getOption };
     }
 
-    private uiOutputPanel(pnl: any): PanelDesc {
+    private uiOutputPanel = (pnl: any): PanelDesc => {
         let xOfs = 10, yOfs = 20;
         let xx = xOfs,  yy = yOfs;
 
@@ -363,9 +369,8 @@ class LabelPlusInput extends GenericUI {
         pnl.targetTextBox = pnl.add('edittext', [xx, yy, xx + 300, yy + 20], '');
         xx += 305;
         pnl.targetBrowse = pnl.add('button', [xx, yy - 2, xx + 30, yy + 20], '...');
-        pnl.targetBrowse.onClick = function () {
+        pnl.targetBrowse.onClick = () => {
             try {
-                let pnl = this.parent;
                 let f;
                 let def = pnl.targetTextBox.text;
                 if (!def) {
@@ -437,7 +442,7 @@ class LabelPlusInput extends GenericUI {
             Emit(pnl.noLayerGroupCheckBox.onClick);
         }
 
-        function getOption(opts: CustomOptions, toFile: boolean): CustomOptions | null {
+        let getOption = (opts: CustomOptions, toFile: boolean): CustomOptions | null => {
             if (!toFile) {
                 // image target folder
                 let f = new Folder(pnl.targetTextBox.text);
@@ -460,7 +465,7 @@ class LabelPlusInput extends GenericUI {
         return {getOption: getOption};
     }
 
-    private uiStylePanel(pnl: any): PanelDesc {
+    private uiStylePanel = (pnl: any): PanelDesc => {
         let xOfs = 10, yOfs = 20;
         let xx = xOfs,  yy = yOfs;
 
@@ -481,7 +486,7 @@ class LabelPlusInput extends GenericUI {
         pnll.customTempleteRb = pnll.add('radiobutton', [xxx, yyy, xxx + 130, yyy + 20], I18n.RB_TEMPLETE_CUSTOM); xxx += 135;
         pnll.customTempleteTextbox = pnll.add('edittext', [xxx, yyy, xxx + 180, yyy + 20]); xxx += 185;
         pnll.customTempleteTextButton = pnll.add('button', [xxx, yyy - 2, xxx + 30, yyy + 20], '...'); xxx += 30;
-        let rbclick = function () {
+        let rbclick = () => {
             let custom_enable: boolean = pnll.customTempleteRb.value;
             pnll.customTempleteTextbox.enabled = custom_enable;
             pnll.customTempleteTextButton.enabled = custom_enable;
@@ -491,7 +496,7 @@ class LabelPlusInput extends GenericUI {
         pnll.customTempleteRb.onClick = rbclick;
         rbclick();
 
-        pnll.customTempleteTextButton.onClick = function () {
+        pnll.customTempleteTextButton.onClick = () => {
             try {
                 let def: string;
                 if (pnll.customTempleteTextbox.text !== "") {
@@ -522,7 +527,7 @@ class LabelPlusInput extends GenericUI {
         // set font
         {
             pnl.setFontCheckBox = pnl.add('checkbox', [xx, yy, xx + 50, yy + 20], I18n.CHECKBOX_SET_FONT);
-            pnl.setFontCheckBox.onClick = function () {
+            pnl.setFontCheckBox.onClick = () => {
                 let value = pnl.setFontCheckBox.value;
                 pnl.font.family.enabled = value;
                 pnl.font.style.enabled = value;
@@ -542,7 +547,7 @@ class LabelPlusInput extends GenericUI {
 
         // leading
         pnl.setTextLeadingCheckBox = pnl.add('checkbox', [xx, yy, xx + 100, yy + 20], I18n.CHECKBOX_SET_LEADING);
-        pnl.setTextLeadingCheckBox.onClick = function () {
+        pnl.setTextLeadingCheckBox.onClick = () => {
             pnl.textLeadingTextBox.enabled = pnl.setTextLeadingCheckBox.value;
         }
         xx += 105;
@@ -596,7 +601,7 @@ class LabelPlusInput extends GenericUI {
             Emit(pnl.setTextLeadingCheckBox.onClick);
         }
 
-        function getOption(opts: CustomOptions): CustomOptions  | null {
+        let getOption = (opts: CustomOptions): CustomOptions  | null => {
             opts.docTemplete =
                 pnl.docTempletePnl.autoTempleteRb.value ? OptionDocTemplete.Auto : (
                     pnl.docTempletePnl.noTempleteRb.value ? OptionDocTemplete.No : (
@@ -620,7 +625,7 @@ class LabelPlusInput extends GenericUI {
         return {getOption: getOption};
     }
 
-    private uiAutomationPanel(pnl: any): PanelDesc {
+    private uiAutomationPanel = (pnl: any): PanelDesc => {
         let xOfs = 10, yOfs = 20;
         let xx = xOfs,  yy = yOfs;
 
@@ -628,7 +633,7 @@ class LabelPlusInput extends GenericUI {
 
         // text replacing(example:"A->B|C->D")
         pnl.textReplaceCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_TEXT_REPLACE);
-        pnl.textReplaceCheckBox.onClick = function () {
+        pnl.textReplaceCheckBox.onClick = () => {
             pnl.textReplaceTextBox.enabled = pnl.textReplaceCheckBox.value;
         };
         xx += 260;
@@ -639,7 +644,7 @@ class LabelPlusInput extends GenericUI {
         // run action
         pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 500, yy + 20],
             I18n.CHECKBOX_RUN_ACTION);
-        pnl.runActionGroupCheckBox.onClick = function () {
+        pnl.runActionGroupCheckBox.onClick = () => {
             pnl.runActionGroupList.enabled = pnl.runActionGroupCheckBox.value;
         }
         xx = xOfs + 30;
@@ -658,7 +663,7 @@ class LabelPlusInput extends GenericUI {
         // dialog overlay
         {
             pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 20], I18n.CHECKBOX_DIALOG_OVERLAY);
-            pnl.dialogOverlayCheckBox.onClick = function () {
+            pnl.dialogOverlayCheckBox.onClick = () => {
                 let enable = pnl.dialogOverlayCheckBox.value;
                 pnl.overlayGroupTextBox.enabled = enable;
                 pnl.overlayGroupAddGroupList.enabled = enable;
@@ -669,7 +674,7 @@ class LabelPlusInput extends GenericUI {
             xx += 255;
             let arr = [""];
             pnl.overlayGroupAddGroupList = pnl.add('dropdownlist', [xx, yy - 1, xx + 100, yy + 21], arr);
-            let func = function () {
+            let func = () => {
                 pnl.overlayGroupTextBox.text += "," + pnl.overlayGroupAddGroupList.selection.text;
                 pnl.overlayGroupAddGroupList.onChange = undefined;
                 pnl.overlayGroupAddGroupList.selection = pnl.overlayGroupAddGroupList.find("");
@@ -697,7 +702,7 @@ class LabelPlusInput extends GenericUI {
             Emit(pnl.dialogOverlayCheckBox.onClick);
         }
 
-        function getOption(opts: CustomOptions): CustomOptions | null {
+        let getOption = (opts: CustomOptions): CustomOptions | null => {
             opts.textReplace = (pnl.textReplaceCheckBox.value) ? pnl.textReplaceTextBox.text : "";
             opts.actionGroup = (pnl.runActionGroupCheckBox.value) ? pnl.runActionGroupList.selection.text : "";
             opts.dialogOverlayLabelGroups = (pnl.dialogOverlayCheckBox.value)? pnl.overlayGroupTextBox.text : "";
@@ -711,15 +716,14 @@ class LabelPlusInput extends GenericUI {
         return {};
     }
 
-    private allPanelEnable(enable: boolean) {
-        let pnl = this.window.appPanel;
-        pnl.inputPnl.enabled = enable;
-        pnl.outputPnl.enabled = enable;
-        pnl.stylePnl.enabled = enable;
-        pnl.automationPnl.enabled = enable;
+    private allPanelEnable = (enable: boolean) => {
+        this.inputPnl.enabled = enable;
+        this.outputPnl.enabled = enable;
+        this.stylePnl.enabled = enable;
+        this.automationPnl.enabled = enable;
     }
 
-    public mainPannel(pnl: any) {
+    public mainPannel = (pnl: any) => {
         let xOfs = 10, yOfs = 0;
         let xx = xOfs,  yy = yOfs;
         let ret: PanelDesc;
@@ -733,14 +737,14 @@ class LabelPlusInput extends GenericUI {
         yOfs = yy;
 
         // setting save/load
-        pnl.settingsPnl = pnl.add('panel', [xx, yy, xx + 355, yy + 50]);
-        ret = this.uiSettingsPanel(pnl.settingsPnl);
+        this.settingsPnl = pnl.add('panel', [xx, yy, xx + 355, yy + 50]);
+        ret = this.uiSettingsPanel(this.settingsPnl);
         this.addToPickerList(ret.getOption);
         yy += 60;
 
         // input options
-        pnl.inputPnl = pnl.add('panel', [xx, yy, xx + 355, yy + 420]);
-        ret = this.uiInputPanel(pnl.inputPnl);
+        this.inputPnl = pnl.add('panel', [xx, yy, xx + 355, yy + 420]);
+        ret = this.uiInputPanel(this.inputPnl);
         this.addToPickerList(ret.getOption);
         xx += 365;
 
@@ -749,34 +753,34 @@ class LabelPlusInput extends GenericUI {
         yy = yOfs;
 
         // output options
-        pnl.outputPnl = pnl.add('panel', [xx, yy, xx + 480, yy + 120]);
-        ret = this.uiOutputPanel(pnl.outputPnl);
+        this.outputPnl = pnl.add('panel', [xx, yy, xx + 480, yy + 120]);
+        ret = this.uiOutputPanel(this.outputPnl);
         this.addToPickerList(ret.getOption);
         yy += 130;
 
         // style
-        pnl.stylePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 180]);
-        ret = this.uiStylePanel(pnl.stylePnl);
+        this.stylePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 180]);
+        ret = this.uiStylePanel(this.stylePnl);
         this.addToPickerList(ret.getOption);
         yy += 190;
 
         // automation
-        pnl.automationPnl = pnl.add('panel', [xx, yy, xx + 480, yy + 160]);
-        ret = this.uiAutomationPanel(pnl.automationPnl);
+        this.automationPnl = pnl.add('panel', [xx, yy, xx + 480, yy + 160]);
+        ret = this.uiAutomationPanel(this.automationPnl);
         this.addToPickerList(ret.getOption);
         yy += 170;
 
         // help bar
         xx = this.winRect.w - 220;
         yy = 5;
-        pnl.HelpPnl = pnl.add('panel', [ , 0, "", [xx, yy, xx + 200, yy + 25]]);
-        ret = this.uiHelpPanel(pnl.HelpPnl);
+        this.HelpPnl = pnl.add('panel', [ , 0, "", [xx, yy, xx + 200, yy + 25]]);
+        ret = this.uiHelpPanel(this.HelpPnl);
 
         this.allPanelEnable(this.lpFile != null);
         return pnl;
     }
 
-    private geCustomOptions(toFile: boolean): CustomOptions | null {
+    private geCustomOptions = (toFile: boolean): CustomOptions | null => {
         let new_opts = new CustomOptions();
         for (let i = 0; i < this.optPickers.length; i++) {
             let ret = this.optPickers[i](new_opts, toFile);
