@@ -1,6 +1,7 @@
 //todo: 以下标记可能被typescript过滤掉，需要找个更妥当的办法导入js
 //@include "./xtools/xlib/GenericUI.jsx";
 //@include  "my_action.js"
+//@include "./jam/jamJSON.jsxinc"
 
 /// <reference path="legacy.d.ts" />
 /// <reference path="i18n.ts" />
@@ -555,7 +556,7 @@ class LabelPlusInput extends GenericUI {
 
         let opts = this.opts;
         if (opts.docTemplate !== undefined) {
-            pnl.docTemplatePnl.autoTemplateRb = false;
+            pnl.docTemplatePnl.autoTemplateRb.value = false;
             pnl.docTemplatePnl.noTemplateRb.value = false;
             pnl.docTemplatePnl.customTemplateRb.value = false;
             switch (opts.docTemplate) {
@@ -564,7 +565,7 @@ class LabelPlusInput extends GenericUI {
                 break;
             case OptionDocTemplate.Custom:
                 pnl.docTemplatePnl.customTemplateRb.value = true;
-                pnl.docTemplatePnl.customTemplateTextbox.text = opts.docTemplateCustomPath;
+                pnl.docTemplatePnl.customTemplateTextbox.text = toUiString(opts.docTemplateCustomPath);
                 break;
             case OptionDocTemplate.Auto:
             default:
@@ -806,34 +807,6 @@ LabelPlusInput.prototype.process = function (opts: CustomOptions, doc)
     importFiles(opts);
 }
 
-function iniToString(ini) {
-    var str = '';
-    for (var idx in ini) {
-        if (idx.charAt(0) == '_') {         // private stuff
-            continue;
-        }
-        if (idx == 'typename') {
-            continue;
-        }
-        if (idx == "noUI") {                // GenericUI property
-            continue;
-        }
-        var val = ini[idx];
-
-        if (val == undefined) {
-            continue;
-        }
-
-        if (val.constructor == String) {
-            str += (idx + ": \"" + val.toString() + "\"\n");
-        }
-        else if (val.constructor == Number || val.constructor == Boolean) {
-            str += (idx + ": " + val.toString() + "\n");
-        }
-    }
-    return str;
-};
-
 function writeIni (iniFile: string, ini: CustomOptions) {
     if (!ini || !iniFile) {
         return;
@@ -847,7 +820,7 @@ function writeIni (iniFile: string, ini: CustomOptions) {
     if (file.open("w", "TEXT", "????")) {
         file.lineFeed = "unix";
         file.encoding = 'UTF-8';
-        let str = iniToString(ini);
+        let str = jamJSON.stringify(ini, "\n");
         file.write(str);
         file.close();
     }
@@ -865,8 +838,7 @@ function readIni(iniFile: string): CustomOptions {
         file.lineFeed = "unix";
         file.encoding = 'UTF-8';
         let str = file.read();
-        str = str.replace(/\n/g, ',');
-        ini = (Function('return {' + str + '}'))(); // note: 不使用GenericUI.iniFileToFile是因为它的实现读出的项均为string类型
+        ini = jamJSON.parse(str);
         file.close();
     }
 

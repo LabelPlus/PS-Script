@@ -1,0 +1,2134 @@
+﻿//------------------------------------------------------------------------------
+// File: jamEngine.jsxinc
+// Version: 4.5
+// Release Date: 2016-09-29
+// Copyright: © 2011-2016 Michel MARIANI <http://www.tonton-pixel.com/blog/>
+// Licence: GPL <http://www.gnu.org/licenses/gpl.html>
+//------------------------------------------------------------------------------
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//------------------------------------------------------------------------------
+// Version History:
+//  4.5:
+//  - Updated the disambiguating rules table: brush in brushPreset, 
+//    currentToolOptions and displayPrefs classes.
+//  4.4.4:
+//  - Added property jamEngine.displayDialogs (DialogModes.ERROR by default) 
+//    used as default value for missing parameter displayDialogs when calling 
+//    function jamEngine.jsonPlay ().
+//  4.4.1:
+//  - Updated the disambiguating rules table: interpolation in dBrush and 
+//    sampledBrush classes.
+//  4.4:
+//  - Normalized error messages.
+//  4.0:
+//  - Removed reference to 'this' for main global object.
+//  3.6.4:
+//  - Updated the disambiguating rules table: align in gradientLayer and 
+//    patternLayer classes.
+//  3.6.3:
+//  - Fixed reentrancy problem in jamEngine.simplifyObject () and
+//    jamEngine.simplifyList () by propagating hook function as parameter.
+//  3.6:
+//  - Updated the disambiguating rules table: start in fileNamingRules class.
+//  - Added jamEngine.simplifyObject () and jamEngine.simplifyList ().
+//  3.5:
+//  - Updated the disambiguating rules table for CS6: interpolation in 
+//    transform event.
+//  3.4:
+//  - Incremented version number to keep in sync with other modules.
+//  3.3:
+//  - Updated the disambiguating rules table.
+//  3.2:
+//  - Added support for large integers (from CS6).
+//  3.1:
+//  - Removed hexadecimal string conversion for raw data format.
+//  - Moved jamEngine.dataToHexaString () and jamEngine.hexaToDataString ()
+//    to jamUtils.dataToHexaString () and jamUtils.hexaToDataString ().
+//  3.0:
+//  - Applied the redefined JSON AM Reference format.
+//  2.0:
+//  - Renamed jamEngine.js to jamEngine.jsxinc.
+//  - Added alternative, more parse-friendly JSON compact syntax, using ordered
+//    pairs made of arrays instead of objects.
+//  - Modified the interface of jamEngine.getConflictingStringIdStrs (); now
+//    takes a CharID string as input and returns an array of the corresponding
+//    conflicting StringID strings if available, null otherwise.
+//  - Moved dataToHexaString () and hexaToDataString () to public members of
+//    jamEngine.
+//  - Changed names of members returned
+//    by jamEngine.eventIdAndActionDescriptorToJson (): "<event>", "<descriptor>"
+//    and jamEngine.classIdAndActionDescriptorToJson (): "<class>", "<descriptor>".
+//  - Changed default names of members handled by jamEngine.compactToExplicit ()
+//    and jamEngine.explicitToCompact (): "<type>", "<value>".
+//  - Simplified result of jamEngine.idToUniIdStrs () to a plain two-element array.
+//  - Merged specific and general context rules into one table with new format.
+//  1.0:
+//  - Initial release.
+//------------------------------------------------------------------------------
+
+/**
+ * @fileOverview
+ * @name jamEngine.jsxinc
+ * @author Michel MARIANI
+ */
+
+if (typeof jamEngine !== 'object')
+{
+    /**
+     * Global object (used to simulate a namespace in JavaScript) containing all the methods and properties of the
+     * <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-action-manager/">JSON Action Manager</a> engine.
+     * @author Michel MARIANI
+     * @version 4.5
+     * @namespace
+     */
+    var jamEngine = { };
+    //
+    (function ()
+    {
+        var that;
+        //
+        /**
+         * @description Global option: generate as "meaningful" as possible ID strings (instead of "canonic" ID strings).
+         * @type Boolean
+         * @default false
+         * @example
+         * jamEngine.<strong>meaningfulIds</strong> = false;
+         * var resultDescriptorObj = jamEngine.jsonGet
+         * (
+         *     [
+         *         { "'Prpr'": { "&lt;property&gt;": "'HstN'" } },
+         *         { "'capp'": { "&lt;enumerated&gt;": { "'Ordn'": "'Trgt'" } } }
+         *     ]
+         * );
+         * alert (jamJSON.stringify (resultDescriptorObj)); // -> { "'HstN'": { "&lt;string&gt;": "Adobe Photoshop CS" } }
+         * @example
+         * jamEngine.<strong>meaningfulIds</strong> = true;
+         * var resultDescriptorObj = jamEngine.jsonGet
+         * (
+         *     [
+         *         { "property": { "&lt;property&gt;": "hostName" } },
+         *         { "application": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } }
+         *     ]
+         * );
+         * alert (jamJSON.stringify (resultDescriptorObj)); // -> { "hostName": { "&lt;string&gt;": "Adobe Photoshop CS" } }
+         */
+        jamEngine.meaningfulIds = false;
+        //
+        /**
+         * @description Global option: generate alternative, more parse-friendly JSON compact format (using ordered pairs made of arrays instead of objects).
+         * @type Boolean
+         * @default false
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * jamEngine.<strong>parseFriendly</strong> = false;
+         * var resultDescriptorObj = jamEngine.jsonGet
+         * (
+         *     [
+         *         { "property": { "&lt;property&gt;": "rulerUnits" } },
+         *         { "application": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } }
+         *     ]
+         * );
+         * alert (jamJSON.stringify (resultDescriptorObj));
+         * // -> { "rulerUnits": { "&lt;enumerated&gt;": { "rulerUnits": "rulerPixels" } } }
+         * var rulerUnits = resultDescriptorObj["rulerUnits"]["&lt;enumerated&gt;"]["rulerUnits"];
+         * alert (jamJSON.stringify (rulerUnits)); // -> "rulerPixels"
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * jamEngine.<strong>parseFriendly</strong> = true;
+         * var resultDescriptorObj = jamEngine.jsonGet
+         * (
+         *     [
+         *         [ "property", [ "&lt;property&gt;", "rulerUnits" ] ],
+         *         [ "application", [ "&lt;enumerated&gt;", [ "ordinal", "targetEnum" ] ] ]
+         *     ]
+         * );
+         * alert (jamJSON.stringify (resultDescriptorObj));
+         * // -> { "rulerUnits": [ "&lt;enumerated&gt;", [ "rulerUnits", "rulerPixels" ] ] }
+         * var rulerUnits = resultDescriptorObj["rulerUnits"][1][1];
+         * alert (jamJSON.stringify (rulerUnits)); // -> "rulerPixels"
+         */
+        jamEngine.parseFriendly = false;
+        //
+        /**
+         * @description Global option: default value for displayDialogs when calling jamEngine.jsonPlay ().
+         * @type Object
+         * @default DialogModes.ERROR
+         * @example
+         * jamEngine.<strong>displayDialogs</strong> = DialogModes.ALL;
+         */
+        jamEngine.displayDialogs = DialogModes.ERROR;
+        //
+        // Table of conflicting StringID strings.
+        var conflictingStringIdStrs =
+        {
+            "'Algn'": [ "align", "alignment" ],
+            "'AntA'": [ "antiAlias", "antiAliasedPICTAcquire" ],
+            "'BckL'": [ "backgroundLayer", "backgroundLevel" ],
+            "'BlcG'": [ "blackGenerationType", "blackGenerationCurve" ],
+            "'BlcL'": [ "blackLevel", "blackLimit" ],
+            "'Blks'": [ "blacks", "blocks" ],
+            "'BlrM'": [ "blurMethod", "blurMore" ],
+            "'BrgC'": [ "brightnessEvent", "brightnessContrast" ],
+            "'BrsD'": [ "brushDetail", "brushesDefine" ],
+            "'Brsh'": [ "brush", "brushes" ],
+            "'Clcl'": [ "calculation", "calculations" ],
+            "'ClrP'": [ "colorPalette", "coloredPencil" ],
+            "'Cnst'": [ "constant", "constrain" ],
+            "'CntC'": [ "centerCropMarks", "conteCrayon" ],
+            "'Cntr'": [ "center", "contrast" ],
+            "'CrtD'": [ "createDroplet", "createDuplicate" ],
+            "'CstP'": [ "customPalette", "customPhosphors" ],
+            "'Cstm'": [ "custom", "customPattern" ],
+            "'Drkn'": [ "darken", "darkness" ],
+            "'Dstr'": [ "distort", "distortion", "distribute", "distribution" ],
+            "'Dstt'": [ "desaturate", "destWhiteMax" ],
+            "'FlIn'": [ "fileInfo", "fillInverse" ],
+            "'Gd  '": [ "good", "guide" ],
+            "'GnrP'": [ "generalPreferences", "generalPrefs", "preferencesClass" ],
+            "'GrSt'": [ "grainStippled", "graySetup" ],
+            "'Grdn'": [ "gradientClassEvent", "gridMinor" ],
+            "'Grn '": [ "grain", "green" ],
+            "'Grns'": [ "graininess", "greens" ],
+            "'HstP'": [ "historyPreferences", "historyPrefs" ],
+            "'HstS'": [ "historyState", "historyStateSourceType" ],
+            "'ImgP'": [ "imageCachePreferences", "imagePoint" ],
+            "'In  '": [ "in", "stampIn" ],
+            "'IntW'": [ "interfaceWhite", "intersectWith" ],
+            "'Intr'": [ "interfaceIconFrameDimmed", "interlace", "interpolation", "intersect" ],
+            "'JPEG'": [ "JPEG", "JPEGFormat" ],
+            "'LghD'": [ "lightDirection", "lightDirectional" ],
+            "'LghO'": [ "lightOmni", "lightenOnly" ],
+            "'LghS'": [ "lightSource", "lightSpot" ],
+            "'Lns '": [ "lens", "lines" ],
+            "'Mgnt'": [ "magenta", "magentas" ],
+            "'MrgL'": [ "mergeLayers", "mergedLayers" ],
+            "'Mxm '": [ "maximum", "maximumQuality" ],
+            "'NTSC'": [ "NTSC", "NTSCColors" ],
+            "'NmbL'": [ "numberOfLayers", "numberOfLevels" ],
+            "'PlgP'": [ "pluginPicker", "pluginPrefs" ],
+            "'Pncl'": [ "pencilEraser", "pencilWidth" ],
+            "'Pnt '": [ "paint", "point" ],
+            "'Prsp'": [ "perspective", "perspectiveIndex" ],
+            "'PrvM'": [ "previewMacThumbnail", "previewMagenta" ],
+            "'Pstr'": [ "posterization", "posterize" ],
+            "'RGBS'": [ "RGBSetup", "RGBSetupSource" ],
+            "'Rds '": [ "radius", "reds" ],
+            "'ScrD'": [ "scratchDisks", "screenDot" ],
+            "'ShdI'": [ "shadingIntensity", "shadowIntensity" ],
+            "'ShpC'": [ "shapeCurveType", "shapingCurve" ],
+            "'ShrE'": [ "sharpenEdges", "shearEd" ],
+            "'Shrp'": [ "sharpen", "sharpness" ],
+            "'SplC'": [ "splitChannels", "supplementalCategories" ],
+            "'Spot'": [ "spot", "spotColor" ],
+            "'SprS'": [ "separationSetup", "sprayedStrokes" ],
+            "'StrL'": [ "strokeLength", "strokeLocation" ],
+            "'Strt'": [ "saturation", "start" ],
+            "'TEXT'": [ "char", "textType" ],
+            "'TIFF'": [ "TIFF", "TIFFFormat" ],
+            "'TglO'": [ "toggleOptionsPalette", "toggleOthers" ],
+            "'TrnG'": [ "transparencyGamutPreferences", "transparencyGrid", "transparencyGridSize" ],
+            "'TrnS'": [ "transferSpec", "transparencyShape", "transparencyStop" ],
+            "'Trns'": [ "transparency", "transparent" ],
+            "'TxtC'": [ "textClickPoint", "textureCoverage" ],
+            "'TxtF'": [ "textureFile", "textureFill" ],
+            "'UsrM'": [ "userMaskEnabled", "userMaskOptions" ],
+            "'c@#^'": [ "inherits", "pInherits" ],
+            "'comp'": [ "comp", "sInt64" ],
+            "'doub'": [ "floatType", "IEEE64BitFloatingPoint", "longFloat" ],
+            "'long'": [ "integer", "longInteger", "sInt32" ],
+            "'magn'": [ "magnitude", "uInt32" ],
+            "'null'": [ "null", "target" ],
+            "'shor'": [ "sInt16", "sMInt", "shortInteger" ],
+            "'sing'": [ "IEEE32BitFloatingPoint", "sMFloat", "shortFloat" ]
+        };
+        //
+        /**
+         * @description Get an array of conflicting StringID strings corresponding to a CharID string.
+         * @param {String} charIdStr CharID string (<code>"'xxxx'"</code>)
+         * @returns {Array|Null} Array of conflicting StringID strings corresponding to a CharID string if available, null otherwise
+         * @example
+         * alert (jamJSON.stringify (jamEngine.<strong>getConflictingStringIdStrs</strong> ("'Rd  '")));
+         * // -> null
+         * alert (jamJSON.stringify (jamEngine.<strong>getConflictingStringIdStrs</strong> ("'Grn '")));
+         * // -> [ "grain", "green" ]
+         * alert (jamJSON.stringify (jamEngine.<strong>getConflictingStringIdStrs</strong> ("'Bl  '")));
+         * // -> null
+         */
+        jamEngine.getConflictingStringIdStrs = function (charIdStr)
+        {
+            return conflictingStringIdStrs[charIdStr] || null;
+        };
+        //
+        /**
+         * @description Convert a unified ID string into its numerical ID.
+         * @param {String} uniIdStr unified ID string (either <code>"'xxxx'"</code> or <code>"xxxxxxxx"</code>)
+         * @returns {Number} Numerical ID
+         * @see jamEngine.idToUniIdStrs
+         * @example
+         * var smallestHashValue = jamEngine.<strong>uniIdStrToId</strong> ("'    '");  // -> 0x20202020
+         */
+        jamEngine.uniIdStrToId = function (uniIdStr)
+        {
+            var id = 0;
+            if (typeof uniIdStr === 'string')
+            {
+                if ((uniIdStr.length === (1 + 4 + 1)) && (uniIdStr.charAt (0) === "'") && (uniIdStr.charAt (5) === "'"))
+                {
+                    // Predefined ID
+                    id = app.charIDToTypeID (uniIdStr.substring (1, 5));
+                }
+                else
+                {
+                    // Predefined or runtime ID
+                    id = app.stringIDToTypeID (uniIdStr);
+                }
+            }
+            return id;
+        };
+        //
+        var smallestHashValue = app.charIDToTypeID ("    "); // 0x20202020
+        //
+        /**
+         * @description Convert a numerical ID into a CharID string and a StringID string (or an array of conflicting StringID strings).
+         * @param {Number} id Numerical ID
+         * @returns {Object} Two-element array: CharID string (<code>"'xxxx'"</code>) (empty string if not available) and StringID string (<code>"xxxxxxxx"</code>) (empty string if not available, or array of StringID strings if they are conflicting)
+         * @see jamEngine.uniIdStrToId
+         * @example
+         * var uniIdStr = "green";
+         * alert (jamJSON.stringify (jamEngine.<strong>idToUniIdStrs</strong> (jamEngine.uniIdStrToId (uniIdStr))));
+         * // -> [ "'Grn '", [ "grain", "green" ] ]
+         */
+        jamEngine.idToUniIdStrs = function (id)
+        {
+            var charIdStr = "";
+            var stringIdStr = app.typeIDToStringID (id);
+            if (id >= smallestHashValue)
+            {
+                // Predefined ID
+                charIdStr = "'" + app.typeIDToCharID (id) + "'";
+                if (stringIdStr !== "")
+                {
+                    if (charIdStr in conflictingStringIdStrs)
+                    {
+                        stringIdStr = conflictingStringIdStrs[charIdStr];
+                    }
+                }
+            }
+            return [ charIdStr, stringIdStr ];
+        };
+        //
+        /**
+         * @description Test if two unified ID strings are equivalent (map to the same numerical ID).
+         * @param {String} uniIdStr1 unified ID string (either <code>"'xxxx'"</code> or <code>"xxxxxxxx"</code>)
+         * @param {String} uniIdStr2 unified ID string (either <code>"'xxxx'"</code> or <code>"xxxxxxxx"</code>)
+         * @returns {Boolean} true if the two unified ID strings are equivalent, false otherwise 
+         * @example
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("green", "'Grn '");    // returns true
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("grain", "'Grn '");    // returns true
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("green", "grain");     // returns true
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("null", "'null'");     // returns true
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("target", "'Trgt'");   // returns false
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("target", "null");     // returns true
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("target", "'null'");   // returns true
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("axis", "'Axis'");     // returns true
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("center", "contrast"); // returns true
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("'Grn '", "'Grns'");   // returns false
+         * jamEngine.<strong>equivalentUniIdStrs</strong> ("green", "greens");    // returns false
+         */
+        jamEngine.equivalentUniIdStrs = function (uniIdStr1, uniIdStr2)
+        {
+            return this.uniIdStrToId (uniIdStr1) === this.uniIdStrToId (uniIdStr2);
+        };
+        //
+        function putInReference (ref, containers)
+        {
+            if (containers.constructor === Array)
+            {
+                var count = containers.length;
+                for (var i = 0; i < count; i++)
+                {
+                    var container = that.parseCompact (containers[i]);
+                    var desiredClassId = that.uniIdStrToId (container[0]);
+                    var typedValue = that.parseCompact (container[1]);
+                    var form = typedValue[0];
+                    var value = typedValue[1];
+                    switch (form)
+                    {
+                        case "<class>":
+                            ref.putClass (desiredClassId);
+                            break;
+                        case "<enumerated>":
+                            var enumerated = that.parseCompact (value);
+                            ref.putEnumerated (desiredClassId, that.uniIdStrToId (enumerated[0]), that.uniIdStrToId (enumerated[1]));
+                            break;
+                        case "<identifier>":
+                            ref.putIdentifier (desiredClassId, value);
+                            break;
+                        case "<index>":
+                            ref.putIndex (desiredClassId, value);
+                            break;
+                        case "<name>":
+                            ref.putName (desiredClassId, value);
+                            break;
+                        case "<offset>":
+                            ref.putOffset (desiredClassId, value);
+                            break;
+                        case "<property>":
+                            ref.putProperty (desiredClassId, that.uniIdStrToId (value));
+                            break;
+                        default:
+                            throw new Error ("[jamEngine putInReference] Unknown reference form: " + form);
+                            break;
+                    }
+                 }
+            }
+            else
+            {
+                throw new Error ("[jamEngine putInReference] JavaScript array expected");
+            }
+        }
+        //
+        function putInList (list, items)
+        {
+            if (items.constructor === Array)
+            {
+                var count = items.length;
+                for (var i = 0; i < count; i++)
+                {
+                    var item = that.parseCompact (items[i]);
+                    var type = item[0];
+                    var value = item[1];
+                    switch (type)
+                    {
+                        case "<boolean>":
+                            list.putBoolean (value);
+                            break;
+                        case "<class>":
+                            list.putClass (that.uniIdStrToId (value));
+                            break;
+                        case "<data>":
+                            list.putData (value);    // Only from CS2
+                            break;
+                        case "<double>":
+                            list.putDouble (value);
+                            break;
+                        case "<enumerated>":
+                            var enumerated = that.parseCompact (value);
+                            list.putEnumerated (that.uniIdStrToId (enumerated[0]), that.uniIdStrToId (enumerated[1]));
+                            break;
+                        case "<integer>":
+                            list.putInteger (value);
+                            break;
+                        case "<largeInteger>":
+                            list.putLargeInteger (value);    // Only from CS6
+                            break;
+                        case "<list>":
+                            var actionList = new ActionList ();
+                            putInList (actionList, value);
+                            list.putList (actionList);
+                            break;
+                        case "<object>":
+                            var object = that.parseCompact (value);
+                            if (object[1])
+                            {
+                                var actionDescriptor = new ActionDescriptor ();
+                                putInDescriptor (actionDescriptor, object[1]);
+                                list.putObject (that.uniIdStrToId (object[0]), actionDescriptor);
+                            }
+                            else
+                            {
+                                // A Photoshop object is not supposed to have a null descriptor, use a simple class instead
+                                list.putClass (that.uniIdStrToId (object[0]));
+                            }
+                            break;
+                        case "<path>":
+                            var fileRef = new File (value);
+                            list.putPath (fileRef);
+                            break;
+                        case "<reference>":
+                            var actionReference = new ActionReference ();
+                            putInReference (actionReference, value);
+                            list.putReference (actionReference);
+                            break;
+                        case "<string>":
+                            list.putString (value);
+                            break;
+                        case "<unitDouble>":
+                            var unitDouble = that.parseCompact (value);
+                            list.putUnitDouble (that.uniIdStrToId (unitDouble[0]), unitDouble[1]);
+                            break;
+                        default:
+                            throw new Error ("[jamEngine putInList] Unknown list type: " + type);
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                throw new Error ("[jamEngine putInList] JavaScript array expected");
+            }
+        }
+        //
+        function putInDescriptor (desc, members)
+        {
+            if (members.constructor === Object)
+            {
+                for (var key in members)
+                {
+                    if (members.hasOwnProperty (key))
+                    {
+                        var keyID = that.uniIdStrToId (key);
+                        var member = that.parseCompact (members[key]);
+                        var type = member[0];
+                        var value = member[1];
+                        switch (type)
+                        {
+                            case "<boolean>":
+                                desc.putBoolean (keyID, value);
+                                break;
+                            case "<class>":
+                                desc.putClass (keyID, that.uniIdStrToId (value));
+                                break;
+                            case "<data>":
+                                desc.putData (keyID, value); // Only from CS2
+                                break;
+                            case "<double>":
+                                desc.putDouble (keyID, value);
+                                break;
+                            case "<enumerated>":
+                                var enumerated = that.parseCompact (value);
+                                desc.putEnumerated (keyID, that.uniIdStrToId (enumerated[0]), that.uniIdStrToId (enumerated[1]));
+                                break;
+                            case "<integer>":
+                                desc.putInteger (keyID, value);
+                                break;
+                            case "<largeInteger>":
+                                desc.putLargeInteger (keyID, value);    // Only from CS6
+                                break;
+                            case "<list>":
+                                var actionList = new ActionList ();
+                                putInList (actionList, value);
+                                desc.putList (keyID, actionList);
+                                break;
+                            case "<object>":
+                                var object = that.parseCompact (value);
+                                if (object[1])
+                                {
+                                    var actionDescriptor = new ActionDescriptor ();
+                                    putInDescriptor (actionDescriptor, object[1]);
+                                    desc.putObject (keyID, that.uniIdStrToId (object[0]), actionDescriptor);
+                                }
+                                else
+                                {
+                                    // A Photoshop object is not supposed to have a null descriptor, use a simple class instead
+                                    desc.putClass (keyID, that.uniIdStrToId (object[0]));
+                                }
+                                break;
+                            case "<path>":
+                                var fileRef = new File (value);
+                                desc.putPath (keyID, fileRef);
+                                break;
+                            case "<reference>":
+                                var actionReference = new ActionReference ();
+                                putInReference (actionReference, value);
+                                desc.putReference (keyID, actionReference);
+                                break;
+                            case "<string>":
+                                desc.putString (keyID, value);
+                                break;
+                            case "<unitDouble>":
+                                var unitDouble = that.parseCompact (value);
+                                desc.putUnitDouble (keyID, that.uniIdStrToId (unitDouble[0]), unitDouble[1]);
+                                break;
+                            default:
+                                throw new Error ("[jamEngine putInDescriptor] Unknown descriptor type: " + type);
+                                break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw new Error ("[jamEngine putInDescriptor] JavaScript object expected");
+            }
+        }
+        //
+        // Disambiguating rules table, used to choose among conflicting StringID strings the most adequate meaningful one in context.
+        var contextRules =
+        {
+            "'Algn'":
+            {
+                "<classKey>":
+                {
+                    "bevelEmboss": "align",
+                    "frameFX": "align",
+                    "gradientFill": "align",
+                    "gradientLayer": "align",
+                    "patternFill": "align",
+                    "patternLayer": "align"
+                },
+                "<event>": "align",
+                "<key>": "alignment"
+            },
+            "'AntA'":
+            {
+                "<class>": "antiAliasedPICTAcquire",
+                "<key>": "antiAlias"
+            },
+            "'BckL'":
+            {
+                "<class>": "backgroundLayer",
+                "<key>": "backgroundLevel"
+            },
+            "'BlcG'":
+            {
+                "<enumType>": "blackGenerationType",
+                "<key>": "blackGenerationCurve"
+            },
+            "'BlcL'":
+            {
+                "<classKey>":
+                {
+                    "'GEfc'": "blackLevel",
+                    "CMYKSetup": "blackLimit"
+                },
+                "<eventKey>":
+                {
+                    "reticulation": "blackLevel"
+                }
+            },
+            "'Blks'":
+            {
+                "<typeValue>":
+                {
+                    "colors": "blacks",
+                    "extrudeType": "blocks"
+                }
+            },
+            "'BlrM'":
+            {
+                "<enumType>": "blurMethod",
+                "<event>": "blurMore",
+                "<key>": "blurMethod"
+            },
+            "'BrgC'":
+            {
+                "<class>": "brightnessContrast",
+                "<event>": "brightnessContrast"
+            },
+            "'BrsD'":
+            {
+                "<enumValue>": "brushesDefine",
+                "<key>": "brushDetail"
+            },
+            "'Brsh'":
+            {
+                "<class>": "brush",
+                "<classKey>":
+                {
+                    "brushPreset": "brush",
+                    "currentToolOptions": "brush",
+                    "displayPrefs": "brush"
+                },
+                "<key>": "brushes"
+            },
+            "'Clcl'":
+            {
+                "<class>": "calculation",
+                "<enumValue>": "calculations",
+                "<key>": "calculation"
+            },
+            "'ClrP'":
+            {
+                "<typeValue>":
+                {
+                    "'GEft'": "coloredPencil"
+                },
+                "<enumType>": "colorPalette",
+                "<event>": "coloredPencil"
+            },
+            "'Cnst'":
+            {
+                "<classKey>":
+                {
+                    "channelMatrix": "constant"
+                },
+                "<unknown>": "constrain"
+            },
+            "'CntC'":
+            {
+                "<typeValue>":
+                {
+                    "'GEft'": "conteCrayon"
+                },
+                "<event>": "conteCrayon",
+                "<key>": "centerCropMarks"
+            },
+            "'Cntr'":
+            {
+                "<classKey>":
+                {
+                    "'GEfc'": "contrast",
+                    "brightnessContrast": "contrast",
+                    "document": "center",
+                    "polygon": "center",
+                    "quadrilateral": "center"
+                },
+                "<eventKey>":
+                {
+                    "adaptCorrect": "contrast",
+                    "brightnessEvent": "contrast",
+                    "grain": "contrast",
+                    "halftoneScreen": "contrast",
+                    "sumie": "contrast",
+                    "tornEdges": "contrast",
+                    "waterPaper": "contrast"
+                },
+                "<enumValue>": "center"
+            },
+            "'CrtD'":
+            {
+                "<enumValue>": "createDuplicate",
+                "<event>": "createDroplet"
+            },
+            "'CstP'":
+            {
+                "<class>": "customPhosphors",
+                "<key>": "customPalette"
+            },
+            "'Cstm'":
+            {
+                "<enumValue>": "customPattern",
+                "<event>": "custom",
+                "<key>": "custom"
+            },
+            "'Drkn'":
+            {
+                "<enumValue>": "darken",
+                "<key>": "darkness"
+            },
+            "'Dstr'":
+            {
+                "<classKey>":
+                {
+                    "'GEfc'": "distortion"
+                },
+                "<eventKey>":
+                {
+                    "glass": "distortion",
+                    "addNoise": "distribution"
+                },
+                "<enumType>": "distribution",
+                "<enumValue>": "distort",
+                "<event>": "distribute"
+            },
+            "'Dstt'":
+            {
+                "<enumValue>": "desaturate",
+                "<event>": "desaturate",
+                "<key>": "destWhiteMax"
+            },
+            "'FlIn'":
+            {
+                "<typeValue>":
+                {
+                    "fillColor": "fillInverse",
+                    "menuItemType": "fileInfo"
+                },
+                "<class>": "fileInfo",
+                "<key>": "fileInfo"
+            },
+            "'Gd  '":
+            {
+                "<class>": "guide",
+                "<enumValue>": "good"
+            },
+            "'GnrP'":
+            {
+                "<class>": "preferencesClass",
+                "<enumValue>": "generalPreferences",
+                "<key>": "generalPrefs"
+            },
+            "'GrSt'":
+            {
+                "<class>": "graySetup",
+                "<enumValue>": "grainStippled",
+                "<key>": "graySetup"
+            },
+            "'Grdn'":
+            {
+                "<class>": "gradientClassEvent",
+                "<event>": "gradientClassEvent",
+                "<key>": "gridMinor"
+            },
+            "'Grn '":
+            {
+                "<typeValue>":
+                {
+                    "'GEft'": "grain"
+                },
+                "<classKey>":
+                {
+                    "'GEfc'": "grain",
+                    "RGBColor": "green",
+                    "blackAndWhite": "green",
+                    "channelMatrix": "green",
+                    "channelMixer": "green"
+                },
+                "<eventKey>":
+                {
+                    "blackAndWhite": "green",
+                    "channelMixer": "green",
+                    "filmGrain": "grain"
+                },
+                "<enumValue>": "green",
+                "<event>": "grain"
+            },
+            "'Grns'":
+            {
+                "<enumValue>": "greens",
+                "<key>": "graininess"
+            },
+            "'HstP'":
+            {
+                "<enumValue>": "historyPreferences",
+                "<key>": "historyPrefs"
+            },
+            "'HstS'":
+            {
+                "<class>": "historyState",
+                "<enumType>": "historyStateSourceType"
+            },
+            "'ImgP'":
+            {
+                "<class>": "imagePoint",
+                "<enumValue>": "imageCachePreferences"
+            },
+            "'In  '":
+            {
+                "<enumValue>": "stampIn",
+                "<key>": "in"
+            },
+            "'IntW'":
+            {
+                "<event>": "intersectWith",
+                "<key>": "interfaceWhite"
+            },
+            "'Intr'":
+            {
+                "<typeValue>":
+                {
+                    "shapeOperation": "intersect"
+                },
+                "<classKey>":
+                {
+                    "GIFFormat": "interlace",
+                    "SaveForWeb": "interlace",
+                    "application": "interfaceIconFrameDimmed",
+                    "computedBrush": "interpolation",
+                    "dBrush": "interpolation",
+                    "gradientClassEvent": "interpolation",
+                    "photoshopEPSFormat": "interpolation",
+                    "sampledBrush": "interpolation"
+                },
+                "<eventKey>":
+                {
+                    "convertMode": "interpolation",
+                    "imageSize": "interpolation",
+                    "transform": "interpolation"
+                },
+                "<event>": "intersect"
+            },
+            "'JPEG'":
+            {
+                "<class>": "JPEGFormat",
+                "<enumValue>": "JPEG"
+            },
+            "'LghD'":
+            {
+                "<enumType>": "lightDirection",
+                "<enumValue>": "lightDirectional",
+                "<key>": "lightDirection"
+            },
+            "'LghO'":
+            {
+                "<typeValue>":
+                {
+                    "diffuseMode": "lightenOnly",
+                    "lightType": "lightOmni"
+                }
+            },
+            "'LghS'":
+            {
+                "<class>": "lightSource",
+                "<enumValue>": "lightSpot",
+                "<key>": "lightSource"
+            },
+            "'Lns '":
+            {
+                "<enumType>": "lens",
+                "<enumValue>": "lines",
+                "<key>": "lens"
+            },
+            "'Mgnt'":
+            {
+                "<typeValue>":
+                {
+                    "channel": "magenta",
+                    "colors": "magentas",
+                    "guideGridColor": "magenta"
+                },
+                "<key>": "magenta"
+            },
+            "'MrgL'":
+            {
+                "<enumValue>": "mergedLayers",
+                "<event>": "mergeLayers"
+            },
+            "'Mxm '":
+            {
+                "<enumValue>": "maximumQuality",
+                "<event>": "maximum",
+                "<key>": "maximum"
+            },
+            "'NTSC'":
+            {
+                "<enumValue>": "NTSC",
+                "<event>": "NTSCColors"
+            },
+            "'NmbL'":
+            {
+                "<classKey>":
+                {
+                    "'GEfc'": "numberOfLevels",
+                    "document": "numberOfLayers"
+                },
+                "<eventKey>":
+                {
+                    "cutout": "numberOfLevels"
+                }
+            },
+            "'PlgP'":
+            {
+                "<class>": "pluginPrefs",
+                "<enumValue>": "pluginPicker",
+                "<key>": "pluginPrefs"
+            },
+            "'Pncl'":
+            {
+                "<enumValue>": "pencilEraser",
+                "<key>": "pencilWidth"
+            },
+            "'Pnt '":
+            {
+                "<typeValue>":
+                {
+                    "textType": "point"
+                },
+                "<class>": "point",
+                "<event>": "paint"
+            },
+            "'Prsp'":
+            {
+                "<enumValue>": "perspective",
+                "<key>": "perspectiveIndex"
+            },
+            "'PrvM'":
+            {
+                "<enumValue>": "previewMagenta",
+                "<key>": "previewMacThumbnail"
+            },
+            "'Pstr'":
+            {
+                "<class>": "posterize",
+                "<event>": "posterize",
+                "<key>": "posterization"
+            },
+            "'RGBS'":
+            {
+                "<enumType>": "RGBSetupSource",
+                "<key>": "RGBSetup"
+            },
+            "'Rds '":
+            {
+                "<enumValue>": "reds",
+                "<key>": "radius"
+            },
+            "'ScrD'":
+            {
+                "<enumValue>": "screenDot",
+                "<key>": "scratchDisks"
+            },
+            "'ShdI'":
+            {
+                "<classKey>":
+                {
+                    "'GEfc'": "shadowIntensity"
+                },
+                "<eventKey>":
+                {
+                    "watercolor": "shadowIntensity"
+                },
+                "<unknown>": "shadingIntensity"
+            },
+            "'ShpC'":
+            {
+                "<classKey>":
+                {
+                    "application": "shapingCurve"
+                },
+                "<class>": "shapingCurve",
+                "<key>": "shapeCurveType"
+            },
+            "'ShrE'":
+            {
+                "<event>": "sharpenEdges",
+                "<key>": "shearEd"
+            },
+            "'Shrp'":
+            {
+                "<event>": "sharpen",
+                "<key>": "sharpness"
+            },
+            "'SplC'":
+            {
+                "<event>": "splitChannels",
+                "<key>": "supplementalCategories"
+            },
+            "'Spot'":
+            {
+                "<enumValue>": "spotColor",
+                "<key>": "spot"
+            },
+            "'SprS'":
+            {
+                "<typeValue>":
+                {
+                    "'GEft'": "sprayedStrokes"
+                },
+                "<enumValue>": "separationSetup",
+                "<event>": "sprayedStrokes"
+            },
+            "'StrL'":
+            {
+                "<enumType>": "strokeLocation",
+                "<key>": "strokeLength"
+            },
+            "'Strt'":
+            {
+                "<classKey>":
+                {
+                    "currentToolOptions": "saturation",
+                    "fileNamingRules": "start",
+                    "HSBColorClass": "saturation",
+                    "hueSatAdjustment": "saturation",
+                    "hueSatAdjustmentV2": "saturation",
+                    "lineClass": "start",
+                    "range": "start",
+                    "vibrance": "saturation"
+                },
+                "<eventKey>":
+                {
+                    "replaceColor": "saturation",
+                    "variations": "saturation",
+                    "vibrance": "saturation"
+                },
+                "<enumValue>": "saturation"
+            },
+            "'TEXT'":
+            {
+                "<enumType>": "textType",
+                "<key>": "textType"
+            },
+            "'TIFF'":
+            {
+                "<class>": "TIFFFormat",
+                "<enumValue>": "TIFF"
+            },
+            "'TglO'":
+            {
+                "<enumValue>": "toggleOptionsPalette",
+                "<key>": "toggleOthers"
+            },
+            "'TrnG'":
+            {
+                "<classKey>":
+                {
+                    "application": "transparencyGrid",
+                    "transparencyPrefs": "transparencyGridSize"
+                },
+                "<enumType>": "transparencyGridSize",
+                "<enumValue>": "transparencyGamutPreferences"
+            },
+            "'TrnS'":
+            {
+                "<classKey>":
+                {
+                    "bevelEmboss": "transparencyShape",
+                    "dropShadow": "transparencyShape",
+                    "innerGlow": "transparencyShape",
+                    "innerShadow": "transparencyShape",
+                    "outerGlow": "transparencyShape"
+                },
+                "<class>": "transparencyStop",
+                "<unknown>": "transferSpec"
+            },
+            "'Trns'":
+            {
+                "<enumValue>": "transparent",
+                "<key>": "transparency"
+            },
+            "'TxtC'":
+            {
+                "<classKey>":
+                {
+                    "'GEfc'": "textureCoverage",
+                    "textLayer": "textClickPoint"
+                },
+                "<eventKey>":
+                {
+                    "underpainting": "textureCoverage"
+                }
+            },
+            "'TxtF'":
+            {
+                "<event>": "textureFill",
+                "<key>": "textureFile"
+            },
+            "'UsrM'":
+            {
+                "<enumType>": "userMaskOptions",
+                "<key>": "userMaskEnabled"
+            },
+            "'null'":
+            {
+                "<class>": "null",
+                "<enumValue>": "null",
+                "<event>": "null",
+                "<key>": "target"
+            }
+        };
+        //
+        function getFromId (context, parentContext)
+        {
+            var uniIdStr;
+            var kind = context[0];
+            var id = context[1];
+            if (id < smallestHashValue)
+            {
+                // Runtime ID
+                uniIdStr = app.typeIDToStringID (id);
+            }
+            else
+            {
+                // Predefined ID
+                uniIdStr = "'" + app.typeIDToCharID (id) + "'";
+                if (that.meaningfulIds)
+                {
+                    // Meaningful ID string preferred if available
+                    if (uniIdStr in contextRules)
+                    {
+                        function resolveIdStr (candidates)
+                        {
+                            var idStr = "";
+                            for (var parentString in candidates)
+                            {
+                                if (candidates.hasOwnProperty (parentString))
+                                {
+                                    if (parentContext[1] === that.uniIdStrToId (parentString))
+                                    {
+                                        idStr = candidates[parentString];
+                                        break;
+                                    }
+                                }
+                            }
+                            return idStr;
+                        }
+                        var resolvedIdStr = "";
+                        var rule = contextRules[uniIdStr];
+                        if (parentContext)
+                        {
+                            switch (kind)
+                            {
+                                case "<key>":
+                                    if ((parentContext[0] === "<class>") && ("<classKey>" in rule))
+                                    {
+                                        resolvedIdStr = resolveIdStr (rule["<classKey>"]);
+                                    }
+                                    else if ((parentContext[0] === "<event>") && ("<eventKey>" in rule))
+                                    {
+                                        resolvedIdStr = resolveIdStr (rule["<eventKey>"]);
+                                    }
+                                    break;
+                                case "<enumValue>":
+                                    if ((parentContext[0] === "<enumType>") && ("<typeValue>" in rule))
+                                    {
+                                        resolvedIdStr = resolveIdStr (rule["<typeValue>"]);
+                                    }
+                                    break;
+                            }
+                        }
+                        if (resolvedIdStr !== "")
+                        {
+                            uniIdStr = resolvedIdStr;
+                        }
+                        else if (kind in rule)
+                        {
+                             uniIdStr = rule[kind];
+                        }
+                    }
+                    else
+                    {
+                        var stringIDStr = app.typeIDToStringID (id);
+                        if (stringIDStr !== "")
+                        {
+                            uniIdStr = stringIDStr;
+                        }
+                    }
+                }
+            }
+            return uniIdStr;
+        }
+        //
+        var incompatiblePlatformPath = "";
+        //
+        var getEventId = app.stringIDToTypeID ("get");
+        var targetKeyId = app.stringIDToTypeID ("target");
+        var propertyClassId = app.stringIDToTypeID ("property");
+        //
+        function getFromReference (ref)
+        {
+            var propertyId = 0;
+            var arr = [ ];
+            do
+            {
+                // var desiredClassId = ref.getDesiredClass ();
+                try { var desiredClassId = ref.getDesiredClass (); } catch (e) { break; }
+                if (propertyId !== 0)   // Delayed property class
+                {
+                    var propertyCompact = that.buildCompact ("<property>", getFromId ([ "<key>", propertyId ], [ "<class>", desiredClassId ]));
+                    arr.push (that.buildCompact (getFromId ([ "<class>", propertyClassId ]), propertyCompact));
+                    propertyId = 0;
+                }
+                var desiredCompact;
+                var aFormID = ref.getForm ();
+                switch (aFormID)
+                {
+                    case ReferenceFormType.CLASSTYPE:
+                        desiredCompact = that.buildCompact ("<class>", null);
+                        break;
+                    case ReferenceFormType.ENUMERATED:
+                        var enumTypeContext = [ "<enumType>", ref.getEnumeratedType () ];
+                        var enumValueContext = [ "<enumValue>", ref.getEnumeratedValue () ];
+                        desiredCompact = that.buildCompact ("<enumerated>", that.buildCompact (getFromId (enumTypeContext), getFromId (enumValueContext, enumTypeContext)));
+                        break;
+                    case ReferenceFormType.IDENTIFIER:
+                        desiredCompact = that.buildCompact ("<identifier>", ref.getIdentifier ());
+                        break;
+                    case ReferenceFormType.INDEX:
+                        desiredCompact = that.buildCompact ("<index>", ref.getIndex ());
+                        break;
+                    case ReferenceFormType.NAME:
+                        desiredCompact = that.buildCompact ("<name>", ref.getName ());
+                        break;
+                    case ReferenceFormType.OFFSET:
+                        desiredCompact = that.buildCompact ("<offset>", ref.getOffset ());
+                        break;
+                    case ReferenceFormType.PROPERTY:
+                        if (desiredClassId === propertyClassId)
+                        {
+                            propertyId = ref.getProperty ();
+                        }
+                        else
+                        {
+                            desiredCompact = that.buildCompact ("<property>", getFromId ([ "<key>", ref.getProperty () ], [ "<class>", desiredClassId ]));
+                        }
+                        break;
+                    default:
+                        throw new Error ("[jamEngine getFromReference] Unknown reference form type: " + aFormID);
+                        break;
+                }
+                if (desiredClassId !== propertyClassId)
+                {
+                    arr.push (that.buildCompact (getFromId ([ "<class>", desiredClassId ]), desiredCompact));
+                }
+                ref = ref.getContainer ();
+            }
+            while (ref);
+            return arr;
+        }
+        //
+        function getFromList (list)
+        {
+            var arr = [ ];
+            var itemCount = list.count;
+            for (var itemIndex = 0; itemIndex < itemCount; itemIndex++)
+            {
+                var itemCompact;
+                var typeID;
+                // typeID = list.getType (itemIndex);
+                try { typeID = list.getType (itemIndex); } catch (e) { continue; }  // Data (Raw) type only from CS2 + Large integer type only from CS6
+                switch (typeID)
+                {
+                    case DescValueType.BOOLEANTYPE:
+                        itemCompact = that.buildCompact ("<boolean>", list.getBoolean (itemIndex));
+                        break;
+                    case DescValueType.CLASSTYPE:
+                        itemCompact = that.buildCompact ("<class>", getFromId ([ "<class>", list.getClass (itemIndex) ]));
+                        break;
+                    /*
+                    case DescValueType.RAWTYPE:
+                        itemCompact = that.buildCompact ("<data>", list.getData (itemIndex)); // Only from CS2
+                        break;
+                    */
+                    case DescValueType.DOUBLETYPE:
+                        itemCompact = that.buildCompact ("<double>", list.getDouble (itemIndex));
+                        break;
+                    case DescValueType.ENUMERATEDTYPE:
+                        var enumTypeContext = [ "<enumType>", list.getEnumerationType (itemIndex) ];
+                        var enumValueContext = [ "<enumValue>", list.getEnumerationValue (itemIndex) ];
+                        itemCompact = that.buildCompact ("<enumerated>", that.buildCompact (getFromId (enumTypeContext), getFromId (enumValueContext, enumTypeContext)));
+                        break;
+                    case DescValueType.INTEGERTYPE:
+                        itemCompact = that.buildCompact ("<integer>", list.getInteger (itemIndex));
+                        break;
+                    /*
+                    case DescValueType.LARGEINTEGERTYPE:
+                        itemCompact = that.buildCompact ("<largeInteger>", list.getLargeInteger (itemIndex)); // Only from CS6
+                        break;
+                    */
+                    case DescValueType.LISTTYPE:
+                        itemCompact = that.buildCompact ("<list>", getFromList (list.getList (itemIndex)));
+                        break;
+                    case DescValueType.OBJECTTYPE:
+                        var objectTypeContext = [ "<class>", list.getObjectType (itemIndex) ];
+                        var objectValue = list.getObjectValue (itemIndex);
+                        itemCompact = that.buildCompact ("<object>", that.buildCompact (getFromId (objectTypeContext), getFromDescriptor (objectValue, objectTypeContext)));
+                        break;
+                    case DescValueType.ALIASTYPE:
+                        try
+                        {
+                            var fileRef = list.getPath (itemIndex);
+                            itemCompact = that.buildCompact ("<path>", fileRef.fsName);
+                        }
+                        catch (e)
+                        {
+                            itemCompact = that.buildCompact ("<path>", incompatiblePlatformPath);
+                        }
+                        break;
+                    case DescValueType.REFERENCETYPE:
+                        itemCompact = that.buildCompact ("<reference>", getFromReference (list.getReference (itemIndex)));
+                        break;
+                    case DescValueType.STRINGTYPE:
+                        itemCompact = that.buildCompact ("<string>", list.getString (itemIndex));
+                        break;
+                    case DescValueType.UNITDOUBLE:
+                        var unitTypeContext = [ "<unit>", list.getUnitDoubleType (itemIndex) ];
+                        var doubleValue = list.getUnitDoubleValue (itemIndex);
+                        itemCompact = that.buildCompact ("<unitDouble>", that.buildCompact (getFromId (unitTypeContext), doubleValue));
+                        break;
+                    default:
+                        var isRawType;
+                        var isLargeIntegerType;
+                        try { isRawType = (typeID === DescValueType.RAWTYPE); } catch (e) { }
+                        try { isLargeIntegerType = (typeID === DescValueType.LARGEINTEGERTYPE); } catch (e) { }
+                        if (isRawType)
+                        {
+                            itemCompact = that.buildCompact ("<data>", list.getData (itemIndex)); // Only from CS2
+                        }
+                        else if (isLargeIntegerType)
+                        {
+                            itemCompact = that.buildCompact ("<largeInteger>", list.getLargeInteger (itemIndex)); // Only from CS6
+                        }
+                        else
+                        {
+                            throw new Error ("[jamEngine getFromList] Unknown descriptor value type: " + typeID);
+                        }
+                        break;
+                }
+                arr[itemIndex] = itemCompact;
+            }
+            return arr;
+        }
+        //
+        function getFromDescriptor (desc, parentContext)
+        {
+            if (desc)
+            {
+                var obj = { };
+                var keyCount;
+                // keyCount = desc.count;   // NG in CS; OK in CS4 !!
+                try { keyCount = desc.count; } catch (e) { return null; }
+                for (var keyIndex = 0; keyIndex < keyCount; keyIndex++)
+                {
+                    var keyID = desc.getKey (keyIndex);
+                    var keyString = getFromId ([ "<key>", keyID ], parentContext);
+                    var keyCompact;
+                    var typeID;
+                    // typeID = desc.getType (keyID);
+                    try { typeID = desc.getType (keyID); } catch (e) { continue; }  // Data (Raw) type only from CS2 + Large integer type only from CS6
+                    switch (typeID)
+                    {
+                        case DescValueType.BOOLEANTYPE:
+                            keyCompact = that.buildCompact ("<boolean>", desc.getBoolean (keyID));
+                            break;
+                        case DescValueType.CLASSTYPE:
+                            keyCompact = that.buildCompact ("<class>", getFromId ([ "<class>", desc.getClass (keyID) ]));
+                            break;
+                        /*
+                        case DescValueType.RAWTYPE:
+                            keyCompact = that.buildCompact ("<data>", desc.getData (keyID));  // Only from CS2
+                            break;
+                        */
+                        case DescValueType.DOUBLETYPE:
+                            keyCompact = that.buildCompact ("<double>", desc.getDouble (keyID));
+                            break;
+                        case DescValueType.ENUMERATEDTYPE:
+                            var enumTypeContext = [ "<enumType>", desc.getEnumerationType (keyID) ];
+                            var enumValueContext = [ "<enumValue>", desc.getEnumerationValue (keyID) ];
+                            keyCompact = that.buildCompact ("<enumerated>", that.buildCompact (getFromId (enumTypeContext), getFromId (enumValueContext, enumTypeContext)));
+                            break;
+                        case DescValueType.INTEGERTYPE:
+                            keyCompact = that.buildCompact ("<integer>", desc.getInteger (keyID));
+                            break;
+                        /*
+                        case DescValueType.LARGEINTEGERTYPE:
+                            keyCompact = that.buildCompact ("<largeInteger>", desc.getLargeInteger (keyID));  // Only from CS6
+                            break;
+                        */
+                        case DescValueType.LISTTYPE:
+                            keyCompact = that.buildCompact ("<list>", getFromList (desc.getList (keyID)));
+                            break;
+                        case DescValueType.OBJECTTYPE:
+                            var objectTypeContext = [ "<class>", desc.getObjectType (keyID) ];
+                            var objectValue = desc.getObjectValue (keyID);
+                            keyCompact = that.buildCompact ("<object>", that.buildCompact (getFromId (objectTypeContext), getFromDescriptor (objectValue, objectTypeContext)));
+                            break;
+                        case DescValueType.ALIASTYPE:
+                            try
+                            {
+                                var fileRef = desc.getPath (keyID);
+                                keyCompact = that.buildCompact ("<path>", fileRef.fsName);
+                            }
+                            catch (e)
+                            {
+                                keyCompact = that.buildCompact ("<path>", incompatiblePlatformPath);
+                            }
+                            break;
+                        case DescValueType.REFERENCETYPE:
+                            keyCompact = that.buildCompact ("<reference>", getFromReference (desc.getReference (keyID)));
+                            break;
+                        case DescValueType.STRINGTYPE:
+                            keyCompact = that.buildCompact ("<string>", desc.getString (keyID));
+                            break;
+                        case DescValueType.UNITDOUBLE:
+                            var unitTypeContext = [ "<unit>", desc.getUnitDoubleType (keyID) ];
+                            var doubleValue = desc.getUnitDoubleValue (keyID);
+                            keyCompact = that.buildCompact ("<unitDouble>", that.buildCompact (getFromId (unitTypeContext), doubleValue));
+                            break;
+                        default:
+                            var isRawType;
+                            var isLargeIntegerType;
+                            try { isRawType = (typeID === DescValueType.RAWTYPE); } catch (e) { }
+                            try { isLargeIntegerType = (typeID === DescValueType.LARGEINTEGERTYPE); } catch (e) { }
+                            if (isRawType)
+                            {
+                                keyCompact = that.buildCompact ("<data>", desc.getData (keyID)); // Only from CS2
+                            }
+                            else if (isLargeIntegerType)
+                            {
+                                keyCompact = that.buildCompact ("<largeInteger>", desc.getLargeInteger (keyID));  // Only from CS6
+                            }
+                            else
+                            {
+                                throw new Error ("[jamEngine getFromDescriptor] Unknown descriptor value type: " + typeID);
+                            }
+                            break;
+                    }
+                    obj[keyString] = keyCompact;
+                }
+                return obj;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        //
+        /**
+         * @description Convert a descriptor object in JSON AM Data Format into an ActionDescriptor object.
+         * @param {Object} descriptorObj Descriptor object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Object} ActionDescriptor object
+         * @see jamEngine.classIdAndActionDescriptorToJson
+         * @see jamEngine.eventIdAndActionDescriptorToJson
+         * @example
+         * app.putCustomOptions (signature, jamEngine.<strong>jsonToActionDescriptor</strong> (customOptions));
+         */
+        jamEngine.jsonToActionDescriptor = function (descriptorObj)
+        {
+            that = this;
+            var actionDescriptor;
+            if (descriptorObj)
+            {
+                actionDescriptor = new ActionDescriptor ();
+                putInDescriptor (actionDescriptor, descriptorObj);
+            }
+            return actionDescriptor;
+        };
+        //
+        /**
+         * @description Convert a reference array in JSON AM Data Format into an ActionReference object.
+         * @param {Array} referenceArr Reference array in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Object} ActionReference object
+         * @see jamEngine.actionReferenceToJson
+         * @example
+         * var referenceArr =
+         * [
+         *     { "property": { "&lt;property&gt;": "hostName" } },
+         *     { "application": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } }
+         * ];
+         * var actionReference = jamEngine.<strong>jsonToActionReference</strong> (referenceArr);
+         */
+        jamEngine.jsonToActionReference = function (referenceArr)
+        {
+            that = this;
+            var actionReference;
+            if (referenceArr)
+            {
+                actionReference = new ActionReference ();
+                putInReference (actionReference, referenceArr);
+            }
+            return actionReference;
+        };
+        //
+        /**
+         * @description Convert an event numerical ID and an ActionDescriptor object into an event unified ID string and a descriptor object in JSON AM Data Format.
+         * @param {Number} eventId Event numerical ID
+         * @param {Object|Null} [actionDescriptor] ActionDescriptor object (can be null)
+         * @returns {Object} Event unified ID string and descriptor object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamEngine.classIdAndActionDescriptorToJson
+         * @see jamEngine.jsonToActionDescriptor
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * var playObj = jamEngine.<strong>eventIdAndActionDescriptorToJson</strong> (eventId, actionDescriptor);
+         * $.writeln ('jamEngine.jsonPlay');
+         * $.writeln ('(');
+         * $.writeln (jamJSON.stringify (playObj["&lt;event&gt;"], '\t', '\t') + ',');
+         * $.writeln (jamJSON.stringify (playObj["&lt;descriptor&gt;"], '\t', '\t'));
+         * $.writeln (');');
+         */
+        jamEngine.eventIdAndActionDescriptorToJson = function (eventId, actionDescriptor)
+        {
+            that = this;
+            var eventIdContext = [ "<event>", eventId ];
+            return { "<event>": getFromId (eventIdContext), "<descriptor>": getFromDescriptor (actionDescriptor, eventIdContext) };
+        };
+        //
+        /**
+         * @description Convert a class numerical ID and an ActionDescriptor object into a class unified ID string and a descriptor object in JSON AM Data Format.
+         * @param {Number} classId Class numerical ID
+         * @param {Object} actionDescriptor ActionDescriptor object
+         * @returns {Object} Class unified ID string and descriptor object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamEngine.eventIdAndActionDescriptorToJson
+         * @see jamEngine.jsonToActionDescriptor
+         * @example
+         * var objectObj = jamEngine.<strong>classIdAndActionDescriptorToJson</strong>
+         * (
+         *     jamEngine.uniIdStrToId (signature),
+         *     app.getCustomOptions (signature)
+         * );
+         * var customOptions = objectObj["&lt;descriptor&gt;"];
+         */
+        jamEngine.classIdAndActionDescriptorToJson = function (classId, actionDescriptor)
+        {
+            that = this;
+            var classIdContext = [ "<class>", classId ];
+            return { "<class>": getFromId (classIdContext), "<descriptor>": getFromDescriptor (actionDescriptor, classIdContext) };
+        };
+        //
+        /**
+         * @description Convert an ActionReference object into a reference array in JSON AM Data Format.
+         * @param {Object} actionReference ActionReference object
+         * @returns {Array} Reference array in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamEngine.jsonToActionReference
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * var referenceArr = jamEngine.<strong>actionReferenceToJson</strong> (actionReference);
+         * $.writeln ('jamEngine.jsonGet');
+         * $.writeln ('(');
+         * $.writeln (jamJSON.stringify (referenceArr, '\t', '\t');
+         * $.writeln (');');
+         */
+        jamEngine.actionReferenceToJson = function (actionReference)
+        {
+            that = this;
+            return getFromReference (actionReference);
+        };
+        //
+        function getReferenceClassId (ref)
+        {
+            classId = 0;
+            do
+            {
+                // var desiredClassId = ref.getDesiredClass ();
+                try { var desiredClassId = ref.getDesiredClass (); } catch (e) { break; }
+                if (desiredClassId !== propertyClassId)
+                {
+                    classId = desiredClassId;
+                    break;
+                }
+                ref = ref.getContainer ();
+            }
+            while (ref);
+            return classId;
+        }
+        //
+        /**
+         * @description Play an event as a unified ID string with a descriptor object in JSON AM Data Format.
+         * @param {String} eventUniIdStr Event unified ID string
+         * @param {Object|Null} [descriptorObj] Descriptor object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>; can be null
+         * @param {Object} [displayDialogs] Dialog mode:<br />
+         * <ul>
+         * <li>DialogModes.ERROR: show dialogs on error only (by default, unless jamEngine.displayDialogs has been set to another value)</li>
+         * <li>DialogModes.ALL: show all dialogs</li>
+         * <li>DialogModes.NO: show no dialogs</li>
+         * </ul>
+         * @returns {Object} Descriptor object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamEngine.jsonGet
+         * @example
+         * jamEngine.<strong>jsonPlay</strong>
+         * (
+         *     "motionBlur",
+         *     {
+         *         "angle": { "&lt;integer&gt;": -45 },
+         *         "distance": { "&lt;unitDouble&gt;": { "pixelsUnit": 200 } }
+         *     }
+         * );
+         */
+        jamEngine.jsonPlay = function (eventUniIdStr, descriptorObj, displayDialogs)
+        {
+            var eventId = this.uniIdStrToId (eventUniIdStr);
+            var desc = this.jsonToActionDescriptor (descriptorObj);
+            var parentContext;
+            if (eventId === getEventId)
+            {
+                var ref = desc.getReference (targetKeyId);
+                parentContext = [ "<class>", getReferenceClassId (ref) ];
+            }
+            else
+            {
+                parentContext = [ "<event>", eventId ];
+            }
+            return getFromDescriptor (app.executeAction (eventId, desc, displayDialogs || this.displayDialogs), parentContext);
+        };
+        //
+        /**
+         * @description Get information from a reference array in JSON AM Data Format.
+         * @param {Array} referenceArr Reference array in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Object} Descriptor object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamEngine.jsonPlay
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * var resultDescriptorObj = jamEngine.<strong>jsonGet</strong>
+         * (
+         *     [
+         *         { "property": { "&lt;property&gt;": "numberOfDocuments" } },
+         *         { "application": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } }
+         *     ]
+         * );
+         * alert ("Number of documents: " + resultDescriptorObj["numberOfDocuments"]["&lt;integer&gt;"]);
+         */
+        jamEngine.jsonGet = function (referenceArr)
+        {
+            var ref = this.jsonToActionReference (referenceArr);
+            return getFromDescriptor (app.executeActionGet (ref), [ "<class>", getReferenceClassId (ref) ]);
+        };
+        //
+        /**
+         * @description Normalize a JSON AM item, according to normalizing options.
+         * @param {Object|Array} item JSON AM item in compact format
+         * @param {Object} [options] Normalizing options (meaningfulIds and parseFriendly, overriding currently defined jamEngine global options when present)
+         * @returns {Object|Array} Normalized JSON AM item, according to normalizing options
+         * @example
+         * var item = { "&lt;object&gt;": { "'Grsc'": { "'Gry '": { "&lt;double&gt;": 50 } } } };
+         * var normalizedItem = jamEngine.<strong>normalizeJsonItem</strong> (item, { meaningfulIds: true, parseFriendly: true });
+         * alert (jamJSON.stringify (normalizedItem));
+         * // -> [ "&lt;object&gt;", [ "grayscale", { "gray": [ "&lt;double&gt;", 50 ] } ] ]
+         */
+        jamEngine.normalizeJsonItem = function (item, options)
+        {
+            function normalizeItem (item)
+            {
+                var explicit = that.parseCompact (item);
+                var type = explicit[0];
+                var value = explicit[1];
+                var normalizedValue;
+                switch (type)
+                {
+                    case "<boolean>":
+                    case "<data>":
+                    case "<double>":
+                    case "<identifier>":
+                    case "<index>":
+                    case "<integer>":
+                    case "<largeInteger>":
+                    case "<name>":
+                    case "<offset>":
+                    case "<path>":
+                    case "<string>":
+                        normalizedValue = value;
+                        break;
+                    case "<class>":
+                        normalizedValue = value && getFromId ([ "<class>", that.uniIdStrToId (value) ]);
+                        break;
+                    case "<enumerated>":
+                        var enumerated = that.parseCompact (value);
+                        var enumTypeContext = [ "<enumType>", that.uniIdStrToId (enumerated[0]) ];
+                        var enumValueContext = [ "<enumValue>", that.uniIdStrToId (enumerated[1]) ];
+                        normalizedValue = that.buildCompact (getFromId (enumTypeContext), getFromId (enumValueContext, enumTypeContext));
+                        break;
+                    case "<list>":
+                        normalizedValue = [ ];
+                        for (var i = 0; i < value.length; i++)
+                        {
+                            normalizedValue.push (normalizeItem (value[i]));
+                        }
+                        break;
+                    case "<object>":
+                        var object = that.parseCompact (value);
+                        var objectClassContext = [ "<class>", that.uniIdStrToId (object[0]) ];
+                        var objectDescriptor = object[1];
+                        var normalizedDescriptor;
+                        if (objectDescriptor === null)
+                        {
+                            normalizedDescriptor = null;
+                        }
+                        else
+                        {
+                            normalizedDescriptor = { };
+                            for (var key in objectDescriptor)
+                            {
+                                if (objectDescriptor.hasOwnProperty (key))
+                                {
+                                    var objectKeyContext = [ "<key>", that.uniIdStrToId (key) ];
+                                    normalizedDescriptor[getFromId (objectKeyContext, objectClassContext)] = normalizeItem (objectDescriptor[key]);
+                                }
+                            }
+                        }
+                        normalizedValue = that.buildCompact (getFromId (objectClassContext), normalizedDescriptor);
+                        break;
+                    case "<property>":
+                        // Cannot be handled properly (lack of parent context), but never mind for the time being...
+                        normalizedValue = getFromId ([ "<key>", that.uniIdStrToId (value) ]);
+                        break;
+                    case "<reference>":
+                        normalizedValue = [ ];
+                        for (var i = 0; i < value.length; i++)
+                        {
+                            var container = that.parseCompact (value[i]);
+                            normalizedValue.push (that.buildCompact (getFromId ([ "<class>", that.uniIdStrToId (container[0]) ]), normalizeItem (container[1])));
+                        }
+                        break;
+                    case "<unitDouble>":
+                        var unitDouble = that.parseCompact (value);
+                        var unitTypeContext = [ "<unit>", that.uniIdStrToId (unitDouble[0]) ];
+                        normalizedValue = that.buildCompact (getFromId (unitTypeContext), unitDouble[1]);
+                        break;
+                    default:
+                        throw new Error ("[jamEngine.normalizeJsonItem] Unknown item type: " + type);
+                        break;
+                }
+                return that.buildCompact (type, normalizedValue);
+            }
+            //
+            that = this;
+            var saveMeaningfulIds = this.meaningfulIds;
+            var saveParseFriendly = this.parseFriendly;
+            if (options && (options.constructor === Object))
+            {
+                if (typeof options.meaningfulIds !== 'undefined')
+                {
+                    this.meaningfulIds = options.meaningfulIds;
+                }
+                if (typeof options.parseFriendly !== 'undefined')
+                {
+                    this.parseFriendly = options.parseFriendly;
+                }
+            }
+            var normalizedItem = normalizeItem (item);
+            this.meaningfulIds = saveMeaningfulIds;
+            this.parseFriendly = saveParseFriendly;
+            return normalizedItem;
+        };
+        //
+        function simplifyRef (ref)
+        {
+            var simplifiedRef = [ ];
+            for (var i = 0; i < ref.length; i++)
+            {
+                var element = ref[i];
+                var simplifiedElement = { };
+                var desiredClass = element[0];
+                var form = element[1][0];
+                var value = element[1][1];
+                switch (form)
+                {
+                    case "<class>":
+                    case "<identifier>":
+                    case "<index>":
+                    case "<name>":
+                    case "<offset>":
+                    case "<property":
+                        simplifiedElement[desiredClass] = value;
+                        break;
+                    case "<enumerated>":
+                        simplifiedElement[desiredClass] = value[1];
+                        break;
+                    default:
+                        throw new Error ("[jamEngine simplifyRef] Unexpected element form: " + form);
+                        break;
+                }
+                simplifiedRef.push (simplifiedElement);
+            }
+            return simplifiedRef;
+        }
+        //
+        function simplifyItem (item, hook)
+        {
+            var simplifiedItem;
+            var type = item[0];
+            var value = item[1];
+            switch (type)
+            {
+                case "<boolean>":
+                case "<class>":
+                case "<data>":
+                case "<double>":
+                case "<integer>":
+                case "<largeInteger>":
+                case "<path>":
+                case "<string>":
+                    simplifiedItem = value;
+                    break;
+                case "<list>":
+                    simplifiedItem = simplifyList (value, hook);
+                    break;
+                case "<enumerated>":
+                case "<unitDouble>":
+                    simplifiedItem = value[1];
+                    break;
+                case "<object>":
+                    simplifiedItem = simplifyDesc (value[1], hook);
+                    break;
+                case "<reference>":
+                    simplifiedItem = simplifyRef (value);
+                    break;
+                default:
+                    throw new Error ("[jamEngine simplifyItem] Unexpected item type: " + type);
+                    break;
+            }
+            return simplifiedItem;
+        }
+        //
+        function simplifyList (list, hook)
+        {
+            var simplifiedList = [ ];
+            for (var i = 0; i < list.length; i++)
+            {
+                simplifiedList.push (simplifyItem (list[i], hook));
+            }
+            return simplifiedList;
+        }
+        //
+        function simplifyDesc (desc, hook)
+        {
+            var getDefaultValue = function (desc, key) { return simplifyItem (desc[key], hook); };
+            var simplifiedDesc = { };
+            for (var key in desc)
+            {
+                if (desc.hasOwnProperty (key))
+                {
+                    var value = undefined;
+                    if (typeof hook === 'function')
+                    {
+                        value = hook (desc, key, getDefaultValue);
+                    }
+                    if (typeof value === 'undefined')
+                    {
+                        value = simplifyItem (desc[key], hook);
+                    }
+                    simplifiedDesc[key] = value;
+                }
+            }
+            return simplifiedDesc;
+        }
+        //
+        /**
+         * @description Simplifies a JSON AM Object into a JSON object.
+         * @param {Object|Array} object JSON AM Object
+         * @param {Function} [hookFunction] Hook function: (desc, key, getDefaultValue); returns value or undefined
+         * @returns {Object} Simplified JSON object
+         * @example
+         * jamStyles.fromLayerEffectsObject = function (layerEffectsObject)
+         * {
+         *     return jamEngine.<strong>simplifyObject</strong> (layerEffectsObject);
+         * };
+         */
+        jamEngine.simplifyObject = function (object, hookFunction)
+        {
+            return simplifyDesc ((this.normalizeJsonItem (object, { meaningfulIds: true, parseFriendly: true }))[1][1], hookFunction);
+        };
+        //
+        /**
+         * @description Simplifies a JSON AM List into a JSON array.
+         * @param {Object|Array} object JSON AM List
+         * @param {Function} [hookFunction] Hook function: (desc, key, getDefaultValue); returns value or undefined
+         * @returns {Object} Simplified JSON array
+         * @example
+         * jamHelpers.fromCurvePointList = function (curvePointList)
+         * {
+         *     return jamEngine.<strong>simplifyList</strong> (curvePointList);
+         * };
+         */
+        jamEngine.simplifyList = function (list, hookFunction)
+        {
+            return simplifyList ((this.normalizeJsonItem (list, { meaningfulIds: true, parseFriendly: true }))[1], hookFunction);
+        };
+        //
+        /**
+         * @description Parse an element in compact format into type and value as a two-element array.
+         * @param {Object|Array} compact JavaScript literal object or array in compact format: { (type): (value) } or [ (type), (value) ]
+         * @returns {Array} Two-element array: [ (type), (value) ]
+         * @see jamEngine.buildCompact
+         * @example
+         * var compactObj = { "percentUnit": 50 };
+         * var parsed = jamEngine.<strong>parseCompact</strong> (compactObj);
+         * // -> [ "percentUnit", 50 ]
+         * @example
+         * var compactArr = [ "percentUnit", 50 ];
+         * var parsed = jamEngine.<strong>parseCompact</strong> (compactArr);
+         * // -> [ "percentUnit", 50 ]
+         */
+        // Parse compact syntax element: { (type): (value) } or [ (type), (value) ] to array: [ (type), (value) ]
+        jamEngine.parseCompact = function (compact)
+        {
+            var result = [ ];
+            if (compact.constructor === Object)
+            {
+                var keys = [ ];
+                for (var k in compact)
+                {
+                    if (compact.hasOwnProperty (k))
+                    {
+                        keys.push (k);
+                    }
+                }
+                if (keys.length === 1)
+                {
+                    result[0] = keys[0];
+                    result[1] = compact[keys[0]];
+                }
+                else
+                {
+                    throw new Error ("[jamEngine.parseCompact] Syntax error: " + compact.toSource ());
+                }
+            }
+            else if (compact.constructor === Array)
+            {
+                if (compact.length === 2)
+                {
+                    result[0] = compact[0];
+                    result[1] = compact[1];
+                }
+                else
+                {
+                    throw new Error ("[jamEngine.parseCompact] Syntax error: " + compact.toSource ());
+                }
+            }
+            else
+            {
+                throw new Error ("[jamEngine.parseCompact] JavaScript object or array expected");
+            }
+            return result;
+        };
+        //
+        /**
+         * @description Expand a special case of JavaScript literal object, from compact to explicit format.
+         * @param {Object|Array} compact JavaScript literal object or array in compact format: { (type): (value) } or [ (type), (value) ]
+         * @param {String} [typeKey] Type key string ("&lt;type&gt;" by default)
+         * @param {String} [valueKey] Value key string ("&lt;value&gt;" by default)
+         * @returns {Object} JavaScript literal object in explicit format: { (typeKey): (type), (valueKey): (value) }
+         * @see jamEngine.explicitToCompact
+         * @example
+         * var compactObj = { "pixelsUnit": 5 };
+         * var explicitObj = jamEngine.<strong>compactToExplicit</strong> (compactObj, "&lt;unit&gt;", "&lt;double&gt;");
+         * // -> { "&lt;unit&gt;": "pixelsUnit", "&lt;double&gt;": 5 }
+         * @example
+         * var compactArr = [ "pixelsUnit", 5 ];
+         * var defaultExplicitObj = jamEngine.<strong>compactToExplicit</strong> (compactArr);
+         * // -> { "&lt;type&gt;": "pixelsUnit", "&lt;value&gt;": 5 }
+         */
+        jamEngine.compactToExplicit = function (compact, typeKey, valueKey)
+        {
+            var explicit = { };
+            var typeValue = this.parseCompact (compact);
+            explicit[typeKey || "<type>"] = typeValue[0];
+            explicit[valueKey || "<value>"] = typeValue[1];
+            return explicit;
+        };
+        //
+        /**
+         * @description Build an element in compact format from type and value.
+         * @param {String} type Type (must be a string)
+         * @param {Object|Array|String|Number|Boolean|Null} value Value
+         * @returns {Object|Array} JavaScript literal object or array in compact format: { (type): (value) } or [ (type), (value) ] depending on the boolean value of jamEngine.parseFriendy
+         * @see jamEngine.parseCompact
+         * @example
+         * jamEngine.parseFriendly = false;
+         * var compact = jamEngine.<strong>buildCompact</strong> ("percentUnit", 50);
+         * // -> { "percentUnit": 50 }
+         * @example
+         * jamEngine.parseFriendly = true;
+         * var compact = jamEngine.<strong>buildCompact</strong> ("percentUnit", 50);
+         * // -> [ "percentUnit", 50 ]
+         */
+        jamEngine.buildCompact = function (type, value)
+        {
+            var compact;
+            if (typeof type === 'string')
+            {
+                if (this.parseFriendly)
+                {
+                    compact = [ type, value ];
+                }
+                else
+                {
+                    compact = { };
+                    compact[type] = value;
+                }
+            }
+            else
+            {
+                throw new Error ("[jamEngine.buildCompact] String expected");
+            }
+            return compact;
+        };
+        //
+        /**
+         * @description Shrink a special case of JavaScript literal object, from explicit to compact format.
+         * @param {Object} explicit JavaScript literal object in explicit format: { (typeKey): (type), (valueKey): (value) }
+         * @param {String} [typeKey] Type key string ("&lt;type&gt;" by default)
+         * @param {String} [valueKey] Value key string ("&lt;value&gt;" by default)
+         * @returns {Object|Array} JavaScript literal object or array in compact format: { (type): (value) } or [ (type), (value) ] depending on the boolean value of jamEngine.parseFriendy
+         * @see jamEngine.compactToExplicit
+         * @example
+         * jamEngine.parseFriendly = false;
+         * var explicitObj = { "&lt;unit&gt;": "pixelsUnit", "&lt;double&gt;": 5 };
+         * var compactObj = jamEngine.<strong>explicitToCompact</strong> (explicitObj, "&lt;unit&gt;", "&lt;double&gt;");
+         * // -> { "pixelsUnit": 5 }
+         * @example
+         * jamEngine.parseFriendly = true;
+         * var defaultExplicitObj = { "&lt;type&gt;": "pixelsUnit", "&lt;value&gt;": 5 };
+         * var compactArr = jamEngine.<strong>explicitToCompact</strong> (defaultExplicitObj);
+         * // -> [ "pixelsUnit", 5 ]
+         */
+        jamEngine.explicitToCompact = function (explicit, typeKey, valueKey)
+        {
+            var compact; 
+            if (explicit.constructor === Object)
+            {
+                compact = this.buildCompact (explicit[typeKey || "<type>"], explicit[valueKey || "<value>"]);
+            }
+            else
+            {
+                throw new Error ("[jamEngine.explicitToCompact] JavaScript object expected");
+            }
+            return compact;
+        };
+        //
+        // Pre-check and update the conflicting StringID strings table before using it
+        // From CS3, for instance, "mergedLayers" is no more equivalent to "'MrgL'"...
+        for (var charIdStr in conflictingStringIdStrs)
+        {
+            if (conflictingStringIdStrs.hasOwnProperty (charIdStr))
+            {
+                var stringIdStrs = conflictingStringIdStrs[charIdStr];
+                for (var index = stringIdStrs.length - 1; index >= 0; index--)
+                {
+                    var stringIdStr = stringIdStrs[index];
+                    if (!(app.charIDToTypeID (charIdStr.substring (1, 5)) === app.stringIDToTypeID (stringIdStr)))
+                    {
+                        stringIdStrs.splice (index, 1);
+                    }
+                }
+                if (stringIdStrs.length < 2)
+                {
+                    delete conflictingStringIdStrs[charIdStr];
+                }
+            }
+        }
+        // Pre-check the disambiguating rules table before using it (better safe than sorry)
+        for (var charIdStr in contextRules)
+        {
+            if (contextRules.hasOwnProperty (charIdStr))
+            {
+                if (charIdStr in conflictingStringIdStrs)
+                {
+                    var rule = contextRules[charIdStr];
+                    for (var kind in rule)
+                    {
+                        if (rule.hasOwnProperty (kind))
+                        {
+                            switch (kind)
+                            {
+                                case "<class>":
+                                case "<event>":
+                                case "<enumType>":
+                                case "<enumValue>":
+                                case "<key>":
+                                case "<unknown>":
+                                    if (app.charIDToTypeID (charIdStr.substring (1, 5)) != app.stringIDToTypeID (rule[kind]))
+                                    {
+                                        throw new Error ("[jamEngine] " + "\"" + charIdStr + "\" and \"" + rule[kind] + "\" are not equivalent ID strings");
+                                    }
+                                    break;
+                                case "<classKey>":
+                                case "<eventKey>":
+                                case "<typeValue>":
+                                    for (var parent in rule[kind])
+                                    {
+                                        if (rule[kind].hasOwnProperty (parent))
+                                        {
+                                            if (app.charIDToTypeID (charIdStr.substring (1, 5)) != app.stringIDToTypeID (rule[kind][parent]))
+                                            {
+                                                throw new Error ("[jamEngine] " + "\"" + charIdStr + "\" and \"" + rule[kind][parent] + "\" are not equivalent ID strings");
+                                            }
+                                        }
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    delete contextRules[charIdStr];
+                }
+            }
+        }
+    } ());
+}
+
+//------------------------------------------------------------------------------
+

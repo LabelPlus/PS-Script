@@ -1,0 +1,656 @@
+﻿//------------------------------------------------------------------------------
+// File: jamText.jsxinc
+// Version: 4.5
+// Release Date: 2016-09-29
+// Copyright: © 2011-2016 Michel MARIANI <http://www.tonton-pixel.com/blog/>
+// Licence: GPL <http://www.gnu.org/licenses/gpl.html>
+//------------------------------------------------------------------------------
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//------------------------------------------------------------------------------
+// Version History:
+//  4.5:
+//  - Incremented version number to keep in sync with other modules.
+//  4.4:
+//  - Normalized error messages.
+//  4.2:
+//  - Cleaned up code.
+//  - Fixed bug: missing break statement in jamText.toLayerTextObject ().
+//  4.0:
+//  - Removed reference to 'this' for main global object.
+//  3.6.3:
+//  - Moved common graphics unit from layer text to path components level.
+//  3.6.2:
+//  - Cleaned up code.
+//  - Added missing keys.
+//  - Updated examples.
+//  3.6.1:
+//  - Initial release.
+//------------------------------------------------------------------------------
+
+/**
+ * @fileOverview
+ * @name jamText.jsxinc
+ * @author Michel MARIANI
+ */
+
+//------------------------------------------------------------------------------
+
+if (typeof jamText !== 'object')
+{
+    /**
+     * Global object (used to simulate a namespace in JavaScript) containing
+     * a set of layer text-related functions for scripts written with the
+     * <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-action-manager/">JSON Action Manager</a> engine.
+     * @author Michel MARIANI
+     * @version 4.5
+     * @namespace
+     */
+    var jamText = { };
+    //
+    (function ()
+    {
+        /**
+         * @description Get a layer text object in JSON AM Data Format from a simplified layer text JSON object.
+         * @param {Object} layerText Simplified layer text JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-text-object-simplified-format/">Layer Text Object Simplified Format</a>)
+         * @returns {Object|Array} Layer text object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamText.fromLayerTextObject
+         * @example
+         * var text = "Hello, world!";
+         * var layerText =
+         * {
+         *     "layerText":
+         *     {
+         *         "textKey": text,
+         *         "warp":
+         *         {
+         *             "warpStyle": "warpRise",
+         *             "warpValue": 33.3333
+         *         },
+         *         "textClickPoint":
+         *         {
+         *             "horizontal": 50,
+         *             "vertical": 50
+         *         },
+         *         "antiAlias": "antiAliasSmooth",
+         *         "textShape":
+         *         [
+         *             {
+         *                 "textType": "point",
+         *                 "orientation": "horizontal"
+         *             }
+         *         ],
+         *         "textStyleRange":
+         *         [
+         *             {
+         *                 "from": 0,
+         *                 "to": text.length,
+         *                 "textStyle":
+         *                 {
+         *                     "fontPostScriptName": "Minion-Regular",
+         *                     "size": 288,
+         *                     "color": { "red": 63, "green": 255, "blue": 0 }
+         *                 }
+         *             }
+         *         ],
+         *         "paragraphStyleRange":
+         *         [
+         *             {
+         *                 "from": 0,
+         *                 "to": text.length,
+         *                 "paragraphStyle":
+         *                 {
+         *                     "alignment": "center"
+         *                 }
+         *             }
+         *         ]
+         *     },
+         *     "typeUnit": "pixelsUnit"
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "make",
+         *     {
+         *         "target": [ "&lt;reference&gt;", [ [ "textLayer", [ "&lt;class&gt;", null ] ] ] ],
+         *         "using": <strong>jamText.toLayerTextObject</strong> (layerText)
+         *     }
+         * );
+         */
+        jamText.toLayerTextObject = function (layerText)
+        {
+            var typeUnit;
+            if ("typeUnit" in layerText)
+            {
+                typeUnit = layerText["typeUnit"];
+            }
+            var data = layerText["layerText"];
+            function restoreDesc (desc, hintData)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        var restoredList;
+                        switch (key)
+                        {
+                            case "bookKey":
+                                typedValue = [ "<data>", value ];
+                                break;
+                            case "rowMajorOrder":
+                            case "syntheticBold":
+                            case "syntheticItalic":
+                            case "autoLeading":
+                            case "ligature":
+                            case "altligature":
+                            case "contextualLigatures":
+                            case "alternateLigatures":
+                            case "oldStyle":
+                            case "fractions":
+                            case "ordinals":
+                            case "swash":
+                            case "titling":
+                            case "connectionForms":
+                            case "stylisticAlternates":
+                            case "ornaments":
+                            case "proportionalMetrics":
+                            case "kana":
+                            case "italics":
+                            case "ruby":
+                            case "enableWariChu":
+                            case "noBreak":
+                            case "fill":
+                            case "stroke":
+                            case "fillFirst":
+                            case "fillOverPrint":
+                            case "strokeOverPrint":
+                            case "hyphenate":
+                            case "hyphenateCapitalized":
+                            case "hangingRoman":
+                            case "keepTogether":
+                            case "kurikaeshiMojiShori":
+                            case "textEveryLineComposer":
+                            case "flip":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "textKey":
+                            case "fontPostScriptName":
+                            case "fontName":
+                            case "fontStyleName":
+                            case "book":
+                            case "name":
+                                typedValue = [ "<string>", value ]; // No localize...
+                                break;
+                            case "rowCount":
+                            case "columnCount":
+                            case "from":
+                            case "to":
+                            case "fontScript":
+                            case "fontTechnology":
+                            case "tracking":
+                            case "wariChuCount":
+                            case "wariChuLineGap":
+                            case "wariChuWidow":
+                            case "wariChuOrphan":
+                            case "tcyUpDown":
+                            case "tcyLeftRight":
+                            case "jiDori":
+                            case "bookID":
+                            case "dropCapMultiplier":
+                            case "hyphenateWordSize":
+                            case "hyphenatePreLength":
+                            case "hyphenatePostLength":
+                            case "hyphenateLimit":
+                            case "autoTCY":
+                            case "kerning":
+                            case "pathTypeSpacing":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                            case "warpValue":
+                            case "warpPerspective":
+                            case "warpPerspectiveOther":
+                            case "xx":
+                            case "xy":
+                            case "yx":
+                            case "yy":
+                            case "tx":
+                            case "ty":
+                            case "top":
+                            case "left":
+                            case "bottom":
+                            case "right":
+                            case "horizontalScale":
+                            case "verticalScale":
+                            case "characterRotation":
+                            case "mojiZume":
+                            case "wariChuScale":
+                            case "a":
+                            case "b":
+                            case "black":
+                            case "blue":
+                            case "brightness":
+                            case "cyan":
+                            case "gray":
+                            case "green":
+                            case "luminance":
+                            case "magenta":
+                            case "red":
+                            case "saturation":
+                            case "yellowColor":
+                            case "lineDashoffset":
+                            case "autoLeadingPercentage":
+                            case "hyphenationZone":
+                            case "hyphenationPreference":
+                            case "justificationWordMinimum":
+                            case "justificationWordDesired":
+                            case "justificationWordMaximum":
+                            case "justificationLetterMinimum":
+                            case "justificationLetterDesired":
+                            case "justificationLetterMaximum":
+                            case "justificationGlyphMinimum":
+                            case "justificationGlyphDesired":
+                            case "justificationGlyphMaximum":
+                            case "defaultTabWidth":
+                            case "start":
+                            case "end":
+                                typedValue = [ "<double>", value ];
+                                break;
+                            case "rowGutter":
+                            case "columnGutter":
+                            case "spacing":
+                            case "firstBaselineMinimum":
+                            case "size":
+                            case "leading":
+                            case "baselineShift":
+                            case "underlineOffset":
+                            case "lineWidth":
+                            case "miterLimit":
+                            case "firstLineIndent":
+                            case "startIndent":
+                            case "endIndent":
+                            case "spaceBefore":
+                            case "spaceAfter":
+                                typedValue = (typeUnit) ? [ "<unitDouble>", [ typeUnit, value ] ] : [ "<double>", value ];
+                                break;
+                            case "horizontal":
+                            case "vertical":
+                                typedValue = (hintData) ? [ "<unitDouble>", [ hintData, value ] ] : [ "<double>", value ];
+                                break;
+                            case "hue":
+                                typedValue = [ "<unitDouble>", [ "angleUnit", value ] ];
+                                break;
+                            case "warpStyle":
+                            case "textGridding":
+                            case "orientation":
+                            case "textType":
+                            case "frameBaselineAlignment":
+                            case "autoKern":
+                            case "fontCaps":
+                            case "baseline":
+                            case "otbaseline":
+                            case "strikethrough":
+                            case "underline":
+                            case "figureStyle":
+                            case "baselineDirection":
+                            case "textLanguage":
+                            case "japaneseAlternate":
+                            case "gridAlignment":
+                            case "wariChuJustification":
+                            case "lineCap":
+                            case "lineJoin":
+                            case "leadingType":
+                            case "burasagari":
+                            case "preferredKinsokuOrder":
+                            case "pathTypeEffect":
+                            case "pathTypeAlignment":
+                            case "pathTypeAlignTo":
+                                typedValue = [ "<enumerated>", [ key, value ] ];
+                                break;
+                            case "antiAlias":
+                                typedValue = [ "<enumerated>", [ "antiAliasType", value ] ];
+                                break;
+                            case "warpRotate":
+                                typedValue = [ "<enumerated>", [ "orientation", value ] ];
+                                break;
+                            case "alignment":
+                            case "singleWordJustification":
+                                typedValue = [ "<enumerated>", [ "alignmentType", value ] ];
+                                break;
+                            case "textShape":
+                            case "textStyleRange":
+                            case "paragraphStyleRange":
+                            case "kerningRange":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ key, restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "warp":
+                            case "transform":
+                            case "textStyle":
+                            case "paragraphStyle":
+                                typedValue = [ "<object>", [ key, restoreDesc (value) ] ];
+                                break;
+                            case "defaultStyle":
+                                typedValue = [ "<object>", [ "textStyle", restoreDesc (value) ] ];
+                                break;
+                            case "color":
+                            case "strokeColor":
+                                var colorClass;
+                                if ((("book" in value) && ("name" in value)) || (("bookID" in value) && ("bookKey" in value)))
+                                {
+                                    colorClass = "bookColor";
+                                }
+                                else if (("cyan" in value) && ("magenta" in value) && ("yellowColor" in value) && ("black" in value))
+                                {
+                                    colorClass = "CMYKColorClass";
+                                }
+                                else if ("gray" in value)
+                                {
+                                    colorClass = "grayscale";
+                                }
+                                else if (("hue" in value) && ("saturation" in value) && ("brightness" in value))
+                                {
+                                    colorClass = "HSBColorClass";
+                                }
+                                else if (("luminance" in value) && ("a" in value) && ("b" in value))
+                                {
+                                    colorClass = "labColor";
+                                }
+                                else if (("red" in value) && ("green" in value) && ("blue" in value))
+                                {
+                                    colorClass = "RGBColor";
+                                }
+                                typedValue = [ "<object>", [ colorClass, restoreDesc (value) ] ];
+                                break;
+                            case "textClickPoint":
+                                typedValue = [ "<object>", [ "point", restoreDesc (value, "percentUnit") ] ];
+                                break;
+                            case "base":
+                                typedValue = [ "<object>", [ "point", restoreDesc (value) ] ];
+                                break;
+                            case "bounds":
+                                typedValue = [ "<object>", [ "rectangle", restoreDesc (value) ] ];
+                                break;
+                            case "path":
+                                typedValue = [ "<object>", [ "pathClass", { "pathComponents": jamHelpers.toPathComponentList (value) } ] ];
+                                break;
+                            case "tRange":
+                                typedValue = [ "<object>", [ "range", restoreDesc (value) ] ];
+                                break;
+                            case "textLayer":
+                                typedValue = [ "<object>", [ "textLayer", restoreDesc (value) ] ];
+                                break;
+                            case "mojiKumiName":
+                            case "kinsokuSetName":
+                                // String in CS, enumerated in CS4...
+                                if (true)   // For the time being...
+                                {
+                                    typedValue = [ "<enumerated>", [ key, value ] ];
+                                }
+                                else
+                                {
+                                    typedValue = [ "<string>", value ]; // No localize...
+                                }
+                                break;
+                            case "leftAki":
+                            case "rightAki":
+                                // Unit double in CS, double in CS4...
+                                if (true)   // For the time being...
+                                {
+                                    typedValue = [ "<double>", value ];
+                                }
+                                else
+                                {
+                                    typedValue = (typeUnit) ? [ "<unitDouble>", [ typeUnit, value ] ] : [ "<double>", value ];
+                                }
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc ({ "textLayer": data })["textLayer"];
+        };
+        //
+        /**
+         * @description Get a simplified layer text JSON object from a layer text object in JSON AM Data Format.
+         * @param {Object|Array} layerTextObject Layer text object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Object} Simplified layer text JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-text-object-simplified-format/">Layer Text Object Simplified Format</a>)
+         * @see jamText.toLayerTextObject
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * jamEngine.parseFriendly = true;
+         * var resultObj = jamEngine.jsonGet
+         * (
+         *     [
+         *         { "property": { "&lt;property&gt;": "textKey" } },
+         *         { "layer": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } }
+         *     ]
+         * );
+         * if ("textKey" in resultObj)
+         * {
+         *     var layerTextObj = jamText.<strong>fromLayerTextObject</strong> (resultObj["textKey"]);
+         *     $.writeln (jamJSON.stringify (layerTextObj, '\t'));
+         * }
+         */
+        jamText.fromLayerTextObject = function (layerTextObject)
+        {
+            var layerText = { };
+            var typeUnit;
+            var typeDone = false;
+            function getUnitsHook (desc, key)
+            {
+                var result;
+                if (key === "path")
+                {
+                    result = jamHelpers.fromPathComponentList (desc[key][1][1]["pathComponents"], true);
+                }
+                else if (!typeDone)
+                {
+                    // First type unit encountered, depending on ruler units preferences; assumed to be the same for all others
+                    switch (key)
+                    {
+                        case "rowGutter":
+                        case "columnGutter":
+                        case "spacing":
+                        case "firstBaselineMinimum":
+                        case "size":
+                        case "leading":
+                        case "baselineShift":
+                        case "underlineOffset":
+                        case "lineWidth":
+                        case "miterLimit":
+                        case "firstLineIndent":
+                        case "startIndent":
+                        case "endIndent":
+                        case "spaceBefore":
+                        case "spaceAfter":
+                        case "leftAki":     // In CS, not in CS4...
+                        case "rightAki":    // In CS, not in CS4...
+                            var value = desc[key];
+                            if (value[0] === "<unitDouble>")
+                            {
+                                typeUnit = value[1][0];
+                            }
+                            typeDone = true;
+                            break;
+                    }
+                }
+                return result;
+            }
+            layerText["layerText"] = jamEngine.simplifyObject (layerTextObject, getUnitsHook);
+            if (typeUnit)
+            {
+                layerText["typeUnit"] = typeUnit;
+            }
+            return layerText;
+        };
+        //
+        /**
+         * @description Set the current layer text.
+         * @param {Object} layerText Simplified layer text JSON object made of two members: "textLayer" and "typeUnit"<br>
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-text-object-simplified-format/">Layer Text Object Simplified Format</a>)
+         * @see jamText.getLayerText
+         * @example
+         * var text = "Bonjour !";
+         * var layerText =
+         * {
+         *     "layerText":
+         *     {
+         *         "textKey": text,
+         *         "textClickPoint": { "horizontal": 50, "vertical": 95 },
+         *         "antiAlias": "antiAliasCrisp",
+         *         "textShape":
+         *         [
+         *             { "textType": "point", "orientation": "horizontal" }
+         *         ],
+         *         "textStyleRange":
+         *         [
+         *             {
+         *                 "from": 0,
+         *                 "to": text.length,
+         *                 "textStyle":
+         *                 {
+         *                     "fontPostScriptName": "Myriad-Italic",
+         *                     "size": 288,
+         *                     "color": { "red": 144, "green": 0, "blue": 255 }
+         *                 }
+         *             }
+         *         ],
+         *         "paragraphStyleRange":
+         *         [
+         *             {
+         *                 "from": 0,
+         *                 "to": text.length,
+         *                 "paragraphStyle": { "alignment": "center" }
+         *             }
+         *         ]
+         *     },
+         *     "typeUnit": "pixelsUnit"
+         * };
+         * jamText.<strong>setLayerText</strong> (layerText);
+         */
+        jamText.setLayerText = function (layerText)
+        {
+            var saveMeaningfulIds = jamEngine.meaningfulIds;
+            var saveParseFriendly = jamEngine.parseFriendly;
+            jamEngine.meaningfulIds = true;
+            jamEngine.parseFriendly = true;
+            var isTextLayer = false;
+            try
+            {
+                resultObj = jamEngine.jsonGet
+                (
+                    [
+                        { "property": { "<property>": "textKey" } },
+                        { "layer": { "<enumerated>": { "ordinal": "targetEnum" } } }
+                    ]
+                );
+                if ("textKey" in resultObj)
+                {
+                    isTextLayer = true;
+                }
+            }
+            catch (e)
+            {
+            }
+            jamEngine.meaningfulIds = saveMeaningfulIds;
+            jamEngine.parseFriendly = saveParseFriendly;
+            if (isTextLayer)
+            {
+                jamEngine.jsonPlay
+                (
+                    "set",
+                    {
+                        "target": [ "<reference>", [ [ "layer", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ] ] ],
+                        "to": this.toLayerTextObject (layerText)
+                    }
+                );
+            }
+            else
+            {
+                jamEngine.jsonPlay
+                (
+                    "make",
+                    {
+                        "target": [ "<reference>", [ [ "textLayer", [ "<class>", null ] ] ] ],
+                        "using": this.toLayerTextObject (layerText)
+                    }
+                );
+            }
+        };
+        //
+        /**
+         * @description Get the current layer text.
+         * @returns {Object|Null} Simplified layer text JSON object made of two members: "textLayer" and "typeUnit"<br>
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-text-object-simplified-format/">Layer Text Object Simplified Format</a>)<br>
+         * or null if not available
+         * @see jamText.setLayerText
+         * @example
+         * var layerText = jamText.<strong>getLayerText</strong> ();
+         * if (layerText)
+         * {
+         *     var jsonFile = new File ("~/Desktop/layer-text.json");
+         *     jamUtils.writeJsonFile (jsonFile, layerText, '\t');
+         *     jsonFile.execute ();
+         * }
+         * else
+         * {
+         *     alert ("No text layer selected.");
+         * }
+         */
+        jamText.getLayerText = function ()
+        {
+            var layerTextObj = null;
+            var saveMeaningfulIds = jamEngine.meaningfulIds;
+            var saveParseFriendly = jamEngine.parseFriendly;
+            jamEngine.meaningfulIds = true;
+            jamEngine.parseFriendly = true;
+            try
+            {
+                var resultObj = jamEngine.jsonGet
+                (
+                    [
+                        { "property": { "<property>": "textKey" } },
+                        { "layer": { "<enumerated>": { "ordinal": "targetEnum" } } }
+                    ]
+                );
+                if ("textKey" in resultObj)
+                {
+                    layerTextObj = this.fromLayerTextObject (resultObj["textKey"]);
+                }
+            }
+            catch (e)
+            {
+            }
+            jamEngine.meaningfulIds = saveMeaningfulIds;
+            jamEngine.parseFriendly = saveParseFriendly;
+            return layerTextObj;
+        };
+    } ());
+}
+
+//------------------------------------------------------------------------------
+

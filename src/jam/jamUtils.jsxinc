@@ -1,0 +1,718 @@
+﻿//------------------------------------------------------------------------------
+// File: jamUtils.jsxinc
+// Version: 4.5
+// Release Date: 2016-09-29
+// Copyright: © 2011-2016 Michel MARIANI <http://www.tonton-pixel.com/blog/>
+// Licence: GPL <http://www.gnu.org/licenses/gpl.html>
+//------------------------------------------------------------------------------
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//------------------------------------------------------------------------------
+// Version History:
+//  4.5:
+//  - Incremented version number to keep in sync with other modules.
+//  4.4:
+//  - Normalized error messages.
+//  4.0:
+//  - Removed reference to 'this' for main global object.
+//  3.6:
+//  - Incremented version number to keep in sync with other modules.
+//  3.5:
+//  - Added jamUtils.mergeData ().
+//  3.4:
+//  - Added jamUtils.readTextFile () and jamUtils.writeTextFile (), now used
+//    by jamUtils.readJsonFile () and jamUtils.writeJsonFile () respectively.
+//  - Added optional lowercase parameter to jamUtils.dataToHexaString ().
+//  3.3.1:
+//  - Added 'TEXT' Mac OS type to newly created JSON file in
+//    jamUtils.writeJsonFile ().
+//  3.3:
+//  - Added jamUtils.loadActionSet ().
+//  - Added extra file.writeln () when needed in jamUtils.writeJsonFile ().
+//  - Added proper handling of null values in jamUtils.cloneData () and
+//    jamUtils.getCustomOptions ().
+//  3.2:
+//  - Incremented version number to keep in sync with other modules.
+//  3.1:
+//  - Moved jamEngine.dataToHexaString () and jamEngine.hexaToDataString ()
+//    to jamUtils.dataToHexaString () and jamUtils.hexaToDataString ().
+//  3.0:
+//  - Applied the redefined JSON AM Reference format.
+//  2.0:
+//  - Initial release.
+//------------------------------------------------------------------------------
+
+/**
+ * @fileOverview
+ * @name jamUtils.jsxinc
+ * @author Michel MARIANI
+ */
+
+//------------------------------------------------------------------------------
+
+if (typeof jamUtils !== 'object')
+{
+    /**
+     * Global object (used to simulate a namespace in JavaScript) containing
+     * a set of utility functions for scripts written with the
+     * <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-action-manager/">JSON Action Manager</a> engine.
+     * @author Michel MARIANI
+     * @version 4.5
+     * @namespace
+     */
+    var jamUtils = { };
+    //
+    (function ()
+    {
+        /**
+         * @description Convert a distance in pixels to "distanceUnit" units.
+         * @param {Number} amount Distance in pixels
+         * @param {Number} amountBasePerInch Resolution of document in pixels per inch
+         * @returns {Number} Distance in "distanceUnit" units (special pixels units at an absolute 72 dpi)
+         * @see jamUtils.fromDistanceUnit
+         * @example
+         * jamEngine.jsonPlay
+         * (
+         *     "make",
+         *     {
+         *         "new":
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "document":
+         *                 {
+         *                     "name": { "&lt;string&gt;": "Polaroid 4x5 Inch (Print)" },
+         *                     "mode": { "&lt;class&gt;": "RGBColorMode" },
+         *                     "width":
+         *                     {
+         *                         "&lt;unitDouble&gt;":
+         *                         {
+         *                             "distanceUnit": jamUtils.<strong>toDistanceUnit</strong> (4 * 300, 300)
+         *                         }
+         *                     },
+         *                     "height":
+         *                     {
+         *                         "&lt;unitDouble&gt;":
+         *                         {
+         *                             "distanceUnit": jamUtils.<strong>toDistanceUnit</strong> (5 * 300, 300)
+         *                         }
+         *                     },
+         *                     "resolution": { "&lt;unitDouble&gt;": { "densityUnit": 300 } },
+         *                     "depth": { "&lt;integer&gt;": 16 },
+         *                     "fill": { "&lt;enumerated&gt;": { "fill": "white" } },
+         *                     "profile": { "&lt;string&gt;": "Adobe RGB (1998)" }
+         *                 }
+         *             }
+         *         }
+         *     }
+         * );
+         */
+        jamUtils.toDistanceUnit = function (amount, amountBasePerInch)
+        {
+            return (amount / amountBasePerInch) * 72.0;
+            // return (amount * 72.0) / amountBasePerInch;
+        };
+        //
+        /**
+         * @description Convert a distance from "distanceUnit" units to pixels.
+         * @param {Number} amount Distance in "distanceUnit" units (special pixels units at an absolute 72 dpi)
+         * @param {Number} amountBasePerInch Resolution of document in pixels per inch
+         * @returns {Number} Distance in pixels
+         * @see jamUtils.toDistanceUnit
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * var resultDescObj = jamEngine.jsonGet ([ { "document": { "&lt;enumerated&gt;": { "ordinal": "first" } } } ]);
+         * var width = resultDescObj["width"]["&lt;unitDouble&gt;"]["distanceUnit"];
+         * var height = resultDescObj["height"]["&lt;unitDouble&gt;"]["distanceUnit"];
+         * var resolution = resultDescObj["resolution"]["&lt;unitDouble&gt;"]["densityUnit"];
+         * var pixelsWidth = jamUtils.<strong>fromDistanceUnit</strong> (width, resolution);
+         * var pixelsHeight = jamUtils.<strong>fromDistanceUnit</strong> (height, resolution);
+         */
+        jamUtils.fromDistanceUnit = function (amount, amountBasePerInch)
+        {
+            return (amount / 72.0) * amountBasePerInch;
+            // return (amount * amountBasePerInch) / 72.0;
+        };
+        //
+        /**
+         * @description Test if a required font is available.
+         * @param {String} fontPostScriptName Font PostScript name string
+         * @returns {Boolean} Font found boolean
+         * @example
+         * if (jamUtils.<strong>fontExists</strong> ("Apple-Chancery"))
+         * {
+         *     // Use the fancy Apple Chancery font...
+         * }
+         */
+        jamUtils.fontExists = function (fontPostScriptName)
+        {
+            var useDOM = true;
+            //
+            var found = false;
+            if (useDOM) // Much faster !!
+            {
+                for (var i = 0; i < app.fonts.length; i++)
+                {
+                    if (app.fonts[i].postScriptName === fontPostScriptName)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                var saveMeaningfulIds = jamEngine.meaningfulIds;
+                var saveParseFriendly = jamEngine.parseFriendly;
+                jamEngine.meaningfulIds = true;
+                jamEngine.parseFriendly = true;
+                //
+                var resultDescriptorObj = jamEngine.jsonGet
+                (
+                    [
+                        [ "property", [ "<property>", "fontList" ] ],
+                        [ "application", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                    ]
+                );
+                var fontPostScriptNameArr = resultDescriptorObj["fontList"][1][1]["fontPostScriptName"][1];
+                for (var i = 0; i < fontPostScriptNameArr.length; i++)
+                {
+                    if (fontPostScriptNameArr[i][1] === fontPostScriptName)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                //
+                jamEngine.meaningfulIds = saveMeaningfulIds;
+                jamEngine.parseFriendly = saveParseFriendly;
+            }
+            return found;
+        };
+        //
+        /**
+         * @description Load an action if not currently available.
+         * @param {String} action Action name string
+         * @param {String} actionSet Action set name string
+         * @param {String} actionsFilePath Actions file path string
+         * @example
+         * Folder.current = new Folder ("~/JSON Action Manager/tests/resources/");
+         * jamUtils.<strong>loadAction</strong> ("Cross Process 2", "Cross Processing", "Cross Processing.atn");
+         */
+        jamUtils.loadAction = function (action, actionSet, actionsFilePath)
+        {
+            try
+            {
+                jamEngine.jsonGet ([ [ "action", [ "<name>", action ] ], [ "actionSet", [ "<name>", actionSet ] ] ]);
+                var found = true;
+            }
+            catch (e)
+            {
+                var found = false;
+            }
+            if (!found)
+            {
+                jamEngine.jsonPlay ("open", { "target": [ "<path>", actionsFilePath ] });
+            }
+        };
+        //
+        /**
+         * @description Load an action set if not currently available.
+         * @param {String} actionSet Action set name string
+         * @param {String} actionsFilePath Actions file path string
+         * @example
+         * Folder.current = new Folder ("~/JSON Action Manager/tests/resources/");
+         * jamUtils.<strong>loadActionSet</strong> ("Cross Processing", "Cross Processing.atn");
+         */
+        jamUtils.loadActionSet = function (actionSet, actionsFilePath)
+        {
+            try
+            {
+                jamEngine.jsonGet ([ [ "actionSet", [ "<name>", actionSet ] ] ]);
+                var found = true;
+            }
+            catch (e)
+            {
+                var found = false;
+            }
+            if (!found)
+            {
+                jamEngine.jsonPlay ("open", { "target": [ "<path>", actionsFilePath ] });
+            }
+        };
+        //
+        /**
+         * @description Load a preset if not currently available.
+         * @param {String} presetProperty Preset property string:<br />
+         * <ul>
+         * <li>"brush"</li>
+         * <li>"colors"</li>
+         * <li>"gradientClassEvent"</li>
+         * <li>"style"</li>
+         * <li>"pattern"</li>
+         * <li>"shapingCurve"</li>
+         * <li>"customShape"</li>
+         * <li>"toolPreset"</li>
+         * </ul>
+         * @param {String} presetName Preset name string
+         * @param {String} presetFilePath Preset file path string
+         * @example
+         * Folder.current = new Folder ("~/JSON Action Manager/tests/resources/");
+         * jamUtils.<strong>loadPreset</strong> ("style", "Logo X-Aqua in Blue Glass (Button)", "Logo-X-Aqua.asl");
+         * jamUtils.<strong>loadPreset</strong> ("toolPreset", "Brush Tool Soft Round 35 Red", "Brush-35-Red.tpl");
+         */
+        jamUtils.loadPreset = function (presetProperty, presetName, presetFilePath)
+        {
+            var useDOM = false;
+            var useOpen = true;
+            //
+            var classes =
+            {
+                // (property): (class)
+                "brush": "brush",
+                "colors": "color",
+                "gradientClassEvent": "gradientClassEvent",
+                "style": "styleClass",
+                "pattern": "'PttR'",
+                "shapingCurve": "shapingCurve",
+                "customShape": "customShape",
+                "toolPreset": "toolPreset"
+            };
+            var presetClass = classes[presetProperty];
+            //
+            var saveMeaningfulIds = jamEngine.meaningfulIds;
+            var saveParseFriendly = jamEngine.parseFriendly;
+            jamEngine.meaningfulIds = true;
+            jamEngine.parseFriendly = true;
+            //
+            var found = false;
+            var resultDescriptorObj = jamEngine.jsonGet
+            (
+                [
+                    [ "property", [ "<property>", "presetManager" ] ],
+                    [ "application", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                ]
+            );
+            var presetManagerArr = resultDescriptorObj["presetManager"][1];
+            for (var i = 0; i < presetManagerArr.length; i++)
+            {
+                var presets = presetManagerArr[i][1];
+                if (presets[0] === presetClass)
+                {
+                    var presetsArr = presets[1]["name"][1];
+                    for (var j = 0; j < presetsArr.length; j++)
+                    {
+                        if (presetsArr[j][1] === presetName)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            if (!found)
+            {
+                if (useDOM)
+                {
+                    app.load (new File (presetFilePath));
+                }
+                else if (useOpen)
+                {
+                    jamEngine.jsonPlay ("open", { "target": [ "<path>", presetFilePath ] });
+                }
+                else
+                {
+                    jamEngine.jsonPlay
+                    (
+                        "set",
+                        {
+                            "target":
+                            [
+                                "<reference>",
+                                [
+                                    [ "property", [ "<property>", presetProperty ] ],
+                                    [ "application", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                                ]
+                            ],
+                            "to": [ "<path>", presetFilePath ],
+                            "append": [ "<boolean>", true ]
+                        }
+                    );
+                }
+            }
+            //
+            jamEngine.meaningfulIds = saveMeaningfulIds;
+            jamEngine.parseFriendly = saveParseFriendly;
+        };
+        //
+        function getFileObject (file)
+        {
+            var fileObject;
+            if (file instanceof File)
+            {
+                fileObject = file;
+            }
+            else if (typeof file === 'string')
+            {
+                fileObject = new File (file);
+            }
+            else
+            {
+                throw new Error ('[jamUtils getFileObject] Invalid argument');
+            }
+            return fileObject;
+        }
+        //
+        /**
+         * @description Read a text file in UTF-8 encoding.
+         * @param {Object|String} textFile Text file File object (or path string)
+         * @returns {String|Null} Text string, or null if error
+         * @see jamUtils.writeTextFile
+         * @example
+         * var text = jamUtils.<strong>readTextFile</strong> ("~/Desktop/test.txt");
+         */
+        jamUtils.readTextFile = function (textFile)
+        {
+            var text = null;
+            var file = getFileObject (textFile);
+            if (file.open ("r"))
+            {
+                text = file.read ();
+                file.close ();
+            }
+            return text;
+        };
+        //
+        /**
+         * @description Convert a JSON text file into a JavaScript data structure.
+         * @param {Object|String} jsonFile JSON text file File object (or path string)
+         * @returns {Object|Array|String|Number|Boolean|Null} JavaScript data structure (usually an object or array)
+         * @see jamUtils.writeJsonFile
+         * @example
+         * var data = jamUtils.<strong>readJsonFile</strong> ("~/Desktop/test-data.json");
+         * alert ("color: " + jamJSON.stringify (data["color"]));   // -> color: [ "RGBColor", [ 255, 0, 255 ] ]
+         */
+        jamUtils.readJsonFile = function (jsonFile)
+        {
+            return jamJSON.parse (this.readTextFile (jsonFile), true);
+        };
+        //
+        /**
+         * @description Write a text file in UTF-8 encoding.
+         * @param {Object|String} textFile Text file File object (or path string)
+         * @param {String} text Text string
+         * @see jamUtils.readTextFile
+         * @example
+         * jamUtils.<strong>writeTextFile</strong> ("~/Desktop/test.txt", "test");
+         */
+        jamUtils.writeTextFile = function (textFile, text)
+        {
+            var file = getFileObject (textFile);
+            if (file.open ('w', 'TEXT'))
+            {
+                file.encoding = 'UTF-8';
+                file.lineFeed = 'unix';
+                file.write ('\uFEFF'); // Byte Order Mark
+                file.write (text);
+                file.close ();
+            }
+        };
+        //
+        /**
+         * @description Convert a JavaScript data structure into a JSON text file.
+         * @param {Object|String} jsonFile JSON text file File object (or path string)
+         * @param {Object|Array|String|Number|Boolean|Null} data JavaScript data structure (usually an object or array)
+         * @param {String|Number} [space] Indent space string (e.g. "\t") or number of spaces
+         * @see jamUtils.readJsonFile
+         * @example
+         * var magenta = [ "RGBColor", [ 255, 0, 255 ] ];
+         * var data =
+         * {
+         *     "width": 640,
+         *     "height": 480,
+         *     "color": magenta,
+         *     "title": "紅紫色" + "／" + "マゼンタ"
+         * };
+         * jamUtils.<strong>writeJsonFile</strong> ("~/Desktop/test-data.json", data);
+         */
+        jamUtils.writeJsonFile = function (jsonFile, data, space)
+        {
+            this.writeTextFile (jsonFile, jamJSON.stringify (data, space));
+        };
+        //
+        /**
+         * @description Get a clone (deep copy) of a Javascript data structure.
+         * @param {Object|Array|String|Number|Boolean|Null} data Javascript data structure
+         * @returns {Object|Array|String|Number|Boolean|Null} Clone (deep copy) of a Javascript data structure
+         * @example
+         * var customOptions;
+         * var defaultOptions =
+         * {
+         *     dialog:
+         *     {
+         *         x: 0,
+         *         y: 0,
+         *         width: 1024,
+         *         height: 768
+         *     }
+         * };
+         * //
+         * customOptions = jamUtils.<strong>cloneData</strong> (defaultOptions);
+         * customOptions.dialog.width = 512;
+         * alert (defaultOptions.dialog.width);   // -&gt; 1024
+         * //
+         * customOptions = defaultOptions;
+         * customOptions.dialog.width = 512;
+         * alert (defaultOptions.dialog.width);   // -&gt; 512
+         */
+        jamUtils.cloneData = function (data)
+        {
+            var clone;
+            if (data === null)   // No constructor for null
+            {
+                clone = data;
+            }
+            else if (data.constructor === Object)
+            {
+                clone = { };
+                for (var k in data)
+                {
+                    if (data.hasOwnProperty (k))
+                    {
+                        clone[k] = this.cloneData (data[k]);
+                    }
+                }
+            }
+            else if (data.constructor === Array)
+            {
+                clone = [ ];
+                for (var i = 0; i < data.length; i++)
+                {
+                    clone.push (this.cloneData (data[i]));
+                }
+            }
+            else
+            {
+                clone = data;
+            }
+            return clone;
+        };
+        //
+        /**
+         * @description Merge two Javascript literal object data structures, using the second one as default base.
+         * @param {Object} data Javascript literal object data structure
+         * @param {Object} defaultData Javascript literal object data structure
+         * @returns {Object} Merged Javascript literal object data structure
+         * @example
+         * var customOptions =
+         * {
+         *     name: "foobar",
+         *     active: true,
+         *     dialog:
+         *     {
+         *         width: 512
+         *     }
+         * };
+         * var defaultOptions =
+         * {
+         *     name: "untitled",
+         *     enabled: false,
+         *     active: false,
+         *     dialog:
+         *     {
+         *         x: 0,
+         *         y: 0,
+         *         width: 1024,
+         *         height: 768
+         *     }
+         * };
+         * //
+         * customOptions = jamUtils.<strong>mergeData</strong> (customOptions, defaultOptions);
+         * alert (jamJSON.stringify (customOptions, '\t'));
+         * // -&gt;
+         * // {
+         * //     "name": "foobar",
+         * //     "active": true,
+         * //     "dialog":
+         * //     {
+         * //         "width": 512,
+         * //         "x": 0,
+         * //         "y": 0,
+         * //         "height": 768
+         * //     },
+         * //     "enabled": false
+         * // }
+         */
+        jamUtils.mergeData = function (data, defaultData)
+        {
+            for (var k in defaultData)
+            {
+                if (defaultData.hasOwnProperty (k))
+                {
+                    if (k in data)
+                    {
+                        if ((defaultData[k] !== null) && (defaultData[k].constructor === Object))
+                        {
+                            data[k] = this.mergeData (data[k], defaultData[k]);
+                        }
+                    }
+                    else
+                    {
+                        data[k] = this.cloneData (defaultData[k]);
+                    }
+                }
+            }
+            return data;
+        };
+        //
+        var jsonCustomOptionsStringKey = "jsonCustomOptions";
+        //
+        /**
+         * @description Retrieve custom options associated with a unique signature [available in CS3 or later].
+         * @param {String} signature Unique signature string
+         * @param {Object} defaultOptions Default options as a JavaScript literal object
+         * @returns {Object} Custom options as a JavaScript literal object
+         * @see jamUtils.eraseCustomOptions
+         * @see jamUtils.putCustomOptions
+         * @example
+         * var signature = "unique-signature-custom-options";
+         * jamUtils.eraseCustomOptions (signature);
+         * var customOptions = { name: "Rectangle" };
+         * jamUtils.putCustomOptions (signature, customOptions, true);
+         * var defaultOptions = { width: 1024, height: 768, name: "Untitled" };
+         * customOptions = jamUtils.<strong>getCustomOptions</strong> (signature, defaultOptions);
+         * if (customOptions.name !== "Untitled")
+         * {
+         *     alert (jamJSON.stringify (customOptions.name + "-" + customOptions.width + "x" + customOptions.height));
+         *     // -> "Rectangle-1024x768"
+         * }
+         */
+        jamUtils.getCustomOptions = function (signature, defaultOptions)
+        {
+            var saveMeaningfulIds = jamEngine.meaningfulIds;
+            var saveParseFriendly = jamEngine.parseFriendly;
+            jamEngine.meaningfulIds = true;
+            jamEngine.parseFriendly = false;
+            try
+            {
+                var resultObj = jamEngine.classIdAndActionDescriptorToJson (jamEngine.uniIdStrToId (signature), app.getCustomOptions (signature));
+                var customOptions = jamJSON.parse (resultObj["<descriptor>"][jsonCustomOptionsStringKey]["<string>"], true)
+            }
+            catch (e)
+            {
+                var customOptions = { };
+            }
+            jamEngine.meaningfulIds = saveMeaningfulIds;
+            jamEngine.parseFriendly = saveParseFriendly;
+            return this.mergeData (customOptions, defaultOptions);
+        };
+        //
+        /**
+         * @description Save custom options associated with a unique signature [available in CS3 or later].
+         * @param {String} signature Unique signature string
+         * @param {Object} customOptions Custom options as a JavaScript literal object
+         * @param {Boolean} [persistent] Whether the options should persist once the script has finished
+         * @see jamUtils.eraseCustomOptions
+         * @see jamUtils.getCustomOptions
+         * @example
+         * var signature = "unique-signature-custom-options";
+         * var customOptions = { width: 512, height: 512, name: "Square" };
+         * jamUtils.<strong>putCustomOptions</strong> (signature, customOptions, true);
+         */
+        jamUtils.putCustomOptions = function (signature, customOptions, persistent)
+        {
+            var descriptorObj = { };
+            descriptorObj[jsonCustomOptionsStringKey] = [ "<string>", jamJSON.stringify (customOptions) ];
+            app.putCustomOptions (signature, jamEngine.jsonToActionDescriptor (descriptorObj), persistent);
+        };
+        //
+        /**
+         * @description Erase custom options associated with a unique signature [available in CS3 or later].
+         * @param {String} signature Unique signature string
+         * @see jamUtils.getCustomOptions
+         * @see jamUtils.putCustomOptions
+         * @example
+         * var signature = "unique-signature-custom-options";
+         * jamUtils.<strong>eraseCustomOptions</strong> (signature);
+         */
+        jamUtils.eraseCustomOptions = function (signature)
+        {
+            app.eraseCustomOptions (signature);
+        };
+        //
+        /**
+         * @description Convert a raw byte data string into a hexadecimal string.
+         * @param {String} dataString Raw byte data string
+         * @param {Boolean} [lowercase] Use lowercase hexadecimal digits (false by default)
+         * @returns {String} Hexadecimal string
+         * @see jamUtils.hexaToDataString
+         * @example
+         * var hexaString = jamUtils.<strong>dataToHexaString</strong> ("«Íï"); // -> "ABCDEF"
+         */
+        jamUtils.dataToHexaString = function (dataString, lowercase)
+        {
+            var hexaDigits = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F" ];
+            var hexaString = "";
+            var length = dataString.length;
+            for (var index = 0; index < length; index++)
+            {
+                var dataByte = dataString.charCodeAt (index);
+                if ((dataByte >= 0x00) && (dataByte <= 0xFF))
+                {
+                    hexaString += hexaDigits[(dataByte & 0xF0) >> 4] + hexaDigits[dataByte & 0x0F];
+                }
+                else
+                {
+                    throw new Error ("[jamUtils.dataToHexaString] Invalid data string");
+                }
+            }
+            if (lowercase)
+            {
+                hexaString = hexaString.toLowerCase ();
+            }
+            return hexaString;
+        };
+        //
+        /**
+         * @description Convert a hexadecimal string into a raw byte data string.
+         * @param {String} hexaString Hexadecimal string
+         * @returns {String} Raw byte data string
+         * @see jamUtils.dataToHexaString
+         * @example
+         * var dataString = jamUtils.<strong>hexaToDataString</strong> ("00011E1F20217E7F80819E9FA0A1FEFF");
+         * // -> "\u0000\u0001\u001E\u001F !~\u007F\u0080\u0081\u009E\u009F ¡þÿ"
+         */
+        jamUtils.hexaToDataString = function (hexaString)
+        {
+            var dataString = "";
+            var length = hexaString.length;
+            if (((length % 2) === 0) && (/^[0-9A-Fa-f]*$/.test (hexaString)))
+            {
+                for (var index = 0; index < length; index += 2)
+                {
+                    var byteString = hexaString.slice (index, index + 2);
+                    dataString += String.fromCharCode (parseInt (byteString, 16));
+                }
+            }
+            else
+            {
+                throw new Error ("[jamUtils.hexaToDataString] Invalid hexa string");
+            }
+            return dataString;
+        };
+    } ());
+}
+
+//------------------------------------------------------------------------------
+

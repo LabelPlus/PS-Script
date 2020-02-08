@@ -1,0 +1,1866 @@
+﻿//------------------------------------------------------------------------------
+// File: jamStyles.jsxinc
+// Version: 4.5
+// Release Date: 2016-09-29
+// Copyright: © 2011-2016 Michel MARIANI <http://www.tonton-pixel.com/blog/>
+// Licence: GPL <http://www.gnu.org/licenses/gpl.html>
+//------------------------------------------------------------------------------
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//------------------------------------------------------------------------------
+// Version History:
+//  4.5:
+//  - Improved error handling.
+//  4.4.2:
+//  - Added ignoreScale parameter to function jamStyles.setLayerStyle ().
+//  - Caught exception in function jamStyles.getLayerStyle () when it is not 
+//    possible to apply styles/effects to a layer group (before Photoshop CS6).
+//  4.4:
+//  - Normalized error messages.
+//  4.2:
+//  - Cleaned up code.
+//  - Fixed bug in setLayerStyle (): in Photoshop CS, color space information 
+//    returned by getDocumentMode () includes depth as well!
+//    For instance: "RGB48" instead of "RGBColor".
+//  4.1:
+//  - Simplified test in jamStyles.isStylesPalette ().
+//  - Replaced decodeURI () with File.decode () for the sake of consistency.
+//  4.0:
+//  - Removed reference to 'this' for main global object.
+//  3.6:
+//  - Moved internal function simplifyObject () to public member of jamEngine.
+//  - Cleaned up code.
+//  3.5.4:
+//  - Added undocumented parameter to jamStyles.getLayerStyle () to get actual 
+//    patterns data as well.
+//  - Added functions jamStyles.patternsFromStylesFile () and
+//    jamStyles.patternsFileFromPatterns ().
+//  - Modified jamStyles.setApplicationGlobalAngle () and 
+//    jamStyles.setDocumentGlobalAngle (): globalAltitude is now optional.
+//  3.5.3:
+//  - Added handling of duotone document mode.
+//  - Fixed jamStyles.setLayerStyle (): the array "channelRestrictions" cannot
+//    be empty.
+//  - Added new functions:
+//    jamStyles.applyLayerStyle (),
+//    jamStyles.copyLayerStyle (),
+//    jamStyles.pasteLayerStyle (),
+//    jamStyles.scaleLayerEffects ().
+//  - Fixed jamStyles.setLayerStyle (): scaling must take into account the
+//    resolution of the document, to be consistent with the behavior of
+//    copyStyle () and pasteStyle ().
+//  - Added break statement in loop in getPresetStylesCount ().
+//  - Moved restored "chokeMatte" key to a value using percentUnit instead of
+//    pixelsUnit.
+//  - Normalized JSON AM data format for all calls to jamEngine.jsonPlay ().
+//  3.5.2:
+//  - Modified descriptor restoring functions: unknown fields are now ignored.
+//  - Added new functions:
+//    jamStyles.removeAllLayerEffects (),
+//    jamStyles.removeLayerEffects (),
+//    jamStyles.removeLayerEffect (),
+//    jamStyles.showHideAllDocumentEffects (),
+//    jamStyles.showHideAllLayerEffects (),
+//    jamStyles.showHideLayerEffects (),
+//    jamStyles.showHideLayerEffect (),
+//    jamStyles.setApplicationGlobalAngle (),
+//    jamStyles.setDocumentGlobalAngle ().
+//  3.5.1:
+//  - Modified jamStyles.setLayerStyle (): the effects property "scale" is taken
+//    into account.
+//  - Modified jamStyles.getLayerStyle (): the effects property "masterFXSwitch"
+//    is discarded, and a unique name is generated for each new temporary layer
+//    style.
+//  - Expanded jamHelpers.toChannelReference () inline to get rid of dependency.
+//  - Fixed a potential problem in jamStyles.dataFromStylesFile (): current
+//    values of jamEngine global options are now saved then restored after use.
+//  - Fixed imageModes array (5 and 6 are unsupported values).
+//  3.5:
+//  - Initial release.
+//------------------------------------------------------------------------------
+
+/**
+ * @fileOverview
+ * @name jamStyles.jsxinc
+ * @author Michel MARIANI
+ */
+
+//------------------------------------------------------------------------------
+
+if (typeof jamStyles !== 'object')
+{
+    /**
+     * Global object (used to simulate a namespace in JavaScript) containing
+     * a set of layer styles-related functions for scripts written with the
+     * <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-action-manager/">JSON Action Manager</a> engine.<br />
+     * Uses information found in the document
+     * <a href="http://www.tonton-pixel.com/Photoshop%20Additional%20File%20Formats/styles-file-format.html">Photoshop Styles File Format</a>.
+     * @author Michel MARIANI
+     * @version 4.5
+     * @namespace
+     */
+    var jamStyles = { };
+    //
+    (function ()
+    {
+        /**
+         * @description Test if a given file is a styles file (*.asl).
+         * @param {Object} file File object
+         * @returns {Boolean} true if styles file
+         * @see jamStyles.isStylesPalette
+         * @example
+         * function stylesFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamStyles.<strong>isStylesFile</strong> (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? stylesFileFilter : "Styles Files:*.asl,All Files:*";
+         * var stylesFile = File.openDialog ("Select a styles file:", select);
+         * if (stylesFile !== null)
+         * {
+         *     alert ("OK!");
+         * }
+         */
+        jamStyles.isStylesFile = function (file)
+        {
+            return (file.type === '8BSL') || file.name.match (/\.asl$/i);
+        };
+        //
+        /**
+         * @description Test if a given file is a styles palette file (Styles.psp).
+         * @param {Object} file File object
+         * @returns {Boolean} true if styles palette file
+         * @see jamStyles.isStylesFile
+         * @example
+         * function stylesPaletteFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamStyles.<strong>isStylesPalette</strong> (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? stylesPaletteFilter : "Styles Palette File:Styles.psp,All Files:*.*";
+         * var stylesPaletteFile = File.openDialog ("Select a styles palette file:", select);
+         * if (stylesPaletteFile !== null)
+         * {
+         *     alert ("OK!");
+         * }
+         */
+        jamStyles.isStylesPalette = function (file)
+        {
+            return file.name.match (/^Styles.psp$/i);
+        };
+        //
+        /**
+         * @description Get a layer effects object in JSON AM Data Format from a simplified layer effects JSON object.
+         * @param {Object} layerEffects Simplified layer effects JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-effects-object-simplified-format/">Layer Effects Object Simplified Format</a>)
+         * @returns {Object|Array} Layer effects object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamStyles.fromLayerEffectsObject
+         * @example
+         * var layerEffects =
+         * {
+         *     "scale": 100,
+         *     "dropShadow":
+         *     {
+         *         "enabled": true,
+         *         "mode": "multiply",
+         *         "color": { "red": 0, "green": 0, "blue": 0 },
+         *         "opacity": 70,
+         *         "localLightingAngle": 135,
+         *         "useGlobalAngle": false,
+         *         "distance": 10,
+         *         "chokeMatte": 20,
+         *         "blur": 15,
+         *         "transparencyShape":
+         *         {
+         *             "name": "Linear",
+         *             "curve":
+         *             [
+         *                 { "horizontal": 0, "vertical": 0 },
+         *                 { "horizontal": 255, "vertical": 255 }
+         *             ]
+         *         },
+         *         "antiAlias": false,
+         *         "noise": 8,
+         *         "layerConceals": true
+         *     }
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target":
+         *         {
+         *             "&lt;reference&gt;":
+         *             [
+         *                 { "property": { "&lt;property&gt;": "layerEffects" } },
+         *                 { "layer": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } }
+         *             ]
+         *         },
+         *         "to": jamStyles.<strong>toLayerEffectsObject</strong> (layerEffects)
+         *     }
+         * );
+         */
+        jamStyles.toLayerEffectsObject = function (layerEffects)
+        {
+            function restoreDesc (desc, hintData)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        var restoredList;
+                        switch (key)
+                        {
+                            case "align":
+                            case "antiAlias":
+                            case "antialiasGloss":
+                            case "continuity":
+                            case "dither":
+                            case "enabled":
+                            case "invert":
+                            case "invertTexture":
+                            case "layerConceals":
+                            case "linked":
+                            case "reverse":
+                            case "showTransparency":
+                            case "useGlobalAngle":
+                            case "useShape":
+                            case "useTexture":
+                            case "vectorColor":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "book":
+                            case "ID":
+                            case "name":
+                                typedValue = [ "<string>", localize (value) ];
+                                break;
+                            case "bookKey":
+                                typedValue = [ "<data>", value ];
+                                break;
+                            case "bookID":
+                            case "location":
+                            case "midpoint":
+                            case "randomSeed":
+                            case "smoothness":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                            case "a":
+                            case "b":
+                            case "black":
+                            case "blue":
+                            case "brightness":
+                            case "cyan":
+                            case "gray":
+                            case "green":
+                            case "interpolation":
+                            case "luminance":
+                            case "magenta":
+                            case "red":
+                            case "saturation":
+                            case "yellowColor":
+                                typedValue = [ "<double>", value ];
+                                break;
+                            case "angle":
+                            case "hue":
+                            case "localLightingAngle":
+                            case "localLightingAltitude":
+                                typedValue = [ "<unitDouble>", [ "angleUnit", value ] ];
+                                break;
+                            case "chokeMatte":
+                            case "highlightOpacity":
+                            case "inputRange":
+                            case "noise":
+                            case "opacity":
+                            case "scale":
+                            case "shadingNoise":
+                            case "shadowOpacity":
+                            case "strengthRatio":
+                            case "textureDepth":
+                                typedValue = [ "<unitDouble>", [ "percentUnit", value ] ];
+                                break;
+                            case "blur":
+                            case "distance":
+                            case "size":
+                            case "softness":
+                                typedValue = [ "<unitDouble>", [ "pixelsUnit", value ] ];
+                                break;
+                            case "horizontal":
+                            case "vertical":
+                                typedValue = (hintData) ? [ "<unitDouble>", [ hintData, value ] ] : [ "<double>", value ];
+                                break;
+                            case "type":
+                                var enumType;
+                                switch (value)
+                                {
+                                    case "linear":
+                                    case "radial":
+                                    case "angle":
+                                    case "reflected":
+                                    case "diamond":
+                                    case "shapeburst":
+                                        enumType = "gradientType";
+                                        break;
+                                    case "foregroundColor":
+                                    case "backgroundColor":
+                                    case "userStop":
+                                        enumType = "colorStopType";
+                                        break;
+                                }
+                                typedValue = [ "<enumerated>", [ enumType, value ] ];
+                                break;
+                            case "colorSpace":
+                                typedValue = [ "<enumerated>", [ "colorSpace", value ] ];
+                                break;
+                            case "gradientForm":
+                                typedValue = [ "<enumerated>", [ "gradientForm", value ] ];
+                                break;
+                            case "paintType":
+                                typedValue = [ "<enumerated>", [ "frameFill", value ] ];
+                                break;
+                            case "bevelDirection":
+                                typedValue = [ "<enumerated>", [ "bevelEmbossStampStyle", value ] ];
+                                break;
+                            case "bevelStyle":
+                                typedValue = [ "<enumerated>", [ "bevelEmbossStyle", value ] ];
+                                break;
+                            case "bevelTechnique":
+                                typedValue = [ "<enumerated>", [ "bevelTechnique", value ] ];
+                                break;
+                            case "glowTechnique":
+                                typedValue = [ "<enumerated>", [ "matteTechnique", value ] ];
+                                break;
+                            case "innerGlowSource":
+                                typedValue = [ "<enumerated>", [ "innerGlowSourceType", value ] ];
+                                break;
+                            case "style":
+                                typedValue = [ "<enumerated>", [ "frameStyle", value ] ];
+                                break;
+                            case "highlightMode":
+                            case "mode":
+                            case "shadowMode":
+                                typedValue = [ "<enumerated>", [ "blendMode", value ] ];
+                                break;
+                            case "bevelEmboss":
+                            case "chromeFX":
+                            case "dropShadow":
+                            case "frameFX":
+                            case "gradientFill":
+                            case "innerGlow":
+                            case "innerShadow":
+                            case "outerGlow":
+                            case "pattern":
+                            case "patternFill":
+                            case "solidFill":
+                                typedValue = [ "<object>", [ key, restoreDesc (value) ] ];
+                                break;
+                            case "color":
+                            case "highlightColor":
+                            case "shadowColor":
+                                var colorClass;
+                                if ((("book" in value) && ("name" in value)) || (("bookID" in value) && ("bookKey" in value)))
+                                {
+                                    colorClass = "bookColor";
+                                }
+                                else if (("cyan" in value) && ("magenta" in value) && ("yellowColor" in value) && ("black" in value))
+                                {
+                                    colorClass = "CMYKColorClass";
+                                }
+                                else if ("gray" in value)
+                                {
+                                    colorClass = "grayscale";
+                                }
+                                else if (("hue" in value) && ("saturation" in value) && ("brightness" in value))
+                                {
+                                    colorClass = "HSBColorClass";
+                                }
+                                else if (("luminance" in value) && ("a" in value) && ("b" in value))
+                                {
+                                    colorClass = "labColor";
+                                }
+                                else if (("red" in value) && ("green" in value) && ("blue" in value))
+                                {
+                                    colorClass = "RGBColor";
+                                }
+                                typedValue = [ "<object>", [ colorClass, restoreDesc (value) ] ];
+                                break;
+                            case "gradient":
+                                typedValue = [ "<object>", [ "gradientClassEvent", restoreDesc (value) ] ];
+                                break;
+                            case "mappingShape":
+                            case "transparencyShape":
+                                typedValue = [ "<object>", [ "shapingCurve", restoreDesc (value) ] ];
+                                break;
+                            case "offset":
+                                typedValue = [ "<object>", [ "point", restoreDesc (value, "percentUnit") ] ];
+                                break;
+                            case "phase":
+                                typedValue = [ "<object>", [ "point", restoreDesc (value) ] ];
+                                break;
+                            case "minimum":
+                            case "maximum":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<integer>", value[i] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "colors":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "colorStop", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "transparency":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "transparencyStop", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "curve":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "curvePoint", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "layerEffects":
+                                typedValue = [ "<object>", [ "layerEffects", restoreDesc (value) ] ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc ({ "layerEffects": layerEffects })["layerEffects"];
+        };
+        //
+        /**
+         * @description Get a simplified layer effects JSON object from a layer effects object in JSON AM Data Format.
+         * @param {Object|Array} layerEffectsObject Layer effects object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Object} Simplified layer effects JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-effects-object-simplified-format/">Layer Effects Object Simplified Format</a>)
+         * @see jamStyles.toLayerEffectsObject
+         * @example
+         * if (parseInt (app.version) &gt;= 10) // CS3
+         * {
+         *     jamEngine.meaningfulIds = true;
+         *     jamEngine.parseFriendly = true;
+         *     try
+         *     {
+         *         var resultDescObj = jamEngine.jsonGet
+         *         (
+         *             [
+         *                 [ "property", [ "&lt;property&gt;", "layerEffects" ] ],
+         *                 [ "layer", [ "&lt;enumerated&gt;", [ "ordinal", "targetEnum" ] ] ]
+         *             ]
+         *         );
+         *         var layerEffects = jamStyles.<strong>fromLayerEffectsObject</strong> (resultDescObj["layerEffects"]);
+         *     }
+         *     catch (e)
+         *     {
+         *         var layerEffects = null;
+         *     }
+         *     if (layerEffects)
+         *     {
+         *         $.writeln (jamJSON.stringify (layerEffects, '\t'));
+         *     }
+         *     else
+         *     {
+         *         alert ("No layer effects selected.");
+         *     }
+         * }
+         */
+        jamStyles.fromLayerEffectsObject = function (layerEffectsObject)
+        {
+            return jamEngine.simplifyObject (layerEffectsObject);
+        };
+        //
+        /**
+         * @description Get a blending options object in JSON AM Data Format from a simplified blending options JSON object.
+         * @param {Object} blendOptions Simplified blending options JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/blending-options-object-simplified-format/">Blending Options Object Simplified Format</a>)
+         * @returns {Object|Array} Blending options object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamStyles.fromBlendOptionsObject
+         * @example
+         * var blendOptions =
+         * {
+         *     "mode": "overlay",
+         *     "opacity": 75,
+         *     "fillOpacity": 50
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target":
+         *         {
+         *             "&lt;reference&gt;":
+         *             [
+         *                 { "layer": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } }
+         *             ]
+         *         },
+         *         "to": jamStyles.<strong>toBlendOptionsObject</strong> (blendOptions)
+         *     }
+         * );
+         */
+        jamStyles.toBlendOptionsObject = function (blendOptions)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        var restoredList;
+                        switch (key)
+                        {
+                            case "blendClipped":
+                            case "blendInterior":
+                            case "layerMaskAsGlobalMask":
+                            case "transparencyShapesLayer":
+                            case "vectorMaskAsGlobalMask":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "srcBlackMin":
+                            case "srcBlackMax":
+                            case "srcWhiteMin":
+                            case "srcWhiteMax":
+                            case "destBlackMin":
+                            case "destBlackMax":
+                            case "destWhiteMin":
+                            case "destWhiteMax":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                            case "fillOpacity":
+                            case "opacity":
+                                typedValue = [ "<unitDouble>", [ "percentUnit", value ] ];
+                                break;
+                            case "mode":
+                                typedValue = [ "<enumerated>", [ "blendMode", value ] ];
+                                break;
+                            case "knockout":
+                                typedValue = [ "<enumerated>", [ "knockout", value ] ];
+                                break;
+                            case "channel":
+                                typedValue = [ "<reference>", [ [ "channel", [ "<enumerated>", [ "channel", value ] ] ] ] ]; // Special handling
+                                break;
+                            case "blendRange":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "blendRange", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "channelRestrictions":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<enumerated>", [ "channel", value[i] ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "blendOptions":
+                                typedValue = [ "<object>", [ "blendOptions", restoreDesc (value) ] ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc ({ "blendOptions": blendOptions })["blendOptions"];
+        };
+        //
+        /**
+         * @description Get a simplified blending options JSON object from a blending options object in JSON AM Data Format.
+         * @param {Object|Array} blendOptionsObject Blending options object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Object} Simplified blending options JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/blending-options-object-simplified-format/">Blending Options Object Simplified Format</a>)
+         * @see jamStyles.toBlendOptionsObject
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * jamEngine.parseFriendly = true;
+         * var style = { };
+         * var actionDescriptor;
+         * var jsonDesc;
+         * actionDescriptor = jamActions.readActionDescriptor (stylesFile);
+         * jsonDesc = jamEngine.classIdAndActionDescriptorToJson (0, actionDescriptor)["&lt;descriptor&gt;"];
+         * style["name"] = jsonDesc["name"][1];
+         * style["ID"] = jsonDesc["ID"][1];
+         * actionDescriptor = jamActions.readActionDescriptor (stylesFile);
+         * jsonDesc = jamEngine.classIdAndActionDescriptorToJson (0, actionDescriptor)["&lt;descriptor&gt;"];
+         * if ("blendOptions" in jsonDesc)
+         * {
+         *     style["blendOptions"] = jamStyles.<strong>fromBlendOptionsObject</strong> (jsonDesc["blendOptions"]);
+         * }
+         * $.writeln (jamJSON.stringify (style, '\t'));
+         */
+        jamStyles.fromBlendOptionsObject = function (blendOptionsObject)
+        {
+            var replaceChannelHook = function (desc, key, getDefaultValue)
+            {
+                var replacedValue = undefined;
+                if (key === "channel")  // Special handling
+                {
+                    var value = getDefaultValue (desc, key);
+                    replacedValue = value[0]["channel"];
+                }
+                return replacedValue;
+            };
+            return jamEngine.simplifyObject (blendOptionsObject, replaceChannelHook);
+        };
+        //
+        /**
+         * @description Get a document mode object in JSON AM Data Format from a simplified document mode JSON object.
+         * @param {Object} documentMode Simplified document mode JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/document-mode-object-simplified-format/">Document Mode Object Simplified Format</a>)
+         * @returns {Object|Array} Document mode object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamStyles.fromDocumentModeObject
+         * @example
+         * var documentMode =
+         * {
+         *     "colorSpace": "RGBColor",
+         *     "depth": 8
+         * };
+         * alert (jamJSON.stringify (jamStyles.<strong>toDocumentModeObject</strong> (documentMode), '\t'));
+         * // -&gt;
+         * // [
+         * //     "&lt;object&gt;",
+         * //     [
+         * //         "documentMode",
+         * //         {
+         * //             "colorSpace":
+         * //             [
+         * //                 "&lt;enumerated&gt;",
+         * //                 [
+         * //                     "colorSpace",
+         * //                     "RGBColor"
+         * //                 ]
+         * //             ],
+         * //             "depth":
+         * //             [
+         * //                 "&lt;integer&gt;",
+         * //                 8
+         * //             ]
+         * //         }
+         * //     ]
+         * // ]
+         */
+        jamStyles.toDocumentModeObject = function (documentMode)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "colorSpace":
+                                typedValue = [ "<enumerated>", [ "colorSpace", value ] ];
+                                break;
+                            case "depth":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                            case "documentMode":
+                                typedValue = [ "<object>", [ "documentMode", restoreDesc (value) ] ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc ({ "documentMode": documentMode })["documentMode"];
+        };
+        //
+        /**
+         * @description Get a simplified document mode JSON object from a document mode object in JSON AM Data Format.
+         * @param {Object|Array} documentModeObject Document mode object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Object} Simplified document mode JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/document-mode-object-simplified-format/">Document Mode Object Simplified Format</a>)
+         * @see jamStyles.toDocumentModeObject
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * jamEngine.parseFriendly = true;
+         * var style = { };
+         * var actionDescriptor;
+         * var jsonDesc;
+         * actionDescriptor = jamActions.readActionDescriptor (stylesFile);
+         * jsonDesc = jamEngine.classIdAndActionDescriptorToJson (0, actionDescriptor)["&lt;descriptor&gt;"];
+         * style["name"] = jsonDesc["name"][1];
+         * style["ID"] = jsonDesc["ID"][1];
+         * actionDescriptor = jamActions.readActionDescriptor (stylesFile);
+         * jsonDesc = jamEngine.classIdAndActionDescriptorToJson (0, actionDescriptor)["&lt;descriptor&gt;"];
+         * if ("documentMode" in jsonDesc)
+         * {
+         *     style["documentMode"] = jamStyles.<strong>fromDocumentModeObject</strong> (jsonDesc["documentMode"]);
+         * }
+         * $.writeln (jamJSON.stringify (style, '\t'));
+         */
+        jamStyles.fromDocumentModeObject = function (documentModeObject)
+        {
+            return jamEngine.simplifyObject (documentModeObject);
+        };
+        //
+        function getDocumentMode ()
+        {
+            var documentMode = { };
+            var saveMeaningfulIds = jamEngine.meaningfulIds;
+            var saveParseFriendly = jamEngine.parseFriendly;
+            jamEngine.meaningfulIds = true;
+            jamEngine.parseFriendly = true;
+            var resultDescObj;
+            resultDescObj = jamEngine.jsonGet
+            (
+                [
+                    [ "property", [ "<property>", "mode" ] ],
+                    [ "document", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                ]
+            );
+            documentMode["colorSpace"] = resultDescObj["mode"][1][1];
+            resultDescObj = jamEngine.jsonGet
+            (
+                [
+                    [ "property", [ "<property>", "depth" ] ],
+                    [ "document", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                ]
+            );
+            documentMode["depth"] = resultDescObj["depth"][1];
+            jamEngine.meaningfulIds = saveMeaningfulIds;
+            jamEngine.parseFriendly = saveParseFriendly;
+            return documentMode;
+        }
+        //
+        function getDocumentResolution ()
+        {
+            var saveMeaningfulIds = jamEngine.meaningfulIds;
+            var saveParseFriendly = jamEngine.parseFriendly;
+            jamEngine.meaningfulIds = true;
+            jamEngine.parseFriendly = true;
+            var resultDescObj = jamEngine.jsonGet
+            (
+                [
+                    [ "property", [ "<property>", "resolution" ] ],
+                    [ "document", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                ]
+            );
+            jamEngine.meaningfulIds = saveMeaningfulIds;
+            jamEngine.parseFriendly = saveParseFriendly;
+            return resultDescObj["resolution"][1][1];
+        }
+        //
+        /**
+         * @description Set the current layer style (blending options and layer effects).
+         * @param {Object|Null} layerStyleObj Simplified layer style JSON object made of two optional members: <br>
+         * "blendOptions" (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/blending-options-object-simplified-format/">Blending Options Object Simplified Format</a>)<br>
+         * "layerEffects" (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-effects-object-simplified-format/">Layer Effects Object Simplified Format</a>)<br>
+         * If null, apply default style (none), i.e., reset blending options to default and remove all layer effects
+         * @param {Boolean} [ignoreScale] Ignore scale property of layer effects; false by default
+         * @see jamStyles.getLayerStyle
+         * @example
+         * jamStyles.<strong>setLayerStyle</strong>
+         * (
+         *     {
+         *         "blendOptions":
+         *         {
+         *             "mode": "difference",
+         *             "opacity": 100,
+         *             "fillOpacity": 70,
+         *             "blendInterior": true
+         *         },
+         *         "layerEffects":
+         *         {
+         *             "scale": 100,
+         *             "solidFill":
+         *             {
+         *                 "enabled": true,
+         *                 "mode": "normal",
+         *                 "opacity": 100,
+         *                 "color": { "red": 125, "green": 0, "blue": 215 }
+         *             },
+         *             "dropShadow":
+         *             {
+         *                 "enabled": true,
+         *                 "mode": "multiply",
+         *                 "color": { "red": 0, "green": 0, "blue": 0 },
+         *                 "opacity": 70,
+         *                 "localLightingAngle": 135,
+         *                 "useGlobalAngle": false,
+         *                 "distance": 10,
+         *                 "chokeMatte": 20,
+         *                 "blur": 15,
+         *                 "transparencyShape":
+         *                 {
+         *                     "name": "Linear",
+         *                     "curve":
+         *                     [
+         *                         { "horizontal": 0, "vertical": 0 },
+         *                         { "horizontal": 255, "vertical": 255 }
+         *                     ]
+         *                 },
+         *                 "antiAlias": false,
+         *                 "noise": 8,
+         *                 "layerConceals": true
+         *             }
+         *         }
+         *     }
+         * );
+         */
+        jamStyles.setLayerStyle = function (layerStyleObj, ignoreScale)
+        {
+            if (layerStyleObj && (("blendOptions" in layerStyleObj) || ("layerEffects" in layerStyleObj)))
+            {
+                var layerDesc = { };
+                //
+                if ("blendOptions" in layerStyleObj)
+                {
+                    defaultBlendOptionsObj =
+                    {
+                        "mode": "normal",
+                        "opacity": 100,
+                        "fillOpacity": 100,
+                        "channelRestrictions": [ ],
+                        "knockout": "none",
+                        "blendInterior": false,
+                        "blendClipped": true,
+                        "transparencyShapesLayer": true,
+                        "layerMaskAsGlobalMask": false,
+                        "vectorMaskAsGlobalMask": false,
+                        "blendRange": [ ]
+                    };
+                    var documentMode = getDocumentMode ();
+                    var channelRestrictions;
+                    var blendRangeChannels;
+                    switch (documentMode["colorSpace"])
+                    {
+                        case "CMYKColorEnum":
+                        case "CMYK64":  // In CS !!
+                            channelRestrictions = [ "cyan", "magenta", "yellow", "black" ];
+                            blendRangeChannels = [ "gray", "cyan", "magenta", "yellow", "black" ];
+                            break;
+                        case "duotone":
+                        case "grayScale":
+                        case "gray16":  // In CS !!
+                            channelRestrictions = [ "black" ];
+                            blendRangeChannels = [ "black" ];
+                            break;
+                        case "labColor":
+                        case "lab48":   // In CS !!
+                            channelRestrictions = [ "lightness", "a", "b" ];
+                            blendRangeChannels = [ "lightness", "a", "b" ];
+                            break;
+                        case "RGBColor":
+                        case "RGB48":   // In CS !!
+                            channelRestrictions = [ "red", "green", "blue" ];
+                            blendRangeChannels = [ "gray", "red", "green", "blue" ];
+                            break;
+                    }
+                    defaultBlendOptionsObj["channelRestrictions"] = channelRestrictions;
+                    for (var i = 0; i < blendRangeChannels.length; i++)
+                    {
+                        defaultBlendRangeObj =
+                        {
+                            "channel": blendRangeChannels[i],
+                            "srcBlackMin": 0,
+                            "srcBlackMax": 0,
+                            "srcWhiteMin": 255,
+                            "srcWhiteMax": 255,
+                            "destBlackMin": 0,
+                            "destBlackMax": 0,
+                            "destWhiteMin": 255,
+                            "destWhiteMax": 255
+                        };
+                        defaultBlendOptionsObj["blendRange"].push (defaultBlendRangeObj);
+                    }
+                    var blendOptionsObj = jamUtils.mergeData (layerStyleObj["blendOptions"], defaultBlendOptionsObj);
+                    var blendOptionsDesc = this.toBlendOptionsObject (blendOptionsObj)[1][1];
+                    for (var key in blendOptionsDesc)
+                    {
+                        if (blendOptionsDesc.hasOwnProperty (key))
+                        {
+                            layerDesc[key] = blendOptionsDesc[key];
+                        }
+                    }
+                }
+                //
+                var layerEffects;
+                //
+                if ("layerEffects" in layerStyleObj)
+                {
+                    layerEffects = layerStyleObj["layerEffects"];
+                    layerDesc["layerEffects"] = this.toLayerEffectsObject (layerEffects);
+                }
+                //
+                jamEngine.jsonPlay
+                (
+                    "set",
+                    {
+                        "target": [ "<reference>", [ [ "layer", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ] ] ],
+                        "to": [ "<object>", [ "layer", layerDesc ] ]
+                    }
+                );
+                //
+                if (layerEffects)
+                {
+                    if (("scale" in layerEffects) && (!ignoreScale))
+                    {
+                        this.scaleLayerEffects ((getDocumentResolution () / 72) / (layerEffects["scale"] / 100) * 100);
+                    }
+                }
+            }
+            else
+            {
+                this.clearLayerStyle ();
+            }
+        };
+        //
+        function getPresetStylesCount ()
+        {
+            var saveMeaningfulIds = jamEngine.meaningfulIds;
+            var saveParseFriendly = jamEngine.parseFriendly;
+            jamEngine.meaningfulIds = true;
+            jamEngine.parseFriendly = true;
+            var resultDescObj = jamEngine.jsonGet
+            (
+                [
+                    [ "property", [ "<property>", "presetManager" ] ],
+                    [ "application", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                ]
+            );
+            var presetManagerArr = resultDescObj["presetManager"][1];
+            var presetStylesCount;
+            for (var i = 0; i < presetManagerArr.length; i++)
+            {
+                var preset = presetManagerArr[i][1];
+                if (preset[0] === "styleClass")
+                {
+                    presetStylesCount = preset[1]["name"][1].length;
+                    break;
+                }
+            }
+            jamEngine.meaningfulIds = saveMeaningfulIds;
+            jamEngine.parseFriendly = saveParseFriendly;
+            return presetStylesCount;
+        }
+        //
+        function isStyledLayer ()
+        {
+            var saveMeaningfulIds = jamEngine.meaningfulIds;
+            var saveParseFriendly = jamEngine.parseFriendly;
+            jamEngine.meaningfulIds = true;
+            jamEngine.parseFriendly = true;
+            var isLayer = false;
+            try
+            {
+                var resultDescObj = jamEngine.jsonGet
+                (
+                    [
+                        [ "property", [ "<property>", "background" ] ],
+                        [ "layer", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                    ]
+                );
+                isLayer = !resultDescObj["background"][1];
+            }
+            catch (e)
+            {
+            }
+            var saveMeaningfulIds = jamEngine.meaningfulIds;
+            var saveParseFriendly = jamEngine.parseFriendly;
+            return isLayer;
+        }
+        //
+        /**
+         * @description Get the current layer style (blending options and layer effects) [available in CS2 or later].
+         * @returns {Object|Null} Simplified layer style JSON object made of two optional members: <br>
+         * "blendOptions" (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/blending-options-object-simplified-format/">Blending Options Object Simplified Format</a>)<br>
+         * "layerEffects" (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-effects-object-simplified-format/">Layer Effects Object Simplified Format</a>)<br>
+         * or null if not available
+         * @see jamStyles.setLayerStyle
+         * @example
+         * var layerStyleObj = jamStyles.<strong>getLayerStyle</strong> ();
+         * if (layerStyleObj)
+         * {
+         *     if ("layerEffects" in layerStyleObj)
+         *     {
+         *         var layerEffectsObj = layerStyleObj["layerEffects"];
+         *         if ("dropShadow" in layerEffectsObj)
+         *         {
+         *             var dropShadowObj = layerEffectsObj["dropShadow"];
+         *             alert ("Drop shadow distance: " + dropShadowObj["distance"]);
+         *         }
+         *         else
+         *         {
+         *             alert ("No drop shadow");
+         *         }
+         *     }
+         *     else
+         *     {
+         *         alert ("No layer effects");
+         *     }
+         * }
+         */
+        jamStyles.getLayerStyle = function ()
+        {
+            var layerStyleObj = null;
+            //
+            if (isStyledLayer ())
+            {
+                var presetStylesCountBefore = getPresetStylesCount ();
+                //
+                var date = new Date ();
+                var tempStyleName = "Temp-Layer-Style-" + date.getTime ();
+                //
+                try
+                {
+                    jamEngine.jsonPlay
+                    (
+                        "make",
+                        {
+                            "target": [ "<reference>", [ [ "style", [ "<class>", null ] ] ] ],
+                            "name": [ "<string>", tempStyleName ],
+                            "using": [ "<reference>", [ [ "layer", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ] ] ],
+                            "blendOptions": [ "<boolean>", true ],
+                            "layerEffects": [ "<boolean>", true ]
+                        }
+                    );
+                }
+                catch (e)
+                {
+                }
+                //
+                var presetStylesCount = getPresetStylesCount ();
+                //
+                // To confirm that a layer was actually *selected* in the layer palette, or that a layer group can get styled...
+                if (presetStylesCount === (presetStylesCountBefore + 1))
+                {
+                    var tempStylesFile = new File (Folder.temp + "/" + tempStyleName + ".asl");
+                    jamEngine.jsonPlay
+                    (
+                        "set",
+                        {
+                            "target": [ "<path>", tempStylesFile.fsName ],
+                            "to": [ "<list>", [ [ "<reference>", [ [ "style", [ "<index>", presetStylesCount ] ] ] ] ] ]
+                        }
+                    );
+                    //
+                    jamEngine.jsonPlay
+                    (
+                        "delete",
+                        {
+                            "target": [ "<list>", [ [ "<reference>", [ [ "style", [ "<index>", presetStylesCount ] ] ] ] ] ]
+                        }
+                    );
+                    //
+                    var tempStylesFileData = this.dataFromStylesFile (tempStylesFile);
+                    if (typeof tempStylesFileData === 'string')
+                    {
+                        alert (tempStylesFileData + "\n" + "Styles file: “" + File.decode (tempStylesFile.name) + "”");
+                    }
+                    else
+                    {
+                        layerStyleObj = tempStylesFileData["styles"][0];
+                        if ("name" in layerStyleObj)
+                        {
+                            delete layerStyleObj["name"];
+                        }
+                        if ("ID" in layerStyleObj)
+                        {
+                            delete layerStyleObj["ID"];
+                        }
+                        if ("documentMode" in layerStyleObj)
+                        {
+                            delete layerStyleObj["documentMode"];
+                        }
+                        if ("layerEffects" in layerStyleObj)
+                        {
+                            var layerEffects = layerStyleObj["layerEffects"];
+                            if ("masterFXSwitch" in layerEffects)
+                            {
+                                delete layerEffects["masterFXSwitch"];
+                            }
+                        }
+                    }
+                    // Let's keep this undocumented for now
+                    if (arguments.length > 0)
+                    {
+                        var extraInfo = arguments[0];
+                        if (extraInfo && (extraInfo.constructor === Object))
+                        {
+                            if ("patterns" in extraInfo)
+                            {
+                                var tempStylesFilePatterns = this.patternsFromStylesFile (tempStylesFile);
+                                if (typeof tempStylesFilePatterns === 'string')
+                                {
+                                    alert (tempStylesFilePatterns + "\n" + "Styles file: “" + File.decode (tempStylesFile.name) + "”");
+                                }
+                                else
+                                {
+                                    extraInfo["patterns"] = tempStylesFilePatterns;
+                                }
+                            }
+                        }
+                    }
+                    //
+                    tempStylesFile.remove ();
+                }
+            }
+            //
+            return layerStyleObj;
+        };
+        //
+        /**
+         * @description Copy a layer style.
+         * @see jamStyles.pasteLayerStyle
+         * @example
+         * jamStyles.<strong>copyLayerStyle</strong> ();
+         */
+        jamStyles.copyLayerStyle = function ()
+        {
+            try
+            {
+                jamEngine.jsonPlay ("copyEffects", null);
+            }
+            catch (e)
+            {
+            }
+        };
+        //
+        /**
+         * @description Paste a layer style.
+         * @see jamStyles.copyLayerStyle
+         * @example
+         * jamStyles.<strong>pasteLayerStyle</strong> ();
+         */
+        jamStyles.pasteLayerStyle = function ()
+        {
+            try
+            {
+                jamEngine.jsonPlay ("pasteEffects", { });
+            }
+            catch (e)
+            {
+            }
+        };
+        //
+        /**
+         * @description Clear a layer style (reset blending options to default and remove all layer effects).
+         * @example
+         * jamStyles.<strong>clearLayerStyle</strong> ();
+         */
+        jamStyles.clearLayerStyle = function ()
+        {
+            try
+            {
+                jamEngine.jsonPlay
+                (
+                    "disableLayerStyle",
+                    {
+                        "target": [ "<reference>", [ [ "layer", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ] ] ]
+                    }
+                );
+            }
+            catch (e)
+            {
+            }
+        };
+        //
+        /**
+         * @description Apply a layer style preset.
+         * @param {String} styleName Layer style preset name
+         * @param {Boolean} [merge] Merge with current layer style
+         * @example
+         * jamUtils.loadPreset ("style", "Logo X-Aqua in Blue Glass (Button)", "Logo-X-Aqua.asl");
+         * jamStyles.<strong>applyLayerStyle</strong> ("Logo X-Aqua in Blue Glass (Button)");
+         */
+        jamStyles.applyLayerStyle = function (styleName, merge)
+        {
+            var descriptor =
+            {
+                "target": [ "<reference>", [ [ "style", [ "<name>", styleName ] ] ] ],
+                "to": [ "<reference>", [ [ "layer", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ] ] ]
+            };
+            if ((typeof merge !== 'undefined') && merge)
+            {
+                descriptor["merge"] = [ "<boolean>", merge ];
+            }
+            jamEngine.jsonPlay ("applyStyle", descriptor);
+        };
+        //
+        /**
+         * @description Scale layer effects.
+         * @param {Number} scale Layer effects scaling factor (percentage: 1% to 1000%)
+         * @example
+         * jamStyles.<strong>scaleLayerEffects</strong> (200);
+         */
+        jamStyles.scaleLayerEffects = function (scale)
+        {
+            jamEngine.jsonPlay ("scaleEffectsEvent", { "scale": [ "<unitDouble>", [ "percentUnit", scale ] ] });
+        };
+        //
+        /**
+         * @description Remove (delete) a layer effect.
+         * @param {String} effect Layer effect to remove (delete), among:<br>
+         * <ul>
+         * <li>"bevelEmboss"</li>
+         * <li>"frameFX"</li>
+         * <li>"innerShadow"</li>
+         * <li>"innerGlow"</li>
+         * <li>"chromeFX"</li>
+         * <li>"solidFill"</li>
+         * <li>"gradientFill"</li>
+         * <li>"patternFill"</li>
+         * <li>"outerGlow"</li>
+         * <li>"dropShadow"</li>
+         * </ul>
+         * @see jamStyles.removeLayerEffects
+         * @see jamStyles.removeAllLayerEffects
+         * @example
+         * jamStyles.<strong>removeLayerEffect</strong> ("dropShadow");
+         */
+        jamStyles.removeLayerEffect = function (effect)
+        {
+            try
+            {
+                jamEngine.jsonPlay
+                (
+                    "disableSingleFX",
+                    {
+                        "target":
+                        [
+                            "<reference>",
+                            [
+                                [ effect, [ "<class>", null ] ],
+                                [ "layer", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                            ]
+                        ]
+                    }
+                );
+            }
+            catch (e)
+            {
+            }
+        };
+        //
+        /**
+         * @description Remove (delete) several layer effects.
+         * @param {Array} effects Array of layer effects to remove (delete), among:<br>
+         * <ul>
+         * <li>"bevelEmboss"</li>
+         * <li>"frameFX"</li>
+         * <li>"innerShadow"</li>
+         * <li>"innerGlow"</li>
+         * <li>"chromeFX"</li>
+         * <li>"solidFill"</li>
+         * <li>"gradientFill"</li>
+         * <li>"patternFill"</li>
+         * <li>"outerGlow"</li>
+         * <li>"dropShadow"</li>
+         * </ul>
+         * @see jamStyles.removeLayerEffect
+         * @see jamStyles.removeAllLayerEffects
+         * @example
+         * jamStyles.<strong>removeLayerEffects</strong> ([ "dropShadow", "bevelEmboss" ]);
+         */
+        jamStyles.removeLayerEffects = function (effects)
+        {
+            for (var i = 0; i < effects.length; i++)
+            {
+                this.removeLayerEffect (effects[i]);
+            }
+        };
+        //
+        /**
+         * @description Remove (delete) all layer effects.
+         * @see jamStyles.removeLayerEffect
+         * @see jamStyles.removeLayerEffects
+         * @example
+         * jamStyles.<strong>removeAllLayerEffects</strong> ();
+         */
+        jamStyles.removeAllLayerEffects = function ()
+        {
+            try
+            {
+                jamEngine.jsonPlay
+                (
+                    "disableLayerFX",
+                    {
+                        "target": [ "<reference>", [ [ "layer", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ] ] ]
+                    }
+                );
+            }
+            catch (e)
+            {
+            }
+        };
+        //
+        /**
+         * @description Show or hide several layer effects.
+         * @param {Array} effects Array of layer effects to show or hide, among:<br>
+         * <ul>
+         * <li>"bevelEmboss"</li>
+         * <li>"frameFX"</li>
+         * <li>"innerShadow"</li>
+         * <li>"innerGlow"</li>
+         * <li>"chromeFX"</li>
+         * <li>"solidFill"</li>
+         * <li>"gradientFill"</li>
+         * <li>"patternFill"</li>
+         * <li>"outerGlow"</li>
+         * <li>"dropShadow"</li>
+         * </ul>
+         * @param {Boolean} [show] Show (instead of hide) the layer effects; false by default<br>
+         * @see jamStyles.showHideLayerEffect
+         * @see jamStyles.showHideAllLayerEffects
+         * @see jamStyles.showHideAllDocumentEffects
+         * @example
+         * jamStyles.<strong>showHideLayerEffects</strong> ([ "dropShadow", "bevelEmboss" ]);                       // Hide
+         * jamStyles.<strong>showHideLayerEffects</strong> ([ "solidFill", "gradientFill", "patternFill" ], true);  // Show
+         */
+        jamStyles.showHideLayerEffects = function (effects, show)
+        {
+            var references = [ ];
+            for (var i = 0; i < effects.length; i++)
+            {
+                references.push
+                (
+                    [
+                        "<reference>",
+                        [
+                            [ effects[i], [ "<class>", null ] ],
+                            [ "layer", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                        ]
+                    ]
+                );
+            }
+            try
+            {
+                jamEngine.jsonPlay ((show) ? "show" : "hide", { "target": [ "<list>", references ] }, DialogModes.NO);
+            }
+            catch (e)
+            {
+            }
+        };
+        //
+        /**
+         * @description Show or hide a layer effect.
+         * @param {String} effect Layer effect to show or hide, among:<br>
+         * <ul>
+         * <li>"bevelEmboss"</li>
+         * <li>"frameFX"</li>
+         * <li>"innerShadow"</li>
+         * <li>"innerGlow"</li>
+         * <li>"chromeFX"</li>
+         * <li>"solidFill"</li>
+         * <li>"gradientFill"</li>
+         * <li>"patternFill"</li>
+         * <li>"outerGlow"</li>
+         * <li>"dropShadow"</li>
+         * </ul>
+         * @param {Boolean} [show] Show (instead of hide) the layer effect; false by default<br>
+         * @see jamStyles.showHideLayerEffects
+         * @see jamStyles.showHideAllLayerEffects
+         * @see jamStyles.showHideAllDocumentEffects
+         * @example
+         * jamStyles.<strong>showHideLayerEffect</strong> ("dropShadow");         // Hide
+         * jamStyles.<strong>showHideLayerEffect</strong> ("bevelEmboss", true);  // Show
+         */
+        jamStyles.showHideLayerEffect = function (effect, show)
+        {
+            this.showHideLayerEffects ([ effect ], show);
+        };
+        //
+        /**
+         * @description Show or hide all layer effects.
+         * @param {Boolean} [show] Show (instead of hide) all layer effects; false by default<br>
+         * @see jamStyles.showHideLayerEffect
+         * @see jamStyles.showHideLayerEffects
+         * @see jamStyles.showHideAllDocumentEffects
+         * @example
+         * jamStyles.<strong>showHideAllLayerEffects</strong> ();      // Hide
+         * jamStyles.<strong>showHideAllLayerEffects</strong> (true);  // Show
+         */
+        jamStyles.showHideAllLayerEffects = function (show)
+        {
+            this.showHideLayerEffects ([ "layerEffects" ], show);
+        };
+        //
+        /**
+         * @description Show or hide all document effects.
+         * @param {Boolean} [show] Show (instead of hide) all document effects; false by default<br>
+         * @see jamStyles.showHideLayerEffect
+         * @see jamStyles.showHideLayerEffects
+         * @see jamStyles.showHideAllLayerEffects
+         * @example
+         * jamStyles.<strong>showHideAllDocumentEffects</strong> ();      // Hide
+         * jamStyles.<strong>showHideAllDocumentEffects</strong> (true);  // Show
+         */
+        jamStyles.showHideAllDocumentEffects = function (show)
+        {
+            jamEngine.jsonPlay
+            (
+                "set",
+                {
+                    "target":
+                    [
+                        "<reference>",
+                        [
+                            [ "property", [ "<property>", "layerFXVisible" ] ],
+                            [ "document", [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                        ]
+                    ],
+                    "to": [ "<object>", [ "layerFXVisible", { "layerFXVisible": [ "<boolean>", show || false ] } ] ]
+                }
+            );
+        };
+        //
+        function setGlobalAngle (target, globalLightingAngle, globalAltitude)
+        {
+            var globalAngle =
+            {
+                "globalLightingAngle": [ "<unitDouble>", [ "angleUnit", globalLightingAngle ] ]
+            };
+            if (typeof globalAltitude !== 'undefined')
+            {
+                globalAngle["globalAltitude"] = [ "<unitDouble>", [ "angleUnit", globalAltitude ] ];
+            }
+            jamEngine.jsonPlay
+            (
+                "set",
+                {
+                    "target":
+                    [
+                        "<reference>",
+                        [
+                            [ "property", [ "<property>", "globalAngle" ] ],
+                            [ target, [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ]
+                        ]
+                    ],
+                    "to": [ "<object>", [ "globalAngle", globalAngle ] ]
+                }
+            );
+        };
+        //
+        /**
+         * @description Set application's layer effects global angle (global light: lighting angle and altitude).
+         * @param {Number} globalLightingAngle Global lighting angle (-180° to 180°)
+         * @param {Number} [globalAltitude] Global altitude (0° to 90°)
+         * @see jamStyles.setDocumentGlobalAngle
+         * @example
+         * jamStyles.<strong>setApplicationGlobalAngle</strong> (30, 45);
+         */
+        jamStyles.setApplicationGlobalAngle = function (globalLightingAngle, globalAltitude)
+        {
+            setGlobalAngle ("application", globalLightingAngle, globalAltitude);
+        };
+        //
+        /**
+         * @description Set document's layer effects global angle (global light: lighting angle and altitude).
+         * @param {Number} globalLightingAngle Global lighting angle (-180° to 180°)
+         * @param {Number} [globalAltitude] Global altitude (0° to 90°)
+         * @see jamStyles.setApplicationGlobalAngle
+         * @example
+         * jamStyles.<strong>setDocumentGlobalAngle</strong> (120, 90);
+         */
+        jamStyles.setDocumentGlobalAngle = function (globalLightingAngle, globalAltitude)
+        {
+            setGlobalAngle ("document", globalLightingAngle, globalAltitude);
+        };
+        //
+        function readBEInt (file, byteCount)
+        {
+            var bytes = file.read (byteCount);
+            var intValue = 0;
+            for (var index = 0; index < byteCount; index++)
+            {
+                intValue = (intValue << 8) + bytes.charCodeAt (index);
+            }
+            return intValue;
+        }
+        //
+        function readUnicodeString (file)
+        {
+            var unicodeString = "";
+            var unicodeLength = readBEInt (file, 4);    // Includes terminating null
+            for (var index = 0; index < unicodeLength; index++)
+            {
+                var unicodeChar = readBEInt (file, 2);
+                if (unicodeChar !== 0)
+                {
+                    unicodeString += String.fromCharCode (unicodeChar);
+                }
+            }
+            return unicodeString;
+        }
+        //
+        function readBytes (file, byteCount)
+        {
+            return file.read (byteCount);
+        }
+        //
+        function readPascalString (file)
+        {
+            var stringLength = readBEInt (file, 1);
+            return readBytes (file, stringLength);
+        }
+        //
+        /**
+         * @description Convert a styles file (*.asl or Styles.psp) into a data structure in JSON format [available in CS2 or later].
+         * @param {String|Object} stylesFile Styles file path string or File object
+         * @param {Boolean} includePatternsInfo Include embedded patterns basic info
+         * @returns {Object|String} Converted styles file data structure in JSON format, or error message string
+         * @example
+         * function stylesFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamStyles.isStylesFile (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? stylesFileFilter : "Styles Files:*.asl,All Files:*";
+         * var stylesFile = File.openDialog ("Select a styles file:", select);
+         * if (stylesFile !== null)
+         * {
+         *     var fileData = jamStyles.<strong>dataFromStylesFile</strong> (stylesFile, true);
+         *     if (typeof fileData === 'string')
+         *     {
+         *         alert (fileData + "\n" + "Styles file: “" + File.decode (stylesFile.name) + "”");
+         *     }
+         *     else
+         *     {
+         *         alert ("Number of patterns: " + fileData["patterns"].length);
+         *         alert ("Number of styles: " + fileData["styles"].length);
+         *     }
+         * }
+         */
+        jamStyles.dataFromStylesFile = function (stylesFile, includePatternsInfo)
+        {
+            var imageModes = [ "Bitmap", "Grayscale", "Indexed", "RGB", "CMYK", null, null, "Multichannel", "Duotone", "Lab" ];
+            //
+            var file;
+            if (typeof stylesFile === 'string')
+            {
+                file = new File (stylesFile);
+            }
+            else if (stylesFile instanceof File)
+            {
+                file = stylesFile;
+            }
+            //
+            var fileData;
+            if (file.open ("r"))
+            {
+                try
+                {
+                    file.encoding = 'BINARY';
+                    var formatVersion;
+                    if (this.isStylesPalette (file))
+                    {
+                        formatVersion = 2;
+                    }
+                    else if (this.isStylesFile (file))
+                    {
+                        formatVersion = readBEInt (file, 2);
+                    }
+                    if (formatVersion === 2)
+                    {
+                        var magicNumber = file.read (4);
+                        if (magicNumber === '8BSL')
+                        {
+                            var subVersion = readBEInt (file, 2);
+                            if (subVersion === 3)
+                            {
+                                var patternsLength = readBEInt (file, 4);
+                                var patternsEnd = file.tell () + patternsLength;
+                                if (includePatternsInfo)
+                                {
+                                    var patterns = [ ];
+                                    while (file.tell () < patternsEnd)
+                                    {
+                                        var pattern = { };
+                                        var patternLength = readBEInt (file, 4);
+                                        var patternEnd = file.tell () + patternLength;
+                                        var patternVersion = readBEInt (file, 4);
+                                        pattern["version"] = patternVersion;
+                                        if (patternVersion === 1)
+                                        {
+                                            pattern["imageMode"] = imageModes[readBEInt (file, 4)];
+                                            pattern["height"] = readBEInt (file, 2);
+                                            pattern["width"] = readBEInt (file, 2);
+                                            pattern["name"] = readUnicodeString (file);
+                                            pattern["ID"] = readPascalString (file);
+                                        }
+                                        else
+                                        {
+                                            pattern["error"] = "Unsupported version";
+                                        }
+                                        patterns.push (pattern);
+                                        file.seek (patternEnd + ((4 - (patternLength % 4)) % 4), 0);
+                                    }
+                                }
+                                file.seek (patternsEnd, 0);
+                                var saveMeaningfulIds = jamEngine.meaningfulIds;
+                                var saveParseFriendly = jamEngine.parseFriendly;
+                                jamEngine.meaningfulIds = true;
+                                jamEngine.parseFriendly = true;
+                                var actionDescriptor;
+                                var jsonDesc;
+                                var styles = [ ];
+                                var styleCount = readBEInt (file, 4);
+                                for (var i = 0; i < styleCount; i++)
+                                {
+                                    var style = { };
+                                    var styleLength = readBEInt (file, 4);
+                                    var styleEnd = file.tell () + styleLength;
+                                    actionDescriptor = jamActions.readActionDescriptor (file);
+                                    jsonDesc = jamEngine.classIdAndActionDescriptorToJson (0, actionDescriptor)["<descriptor>"];
+                                    style["name"] = jsonDesc["name"][1];
+                                    style["ID"] = jsonDesc["ID"][1];
+                                    actionDescriptor = jamActions.readActionDescriptor (file);
+                                    jsonDesc = jamEngine.classIdAndActionDescriptorToJson (0, actionDescriptor)["<descriptor>"];
+                                    if ("documentMode" in jsonDesc)
+                                    {
+                                        style["documentMode"] = this.fromDocumentModeObject (jsonDesc["documentMode"]);
+                                    }
+                                    if ("blendOptions" in jsonDesc)
+                                    {
+                                        style["blendOptions"] = this.fromBlendOptionsObject (jsonDesc["blendOptions"]);
+                                    }
+                                    if ("layerEffects" in jsonDesc)
+                                    {
+                                        style["layerEffects"] = this.fromLayerEffectsObject (jsonDesc["layerEffects"]);
+                                    }
+                                    styles.push (style);
+                                    file.seek (styleEnd, 0);
+                                }
+                                jamEngine.meaningfulIds = saveMeaningfulIds;
+                                jamEngine.parseFriendly = saveParseFriendly;
+                                fileData = { };
+                                if (includePatternsInfo)
+                                {
+                                    fileData["patterns"] = patterns;
+                                }
+                                fileData["styles"] = styles;
+                            }
+                            else
+                            {
+                                throw new Error ("[jamStyles.dataFromStylesFile] Unrecognized sub-version: " + subVersion);
+                            }
+                        }
+                        else
+                        {
+                            throw new Error ("[jamStyles.dataFromStylesFile] Unrecognized magic number: " + magicNumber);
+                        }
+                    }
+                    else
+                    {
+                        throw new Error ("[jamStyles.dataFromStylesFile] Unrecognized format version: " + formatVersion);
+                    }
+                }
+                catch (e)
+                {
+                    fileData = e.message;
+                }
+                finally
+                {
+                    file.close ();
+                }
+            }
+            else
+            {
+                fileData = "[jamStyles.dataFromStylesFile] Cannot open file";
+            }
+            return fileData;
+        };
+        //
+        /**
+         * @description Extract patterns data from a styles file (*.asl or Styles.psp).
+         * @param {String|Object} stylesFile Styles file path string or File object
+         * @returns {Array|String} JSON array of patterns data, or error message string
+         * @example
+         * function stylesFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamStyles.isStylesFile (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? stylesFileFilter : "Styles Files:*.asl,All Files:*";
+         * var stylesFile = File.openDialog ("Select a styles file:", select);
+         * if (stylesFile !== null)
+         * {
+         *     var patternsData = jamStyles.<strong>patternsFromStylesFile</strong> (stylesFile);
+         *     if (typeof patternsData === 'string')
+         *     {
+         *         alert (patternsData + "\n" + "Styles file: “" + File.decode (stylesFile.name) + "”");
+         *     }
+         *     else
+         *     {
+         *         alert ("Number of patterns: " + patternsData.length);
+         *     }
+         * }
+         */
+        jamStyles.patternsFromStylesFile = function (stylesFile)
+        {
+            var file;
+            if (typeof stylesFile === 'string')
+            {
+                file = new File (stylesFile);
+            }
+            else if (stylesFile instanceof File)
+            {
+                file = stylesFile;
+            }
+            //
+            var patternsData;
+            if (file.open ("r"))
+            {
+                try
+                {
+                    file.encoding = 'BINARY';
+                    var formatVersion;
+                    if (this.isStylesPalette (file))
+                    {
+                        formatVersion = 2;
+                    }
+                    else if (this.isStylesFile (file))
+                    {
+                        formatVersion = readBEInt (file, 2);
+                    }
+                    if (formatVersion === 2)
+                    {
+                        var magicNumber = file.read (4);
+                        if (magicNumber === '8BSL')
+                        {
+                            var subVersion = readBEInt (file, 2);
+                            if (subVersion === 3)
+                            {
+                                var patternsLength = readBEInt (file, 4);
+                                var patternsEnd = file.tell () + patternsLength;
+                                var patternsData = [ ];
+                                while (file.tell () < patternsEnd)
+                                {
+                                    var patternLength = readBEInt (file, 4);
+                                    patternsData.push (readBytes (file, patternLength));
+                                    file.seek ((4 - (patternLength % 4)) % 4, 1);
+                                }
+                            }
+                            else
+                            {
+                                throw new Error ("[jamStyles.patternsFromStylesFile] Unrecognized sub-version: " + subVersion);
+                            }
+                        }
+                        else
+                        {
+                            throw new Error ("[jamStyles.patternsFromStylesFile] Unrecognized magic number: " + magicNumber);
+                        }
+                    }
+                    else
+                    {
+                        throw new Error ("[jamStyles.patternsFromStylesFile] Unrecognized format version: " + formatVersion);
+                    }
+                }
+                catch (e)
+                {
+                    patternsData = e.message;
+                }
+                finally
+                {
+                    file.close ();
+                }
+            }
+            else
+            {
+                patternsData = "[jamStyles.patternsFromStylesFile] Cannot open file";
+            }
+            return patternsData;
+        };
+        //
+        /**
+         * @description Generate a patterns file from patterns data extracted from a styles file (*.asl or Styles.psp).
+         * @param {String|Object} patternsFile Patterns file path string or File object
+         * @param {Array} patternsData JSON array of patterns data
+         * @example
+         * function stylesFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamStyles.isStylesFile (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? stylesFileFilter : "Styles Files:*.asl,All Files:*";
+         * var stylesFile = File.openDialog ("Select a styles file:", select);
+         * if (stylesFile !== null)
+         * {
+         *     var patternsData = jamStyles.patternsFromStylesFile (stylesFile);
+         *     if (typeof patternsData === 'string')
+         *     {
+         *         alert (patternsData + "\n" + "Styles file: “" + File.decode (stylesFile.name) + "”");
+         *     }
+         *     else
+         *     {
+         *         var patternsFile = new File ("~/Desktop/myPatterns.pat");
+         *         jamStyles.<strong>patternsFileFromPatterns</strong> (patternsFile, patternsData);
+         *         patternsFile.parent.execute ();
+         *     }
+         * }
+         */
+        jamStyles.patternsFileFromPatterns = function (patternsFile, patternsData)
+        {
+            var file;
+            if (typeof patternsFile === 'string')
+            {
+                file = new File (patternsFile);
+            }
+            else if (patternsFile instanceof File)
+            {
+                file = patternsFile;
+            }
+            //
+            if (file.open ('w', '8BPT', '8BIM'))
+            {
+                file.encoding = "BINARY";
+                file.write ('8BPT');
+                file.write ('\x00\x01');
+                var count = patternsData.length;
+                file.write (String.fromCharCode ((count >> 24) & 0xFF, (count >> 16) & 0xFF, (count >> 8) & 0xFF, count & 0xFF));
+                for (var index = 0; index < count; index++)
+                {
+                    file.write (patternsData[index]);
+                }
+                file.close ();
+            }
+        };
+    } ());
+}
+
+//------------------------------------------------------------------------------
+

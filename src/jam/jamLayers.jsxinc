@@ -1,0 +1,1282 @@
+﻿//------------------------------------------------------------------------------
+// File: jamLayers.jsxinc
+// Version: 4.5
+// Release Date: 2016-09-29
+// Copyright: © 2011-2016 Michel MARIANI <http://www.tonton-pixel.com/blog/>
+// Licence: GPL <http://www.gnu.org/licenses/gpl.html>
+//------------------------------------------------------------------------------
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//------------------------------------------------------------------------------
+// Version History:
+//  4.5:
+//  - Incremented version number to keep in sync with other modules.
+//  4.4.3:
+//  - Fixed incorrect key in function toGradient (): "align" (not "alignment").
+//  4.4:
+//  - Normalized error messages.
+//  4.2:
+//  - Cleaned up code.
+//  4.0:
+//  - Removed reference to 'this' for main global object.
+//  - Improved handling of unsupported adjustment or fill layer type.
+//  3.6.7:
+//  - Fixed type of pattern "phase" key (double instead of unit double).
+//  3.6.6:
+//  - Improved handling of preset files: "using" key added to several adjustment 
+//    layers: "blackAndWhite", "channelMixer", "curves", "exposure", "levels",
+//    "selectiveColor".
+//  3.6.5:
+//  - Fixed bug in jamLayers.fromLayerObject (): "type" is now correctly handled
+//    in all cases.
+//  3.6.4:
+//  - Initial release.
+//------------------------------------------------------------------------------
+
+/**
+ * @fileOverview
+ * @name jamLayers.jsxinc
+ * @author Michel MARIANI
+ */
+
+//------------------------------------------------------------------------------
+
+if (typeof jamLayers !== 'object')
+{
+    /**
+     * Global object (used to simulate a namespace in JavaScript) containing
+     * a set of layer-related functions for scripts written with the
+     * <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-action-manager/">JSON Action Manager</a> engine.
+     * @author Michel MARIANI
+     * @version 4.5
+     * @namespace
+     */
+    var jamLayers = { };
+    //
+    (function ()
+    {
+        function getObjectClass (object)
+        {
+            return (jamEngine.parseCompact (object))[0];
+        }
+        //
+        function toBlackAndWhite (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "using":
+                                typedValue = [ "<path>", value ];
+                                break;
+                            case "useTint":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "blue":
+                            case "cyan":
+                            case "green":
+                            case "magenta":
+                            case "red":
+                            case "yellow":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                            case "tintColor":
+                                typedValue = jamHelpers.toColorObject (value);
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toBrightnessContrast (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "useLegacy":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "brightness":
+                            case "contrast":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toChannelMixer (desc)
+        {
+            function restoreDesc (desc, hintData)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "using":
+                                typedValue = [ "<path>", value ];
+                                break;
+                            case "monochromatic":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "black":
+                            case "blue":
+                            case "cyan":
+                            case "green":
+                            case "magenta":
+                            case "red":
+                            case "yellowColor":
+                                if (hintData)
+                                {
+                                    typedValue = [ "<unitDouble>", [ hintData, value ] ];
+                                }
+                                else
+                                {
+                                    typedValue = [ "<object>", [ "channelMatrix", restoreDesc (value, "percentUnit") ] ];
+                                }
+                                break;
+                            case "gray":
+                                typedValue = [ "<object>", [ "channelMatrix", restoreDesc (value, "percentUnit") ] ];
+                                break;
+                            case "constant":
+                                typedValue = [ "<unitDouble>", [ hintData, value ] ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toColorBalance (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        var restoredList;
+                        switch (key)
+                        {
+                            case "preserveLuminosity":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "shadowLevels":
+                            case "midtoneLevels":
+                            case "highlightLevels":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<integer>", value[i] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toCurves (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        var restoredList;
+                        switch (key)
+                        {
+                            case "using":
+                                typedValue = [ "<path>", value ];
+                                break;
+                            case "horizontal":
+                            case "vertical":
+                                typedValue = [ "<double>", value ];
+                                break;
+                            case "adjustment":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "curvesAdjustment", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "curve":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "point", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "mapping":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<integer>", value[i] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "channel":
+                                typedValue = [ "<reference>", [ [ "channel", [ "<enumerated>", [ "channel", value ] ] ] ] ]; // Special handling
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toExposure (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "using":
+                                typedValue = [ "<path>", value ];
+                                break;
+                            case "exposure":
+                            case "gammaCorrection":
+                            case "offset":
+                                typedValue = [ "<double>", value ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toGradientMap (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "dither":
+                            case "reverse":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "gradient":
+                                typedValue = jamHelpers.toGradientObject (value);
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toHueSaturation (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        var restoredList;
+                        switch (key)
+                        {
+                            case "using":
+                                typedValue = [ "<path>", value ];
+                                break;
+                            case "colorize":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "beginRamp":
+                            case "beginSustain":
+                            case "endRamp":
+                            case "endSustain":
+                            case "hue":
+                            case "lightness":
+                            case "localRange":
+                            case "saturation":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                            case "adjustment":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "hueSatAdjustmentV2", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "channel":
+                                typedValue = [ "<reference>", [ [ "channel", [ "<enumerated>", [ "channel", value ] ] ] ] ]; // Special handling
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toLevels (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        var restoredList;
+                        switch (key)
+                        {
+                            case "using":
+                                typedValue = [ "<path>", value ];
+                                break;
+                            case "auto":
+                            case "autoBlackWhite":
+                            case "autoContrast":
+                            case "autoNeutrals":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "blackClip":
+                            case "gamma":
+                            case "whiteClip":
+                                typedValue = [ "<double>", value ];
+                                break;
+                            case "input":
+                            case "output":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<integer>", value[i] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "adjustment":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "levelsAdjustment", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "channel":
+                                typedValue = [ "<reference>", [ [ "channel", [ "<enumerated>", [ "channel", value ] ] ] ] ]; // Special handling
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toPhotoFilter (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "preserveLuminosity":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "density":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                            case "color":
+                                typedValue = jamHelpers.toColorObject (value);
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toPosterize (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "levels":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toSelectiveColor (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        var restoredList;
+                        switch (key)
+                        {
+                            case "using":
+                                typedValue = [ "<path>", value ];
+                                break;
+                            case "colors":
+                                typedValue = [ "<enumerated>", [ "colors", value ] ];
+                                break;
+                            case "method":
+                                typedValue = [ "<enumerated>", [ "correctionMethod", value ] ];
+                                break;
+                            case "black":
+                            case "cyan":
+                            case "magenta":
+                            case "yellowColor":
+                                typedValue = [ "<unitDouble>", [ "percentUnit", value ] ];
+                                break;
+                            case "colorCorrection":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "colorCorrection", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toThreshold (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "level":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toVibrance (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "vibrance":
+                            case "saturation":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toGradient (desc)
+        {
+            function restoreDesc (desc, hintData)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "align":
+                            case "dither":
+                            case "reverse":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "angle":
+                                typedValue = [ "<unitDouble>", [ "angleUnit", value ] ];
+                                break;
+                            case "scale":
+                                typedValue = [ "<unitDouble>", [ "percentUnit", value ] ];
+                                break;
+                            case "horizontal":
+                            case "vertical":
+                                typedValue = [ "<unitDouble>", [ hintData, value ] ];
+                                break;
+                            case "offset":
+                                typedValue = [ "<object>", [ "point", restoreDesc (value, "percentUnit") ] ];
+                                break;
+                            case "type":
+                                typedValue = [ "<enumerated>", [ "gradientType", value ] ];
+                                break;
+                            case "gradient":
+                                typedValue = jamHelpers.toGradientObject (value);
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toPattern (desc)
+        {
+            function restoreDesc (desc, hintData)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "align":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "ID":
+                            case "name":
+                                typedValue = [ "<string>", value ];
+                                break;
+                            case "scale":
+                                typedValue = [ "<unitDouble>", [ "percentUnit", value ] ];
+                                break;
+                            case "horizontal":
+                            case "vertical":
+                                typedValue = [ "<double>", value ];
+                                break;
+                            case "phase":
+                                typedValue = [ "<object>", [ "point", restoreDesc (value) ] ];
+                                break;
+                            case "pattern":
+                                typedValue = [ "<object>", [ "pattern", restoreDesc (value) ] ];
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        function toSolidColor (desc)
+        {
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        switch (key)
+                        {
+                            case "color":
+                                typedValue = jamHelpers.toColorObject (value);
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            return restoreDesc (desc);
+        }
+        //
+        /**
+         * @description Get the current layer type object in JSON AM format from a simplified layer type JSON object.
+         * @param {Object} layerType Simplified layer type JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-object-simplified-format/">Layer Object Simplified Format</a>)
+         * @returns {Object|Array} Current layer type object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * var brightness10 =
+         * {
+         *     "brightnessContrast":
+         *     {
+         *         "brightness": 10
+         *     }
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": jamLayers.toLayerTypeReference (brightness10),
+         *         "to": jamLayers.<strong>toLayerTypeObject</strong> (brightness10)
+         *     }
+         * );
+         */
+        jamLayers.toLayerTypeObject = function (layerType)
+        {
+            var result = null;
+            var typeArr = jamEngine.parseCompact (layerType);
+            var kind = typeArr[0];
+            var desc = typeArr[1];
+            var toAdjustmentFunctions =
+            {
+                // Adjustment layers
+                "blackAndWhite": toBlackAndWhite,
+                "brightnessContrast": toBrightnessContrast,
+                "channelMixer": toChannelMixer,
+                "colorBalance": toColorBalance,
+                "curves": toCurves,
+                "exposure": toExposure,
+                "gradientMapClass": toGradientMap,
+                "hueSaturation": toHueSaturation,
+                "invert": null,
+                "levels": toLevels,
+                "photoFilter": toPhotoFilter,
+                "posterize": toPosterize,
+                "selectiveColor": toSelectiveColor,
+                "thresholdClassEvent": toThreshold,
+                "vibrance": toVibrance,
+                // Fill layers
+                "gradientLayer": toGradient,
+                "patternLayer": toPattern,
+                "solidColorLayer": toSolidColor
+            };
+            if (kind in toAdjustmentFunctions)
+            {
+                result = (desc) ? [ "<object>", [ kind, (toAdjustmentFunctions[kind]) (desc) ] ] : [ "<class>", kind ];
+            }
+            return result;
+        };
+        //
+        /**
+         * @description Get a layer object in JSON AM Data Format from a simplified layer JSON object.
+         * @param {Object} layer Simplified layer JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-object-simplified-format/">Layer Object Simplified Format</a>)
+         * @returns {Object|Array} Layer object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamLayers.fromLayerObject
+         * @example
+         * var redFilter =
+         * {
+         *     "adjustmentLayer":
+         *     {
+         *         "name": "Red Filter",
+         *         "opacity": 75,
+         *         "type":
+         *         {
+         *             "photoFilter":
+         *             {
+         *                 "color": { "red": 255, "green": 0, "blue": 0 },
+         *                 "density": 50,
+         *                 "preserveLuminosity": true
+         *             }
+         *         }
+         *     }
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "make",
+         *     {
+         *         "target": jamLayers.toLayerClassReference (redFilter),
+         *         "using": jamLayers.<strong>toLayerObject</strong> (redFilter)
+         *     }
+         * );
+         */
+        jamLayers.toLayerObject = function (layer)
+        {
+            var that = this;
+            function restoreDesc (desc)
+            {
+                var restoredDesc = { };
+                for (var key in desc)
+                {
+                    if (desc.hasOwnProperty (key))
+                    {
+                        var value = desc[key];
+                        var typedValue = null;
+                        var restoredList;
+                        switch (key)
+                        {
+                            case "group":
+                            case "blendClipped":
+                            case "blendInterior":
+                            case "fillNeutral":
+                            case "layerMaskAsGlobalMask":
+                            case "protectAll":
+                            case "protectComposite":
+                            case "protectPosition":
+                            case "protectTransparency":
+                            case "transparencyShapesLayer":
+                            case "vectorMaskAsGlobalMask":
+                                typedValue = [ "<boolean>", value ];
+                                break;
+                            case "name":
+                                typedValue = [ "<string>", value ];
+                                break;
+                            case "srcBlackMin":
+                            case "srcBlackMax":
+                            case "srcWhiteMin":
+                            case "srcWhiteMax":
+                            case "destBlackMin":
+                            case "destBlackMax":
+                            case "destWhiteMin":
+                            case "destWhiteMax":
+                                typedValue = [ "<integer>", value ];
+                                break;
+                            case "fillOpacity":
+                            case "opacity":
+                            case "userMaskDensity":
+                            case "vectorMaskDensity":
+                                typedValue = [ "<unitDouble>", [ "percentUnit", value ] ];
+                                break;
+                            case "userMaskFeather":
+                            case "vectorMaskFeather":
+                                typedValue = [ "<unitDouble>", [ "pixelsUnit", value ] ];
+                                break;
+                            case "mode":
+                                typedValue = [ "<enumerated>", [ "blendMode", value ] ];
+                                break;
+                            case "color":
+                                typedValue = [ "<enumerated>", [ "color", value ] ];
+                                break;
+                            case "knockout":
+                                typedValue = [ "<enumerated>", [ "knockout", value ] ];
+                                break;
+                            case "channel":
+                                typedValue = [ "<reference>", [ [ "channel", [ "<enumerated>", [ "channel", value ] ] ] ] ]; // Special handling
+                                break;
+                            case "layerLocking":
+                                typedValue = [ "<object>", [ "layerLocking", restoreDesc (value) ] ];
+                                break;
+                            case "blendRange":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<object>", [ "blendRange", restoreDesc (value[i]) ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "channelRestrictions":
+                                restoredList = [ ];
+                                for (var i = 0; i < value.length; i++)
+                                {
+                                    restoredList.push ([ "<enumerated>", [ "channel", value[i] ] ]);
+                                }
+                                typedValue = [ "<list>", restoredList ];
+                                break;
+                            case "type":
+                                typedValue = that.toLayerTypeObject (value);
+                                break;
+                        }
+                        if (typedValue)
+                        {
+                            restoredDesc[key] = typedValue;
+                        }
+                    }
+                }
+                return restoredDesc;
+            }
+            //
+            var layerClass = getObjectClass (layer);
+            return [ "<object>", [ layerClass, restoreDesc (layer[layerClass]) ] ];
+         };
+        //
+        /**
+         * @description Get a simplified layer JSON object from a layer object in JSON AM Data Format.
+         * @param {Object|Array} layerObject Layer object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Object} Simplified layer JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-object-simplified-format/">Layer Object Simplified Format</a>)
+         * @see jamLayers.toLayerObject
+         * @example
+         * var layerObject =
+         * {
+         *     "&lt;object&gt;":
+         *     {
+         *         "adjustmentLayer":
+         *         {
+         *             "name":
+         *             {
+         *                 "&lt;string&gt;": "Contrast"
+         *             },
+         *             "type":
+         *             {
+         *                 "&lt;object&gt;":
+         *                 {
+         *                     "brightnessContrast":
+         *                     {
+         *                         "brightness":
+         *                         {
+         *                             "&lt;integer&gt;": 0
+         *                         },
+         *                         "contrast":
+         *                         {
+         *                             "&lt;integer&gt;": 20
+         *                         }
+         *                     }
+         *                 }
+         *             }
+         *         }
+         *     }
+         * };
+         * var layerObj = jamLayers.<strong>fromLayerObject</strong> (layerObject);
+         * alert (jamJSON.stringify (layerObj, '\t'));
+         */
+        jamLayers.fromLayerObject = function (layerObject)
+        {
+            var layer = { };
+            function layerHook (desc, key, getDefaultValue)
+            {
+                var replacedValue = undefined;
+                switch (key)
+                {
+                    // Special handling
+                    case "layerObject":
+                    case "type":
+                        if (desc[key][0] === "<object>")
+                        {
+                            replacedValue = { };
+                            replacedValue [desc[key][1][0]] = getDefaultValue (desc, key);
+                        }
+                        else if (desc[key][0] === "<class>")
+                        {
+                            replacedValue = { };
+                            replacedValue [desc[key][1]] = null;
+                        }
+                        break;
+                    // Special handling
+                    case "channel":
+                        var value = getDefaultValue (desc, key);
+                        replacedValue = value[0]["channel"];
+                        break;
+                }
+                return replacedValue;
+            }
+            // Hack for the time being, until jamEngine.simplifyObject is modified to allow hooking the top-level object...
+            return jamEngine.simplifyObject ([ "<object>", [ "layerObject", { "layerObject": layerObject } ] ], layerHook)["layerObject"];
+        };
+        //
+        /**
+         * @description Get a layer class reference in JSON AM format from a simplified layer JSON object.
+         * @param {Object} layer Simplified layer JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-object-simplified-format/">Layer Object Simplified Format</a>)
+         * @returns {Object|Array} Layer class reference in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * var invertColor =
+         * {
+         *     "adjustmentLayer":
+         *     {
+         *         "mode": "color",
+         *         "type":
+         *         {
+         *             "invert": null
+         *         }
+         *     }
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "make",
+         *     {
+         *         "target": jamLayers.<strong>toLayerClassReference</strong> (invertColor),
+         *         "using": jamLayers.toLayerObject (invertColor)
+         *     }
+         * );
+         */
+        jamLayers.toLayerClassReference = function (layer)
+        {
+            return [ "<reference>", [ [ getObjectClass (layer), [ "<class>", null ] ] ] ];
+        };
+        //
+        /**
+         * @description Create a new layer.
+         * @param {Object} layer Simplified layer JSON object<br>
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-object-simplified-format/">Layer Object Simplified Format</a>)
+         * @param {Boolean} [below] Create a new layer below the current one (false by default; ignored for adjustment and fill layers)
+         * @example
+         * var blueOverlay =
+         * {
+         *     "contentLayer":
+         *     {
+         *         "name": "Blue Color | Overlay 50%",
+         *         "mode": "overlay",
+         *         "opacity": 50,
+         *         "type":
+         *         {
+         *             "solidColorLayer":
+         *             {
+         *                 "color": { "red": 0, "green": 0, "blue": 255 }
+         *             }
+         *         }
+         *     }
+         * };
+         * jamLayers.<strong>makeLayer</strong> (blueOverlay);
+         */
+        jamLayers.makeLayer = function (layer, below)
+        {
+            var makeDesc =
+            {
+                "target": this.toLayerClassReference (layer),
+                "using": this.toLayerObject (layer)
+            };
+            if (below)
+            {
+                makeDesc["below"] = [ "<boolean>", below ];
+            }
+            jamEngine.jsonPlay ("make", makeDesc);
+        };
+        //
+        /**
+         * @description Get the current layer reference in JSON AM format from a simplified layer JSON object.
+         * @param {Object} layer Simplified layer JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-object-simplified-format/">Layer Object Simplified Format</a>)
+         * @returns {Object|Array} Current layer reference in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * var overlay50 =
+         * {
+         *     "layer":
+         *     {
+         *         "mode": "overlay",
+         *         "opacity": 50
+         *     }
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": jamLayers.<strong>toLayerReference</strong> (overlay50),
+         *         "to": jamLayers.toLayerObject (overlay50)
+         *     }
+         * );
+         */
+        jamLayers.toLayerReference = function (layer)
+        {
+            return [ "<reference>", [ [ getObjectClass (layer), [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ] ] ];
+        };
+        //
+        /**
+         * @description Set properties of the current layer.
+         * @param {Object} layerProperties Simplified layer properties JSON object<br>
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-object-simplified-format/">Layer Object Simplified Format</a>)
+         * @example
+         * var layerProperties =
+         * {
+         *     "opacity": 80,
+         *     "blendRange":
+         *     [
+         *         {
+         *             "channel": "gray",
+         *             "srcBlackMin": 10,
+         *             "srcBlackMax": 20,
+         *             "srcWhiteMin": 255,
+         *             "srcWhiteMax": 255,
+         *             "destBlackMin": 0,
+         *             "destBlackMax": 0,
+         *             "destWhiteMin": 235,
+         *             "destWhiteMax": 245
+         *         }
+         *     ]
+         * };
+         * jamLayers.<strong>setLayerProperties</strong> (layerProperties);
+         */
+        jamLayers.setLayerProperties = function (layerProperties)
+        {
+            var layer = { "layer": layerProperties };
+            var setDesc =
+            {
+                "target": this.toLayerReference (layer),
+                "to": this.toLayerObject (layer)
+            };
+            jamEngine.jsonPlay ("set", setDesc);
+        };
+        //
+        /**
+         * @description Get the current layer type reference in JSON AM format from a simplified layer type JSON object.
+         * @param {Object} layerType Simplified layer type JSON object
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-object-simplified-format/">Layer Object Simplified Format</a>)
+         * @returns {Object|Array} Current layer type reference in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * var contrast50 =
+         * {
+         *     "brightnessContrast":
+         *     {
+         *         "contrast": 50
+         *     }
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": jamLayers.<strong>toLayerTypeReference</strong> (contrast50),
+         *         "to": jamLayers.toLayerTypeObject (contrast50)
+         *     }
+         * );
+         */
+        jamLayers.toLayerTypeReference = function (layerType)
+        {
+            var layerTypeClasses =
+            {
+                // Adjustment layers
+                "blackAndWhite": "adjustmentLayer",
+                "brightnessContrast": "adjustmentLayer",
+                "channelMixer": "adjustmentLayer",
+                "colorBalance": "adjustmentLayer",
+                "curves": "adjustmentLayer",
+                "exposure": "adjustmentLayer",
+                "gradientMapClass": "adjustmentLayer",
+                "hueSaturation": "adjustmentLayer",
+                "invert": "adjustmentLayer",
+                "levels": "adjustmentLayer",
+                "photoFilter": "adjustmentLayer",
+                "posterize": "adjustmentLayer",
+                "selectiveColor": "adjustmentLayer",
+                "thresholdClassEvent": "adjustmentLayer",
+                "vibrance": "adjustmentLayer",
+                // Fill layers
+                "gradientLayer": "contentLayer",
+                "patternLayer": "contentLayer",
+                "solidColorLayer": "contentLayer"
+            };
+            return [ "<reference>", [ [ layerTypeClasses[getObjectClass (layerType)], [ "<enumerated>", [ "ordinal", "targetEnum" ] ] ] ] ];
+        };
+        //
+        /**
+         * @description Set current layer type.
+         * @param {Object} layerType Simplified layer type JSON object<br>
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/layer-object-simplified-format/">Layer Object Simplified Format</a>)
+         * @example
+         * var layerType =
+         * {
+         *     "photoFilter":
+         *     {
+         *         "density": 50
+         *     }
+         * };
+         * jamLayers.<strong>setLayerType</strong> (layerType);
+         */
+        jamLayers.setLayerType = function (layerType)
+        {
+            var setDesc =
+            {
+                "target": this.toLayerTypeReference (layerType),
+                "to": this.toLayerTypeObject (layerType)
+            };
+            jamEngine.jsonPlay ("set", setDesc);
+        };
+        //
+        /**
+         * @description Group the current layer (create clipping mask).
+         * @see jamLayers.ungroupLayer
+         * @example
+         * jamLayers.<strong>groupLayer</strong> ();
+         */
+        jamLayers.groupLayer = function ()
+        {
+            // In CS4, could use a descriptor with the current layer reference as "target", but this wouldn"t work in CS then...
+            jamEngine.jsonPlay ("groupEvent");
+        };
+        //
+        /**
+         * @description Ungroup the current layer (release clipping mask).
+         * @see jamLayers.groupLayer
+         * @example
+         * jamLayers.<strong>ungroupLayer</strong> ();
+         */
+        jamLayers.ungroupLayer = function ()
+        {
+           // In CS4, could use a descriptor with the current layer reference as "target", but this wouldn"t work in CS then...
+            jamEngine.jsonPlay ("ungroup");
+        };
+    } ());
+}
+
+//------------------------------------------------------------------------------
+

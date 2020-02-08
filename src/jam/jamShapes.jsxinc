@@ -1,0 +1,611 @@
+﻿//------------------------------------------------------------------------------
+// File: jamShapes.jsxinc
+// Version: 4.5
+// Release Date: 2016-09-29
+// Copyright: © 2011-2016 Michel MARIANI <http://www.tonton-pixel.com/blog/>
+// Licence: GPL <http://www.gnu.org/licenses/gpl.html>
+//------------------------------------------------------------------------------
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//------------------------------------------------------------------------------
+// Version History:
+//  4.5:
+//  - Incremented version number to keep in sync with other modules.
+//  4.4:
+//  - Normalized error messages.
+//  4.1:
+//  - Simplified test in jamShapes.isCustomShapesPrefsFile ().
+//  4.0:
+//  - Removed reference to 'this' for main global object.
+//  3.6:
+//  - Incremented version number to keep in sync with other modules.
+//  3.5:
+//  - Renamed field "id" to "ID" in data returned by dataFromCustomShapesFile ().
+//  3.4.3:
+//  - Added parameter shapeIndex to dataFromCustomShapesFile ().
+//  - Renamed field "uuid" to "id" in data returned by dataFromCustomShapesFile ().
+//  3.4.2:
+//  - Added global option: jamShapes.debugMode.
+//  3.4.1:
+//  - Cleaned up some code.
+//  3.4:
+//  - Initial release.
+//------------------------------------------------------------------------------
+
+/**
+ * @fileOverview
+ * @name jamShapes.jsxinc
+ * @author Michel MARIANI
+ */
+
+//------------------------------------------------------------------------------
+
+if (typeof jamShapes !== 'object')
+{
+    /**
+     * Global object (used to simulate a namespace in JavaScript) containing
+     * a set of functions related to decoding custom shapes files into a format usable by scripts written with the
+     * <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-action-manager/">JSON Action Manager</a> engine.<br />
+     * Uses information found in the document
+     * <a href="http://www.tonton-pixel.com/Photoshop%20Additional%20File%20Formats/custom-shapes-file-format.html">Photoshop Custom Shapes File Format</a>.
+     * @author Michel MARIANI
+     * @version 4.5
+     * @namespace
+     */
+    var jamShapes = { };
+    //
+    (function ()
+    {
+        /**
+         * @description Test if a given file is a custom shapes file (*.csh).
+         * @param {Object} file File object
+         * @returns {Boolean} true if custom shapes file
+         * @example
+         * function customShapesFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamShapes.<strong>isCustomShapesFile</strong> (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? customShapesFileFilter : "Custom Shapes Files:*.csh,All Files:*";
+         * var customShapesFile = File.openDialog ("Select a custom shapes file:", select);
+         * if (customShapesFile !== null)
+         * {
+         *     alert ("OK!");
+         * }
+         */
+        jamShapes.isCustomShapesFile = function (file)
+        {
+            return (file.type === '8BCS') || file.name.match (/\.csh$/i);
+        };
+        //
+        /**
+         * @description Test if a given file is a custom shapes preferences file (CustomShapes.psp).
+         * @param {Object} file File object
+         * @returns {Boolean} true if custom shapes preferences file
+         * @example
+         * function customShapesPrefsFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamShapes.<strong>isCustomShapesPrefsFile</strong> (f);
+         * }
+         * var select = (File.fs === "Macintosh") ?
+         *                  customShapesPrefsFileFilter :
+         *                  "Custom Shapes Preferences File:CustomShapes.psp,All Files:*.*";
+         * var customShapesPrefsFile = File.openDialog ("Select a custom shapes preferences file:", select);
+         * if (customShapesPrefsFile !== null)
+         * {
+         *     alert ("OK!");
+         * }
+         */
+        jamShapes.isCustomShapesPrefsFile = function (file)
+        {
+            return file.name.match (/^CustomShapes.psp$/i);
+        };
+        //
+        /**
+         * @description Convert a custom shapes file (*.csh or CustomShapes.psp) into a data structure in JSON format.
+         * @param {String|Object} shapesFile Custom shapes file path string or File object
+         * @param {Number} [shapeIndex] If defined, the returned information for each custom shape is limited to its name and ID 
+         * (no bounds, no path records) except for the shape located at this index; passing -1 will limit the information for 
+         * all custom shapes
+         * @returns {Object|String} Converted custom shapes file data structure in JSON format, or error message string
+         * <p style="margin: 0.5em 0 0 0em;">
+         * The custom shapes file data structure is defined as a JSON object { } with two members:<br />
+         * <code>{ "fileVersion": <em>fileVersion</em>, "customShapes": <em>customShapes</em> }</code>
+         * </p>
+         * <p style="margin: 0.5em 0 0 1.25em;">
+         * <code><em>fileVersion</em></code>: number<br />
+         * <code><em>customShapes</em></code>: JSON array [ ] of <code><em>customShape</em></code>
+         * </p>
+         * <p style="margin: 0.5em 0 0 2.5em;">
+         * <code><em>customShape</em></code>: JSON object { } with four members:<br />
+         * <code>{ "name": <em>name</em>, "ID": <em>ID</em>, "bounds": <em>bounds</em>, 
+         * "pathRecords": <em>pathRecords</em> }</code>
+         * </p>
+         * <p style="margin: 0.5em 0 0 3.75em;">
+         * <code><em>name</em></code>: string<br />
+         * <code><em>ID</em></code>: string<br />
+         * <code><em>bounds</em></code>: JSON array [ ] with four items: 
+         * <code>[ <em>top</em>, <em>left</em>, <em>bottom</em>, <em>right</em> ]</code>
+         * </p>
+         * <p style="margin: 0.5em 0 0 5em;">
+         * <code><em>top</em></code>: number<br />
+         * <code><em>left</em></code>: number<br />
+         * <code><em>bottom</em></code>: number<br />
+         * <code><em>right</em></code>: number<br />
+         * </p>
+         * <p style="margin: 0.5em 0 0 3.75em;">
+         * <code><em>pathRecords</em></code>: JSON array [ ] of <code><em>pathRecord</em></code>
+         * </p>
+         * <p style="margin: 0.5em 0 0 5em;">
+         * <code><em>pathRecord</em></code>: JSON array [ ] with two items: <code>[ <em>selector</em>, <em>data</em> }</code>
+         * </p>
+         * <table style="margin: 0.5em 0 0 6.25em; border-collapse: collapse;">
+         * <tr style="border: 1px solid #E7E7E7;">
+         * <th style="text-align: left; color: gray; padding: 0.25em 2em;"><code><em>selector</em></code></th>
+         * <th style="text-align: left; color: gray; padding: 0.25em 2em;"><code><em>data</em></code></th>
+         * </tr>
+         * <tr style="border: 1px solid #E7E7E7;">
+         * <td style="padding: 0.25em 2em;"><code>"pathFill"</code></td>
+         * <td style="padding: 0.25em 2em;"><code>null</null></td>
+         * </tr>
+         * <tr style="border: 1px solid #E7E7E7;">
+         * <td style="padding: 0.25em 2em;"><code>"initialFill"</code></td>
+         * <td style="padding: 0.25em 2em;">number (0 or 1)</code></td>
+         * </tr>
+         * <tr style="border: 1px solid #E7E7E7;">
+         * <td style="padding: 0.25em 2em;"><code>"closedLength"</code></td>
+         * <td style="padding: 0.25em 2em;">number</td>
+         * </tr>
+         * <tr style="border: 1px solid #E7E7E7;">
+         * <td style="padding: 0.25em 2em;"><code>"closedLinked"</code></td>
+         * <td style="padding: 0.25em 2em;">JSON array [ ] with three items: <code>[ <em>backward</em>, <em>anchor</em>, <em>forward</em> ]</code></td>
+         * </tr>
+         * <tr style="border: 1px solid #E7E7E7;">
+         * <td style="padding: 0.25em 2em;"><code>"closedUnlinked"</code></td>
+         * <td style="padding: 0.25em 2em;">JSON array [ ] with three items: <code>[ <em>backward</em>, <em>anchor</em>, <em>forward</em> ]</code></td>
+         * </tr>
+         * <tr style="border: 1px solid #E7E7E7;">
+         * <td style="padding: 0.25em 2em;"><code>"openLength"</code></td>
+         * <td style="padding: 0.25em 2em;">number</td>
+         * </tr>
+         * <tr style="border: 1px solid #E7E7E7;">
+         * <td style="padding: 0.25em 2em;"><code>"openLinked"</code></td>
+         * <td style="padding: 0.25em 2em;">JSON array [ ] with three items: <code>[ <em>backward</em>, <em>anchor</em>, <em>forward</em> ]</code></td>
+         * </tr>
+         * <tr style="border: 1px solid #E7E7E7;">
+         * <td style="padding: 0.25em 2em;"><code>"openUnlinked"</code></td>
+         * <td style="padding: 0.25em 2em;">JSON array [ ] with three items: <code>[ <em>backward</em>, <em>anchor</em>, <em>forward</em> ]</code></td>
+         * </tr>
+         * </table>
+         * <p style="margin: 0.5em 0 0 7.5em;">
+         * <code><em>backward</em></code>: JSON array [ ] with two items: <code>[ <em>vertical</em>, <em>horizontal</em> ]</code><br />
+         * <code><em>anchor</em></code>: JSON array [ ] with two items: <code>[ <em>vertical</em>, <em>horizontal</em> ]</code><br />
+         * <code><em>forward</em></code>: JSON array [ ] with two items: <code>[ <em>vertical</em>, <em>horizontal</em> ]</code><br />
+         * </p>
+         * <p style="margin: 0.5em 0 0 8.75em;">
+         * <code><em>vertical</em></code>: number<br />
+         * <code><em>horizontal</em></code>: number<br />
+         * </p>
+         * @example
+         * function customShapesFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamShapes.isCustomShapesFile (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? customShapesFileFilter : "Custom Shapes Files:*.csh,All Files:*";
+         * var customShapesFile = File.openDialog ("Select a custom shapes file:", select);
+         * if (customShapesFile !== null)
+         * {
+         *     var fileData = jamShapes.<strong>dataFromCustomShapesFile</strong> (customShapesFile, -1);
+         *     if (typeof fileData === 'string')
+         *     {
+         *         alert (fileData + "\n" + "Custom shapes file: “" + File.decode (customShapesFile.name) + "”");
+         *     }
+         *     else
+         *     {
+         *         alert ("Number of custom shapes: " + fileData["customShapes"].length);
+         *     }
+         * }
+         */
+        jamShapes.dataFromCustomShapesFile = function (shapesFile, shapeIndex)
+        {
+            function skipBytes (file, byteCount)
+            {
+                file.seek (byteCount, 1);
+            }
+            //
+            function readBEInt (file, byteCount)
+            {
+                var bytes = file.read (byteCount);
+                var intValue = 0;
+                for (var index = 0; index < byteCount; index++)
+                {
+                    intValue = (intValue << 8) + bytes.charCodeAt (index);
+                }
+                return intValue;
+            }
+            //
+            function readBytes (file, byteCount)
+            {
+                return file.read (byteCount);
+            }
+            //
+            function readPascalString (file)
+            {
+                var stringLength = readBEInt (file, 1);
+                return readBytes (file, stringLength);
+            }
+            //
+            function readUnicodeStringWithPadding (file)
+            {
+                var unicodeString = "";
+                var unicodeLength = readBEInt (file, 4);    // Includes terminating null
+                for (var index = 0; index < unicodeLength; index++)
+                {
+                    var unicodeChar = readBEInt (file, 2);
+                    if (unicodeChar !== 0)
+                    {
+                        unicodeString += String.fromCharCode (unicodeChar);
+                    }
+                }
+                if ((unicodeLength % 2) !== 0)
+                {
+                    skipBytes (file, 2);
+                }
+                return unicodeString;
+            }
+            //
+            function readSignedBEInt32 (file)
+            {
+                var intValue = readBEInt (file, 4);
+                return (intValue < 0x80000000) ? intValue : (intValue - 0x100000000);
+            }
+            //
+            function readSignedBEFixed32 (file)
+            {
+                return readSignedBEInt32 (file) / 0x1000000;
+            }
+            //
+            var file;
+            if (typeof shapesFile === 'string')
+            {
+                file = new File (shapesFile);
+            }
+            else if (shapesFile instanceof File)
+            {
+                file = shapesFile;
+            }
+            else
+            {
+                throw new Error ('[jamShapes.dataFromCustomShapesFile] Invalid argument');
+            }
+            //
+            var selectorStrings =
+            [
+                "closedLength",
+                "closedLinked",
+                "closedUnlinked",
+                "openLength",
+                "openLinked",
+                "openUnlinked",
+                "pathFill",
+                "clipboard",
+                "initialFill"
+            ];
+            //
+            var fileData;
+            if (file.open ("r"))
+            {
+                try
+                {
+                    file.encoding = 'BINARY';
+                    var magicNumber = file.read (4);
+                    if (magicNumber === 'cush')
+                    {
+                        var fileVersion = readBEInt (file, 4);
+                        if (fileVersion === 2)
+                        {
+                            fileData = { };
+                            fileData["fileVersion"] = fileVersion;
+                            var customShapes = [ ];
+                            var customShapeCount = readBEInt (file, 4);
+                            for (var customShapeIndex = 0; customShapeIndex < customShapeCount; customShapeIndex++)
+                            {
+                                var customShape = { };
+                                customShape["name"] = localize (readUnicodeStringWithPadding (file));
+                                var unknown = jamUtils.dataToHexaString (readBytes (file, 4));
+                                var dataLength = readBEInt (file, 4);
+                                var dataStart = file.tell ();
+                                customShape["ID"] = readPascalString (file);
+                                if ((typeof shapeIndex === 'undefined') || (shapeIndex === customShapeIndex))
+                                {
+                                    var top = readSignedBEInt32 (file);
+                                    var left = readSignedBEInt32 (file);
+                                    var bottom = readSignedBEInt32 (file);
+                                    var right = readSignedBEInt32 (file);
+                                    customShape["bounds"] = [ top, left, bottom, right ];
+                                    var pathRecords = [ ];
+                                    var pathRecordCount = Math.floor ((dataStart + dataLength - file.tell ()) / (2 + 8 + 8 + 8));
+                                    for (var pathRecordIndex = 0; pathRecordIndex < pathRecordCount; pathRecordIndex++)
+                                    {
+                                        var pathRecord = [ ];
+                                        var selector = readBEInt (file, 2);
+                                        if ((selector >= 0) && (selector < selectorStrings.length))
+                                        {
+                                            pathRecord.push (selectorStrings[selector]);
+                                        }
+                                        else
+                                        {
+                                            throw new Error ("[jamShapes.dataFromCustomShapesFile] Unknown selector: " + selector);
+                                        }
+                                        switch (selector)
+                                        {
+                                            case 6:
+                                                pathRecord.push (null);
+                                                skipBytes (file, 24);
+                                                break;
+                                            case 8:
+                                                pathRecord.push (readBEInt (file, 2));
+                                                skipBytes (file, 24 - 2);
+                                                break;
+                                            case 0:
+                                            case 3:
+                                                pathRecord.push (readBEInt (file, 2));
+                                                skipBytes (file, 24 - 2);
+                                                break;
+                                            case 1:
+                                            case 2:
+                                            case 4:
+                                            case 5:
+                                                pathRecord.push
+                                                (
+                                                    [
+                                                        [ readSignedBEFixed32 (file), readSignedBEFixed32 (file) ],
+                                                        [ readSignedBEFixed32 (file), readSignedBEFixed32 (file) ],
+                                                        [ readSignedBEFixed32 (file), readSignedBEFixed32 (file) ]
+                                                    ]
+                                                );
+                                                break;
+                                            default:
+                                                pathRecord.push (null);
+                                                skipBytes (file, 24);
+                                                break;
+                                        }
+                                        pathRecords.push (pathRecord);
+                                    }
+                                    customShape["pathRecords"] = pathRecords;
+                                }
+                                file.seek (dataStart + dataLength, 0);
+                                customShapes.push (customShape);
+                            }
+                            fileData["customShapes"] = customShapes;
+                        }
+                        else
+                        {
+                            fileData = "Unrecognized custom shapes file version: " + fileVersion;
+                        }
+                    }
+                    else
+                    {
+                        fileData = "Unrecognized custom shapes file magic number: '" + magicNumber + "'";
+                    }
+                }
+                catch (e)
+                {
+                    fileData = e.message;
+                }
+                finally
+                {
+                    file.close ();
+                }
+            }
+            else
+            {
+                fileData = "Cannot open file";
+            }
+            return fileData;
+        };
+        //
+        /**
+         * @description Global option: if true, jamShapes.pathComponentsFromCustomShape () returns the path components of 
+         * the shape's bounding box instead of the shape itself.
+         * @type Boolean
+         * @default false
+         * @see jamShapes.pathComponentsFromCustomShape
+         * @example
+         * var fileData = jamShapes.dataFromCustomShapesFile ("~/JSON Action Manager/tests/resources/Logo-X-Aqua.csh");
+         * if (typeof fileData === 'string')
+         * {
+         *     alert (fileData);
+         * }
+         * else
+         * {
+         *     var customShape = fileData["customShapes"][0];
+         *     var bounds = [ [ 10, 10, 90, 90 ], "percentUnit" ];
+         *     jamShapes.<strong>debugMode</strong> = true;
+         *     pathComponents = jamShapes.pathComponentsFromCustomShape (customShape, "add", bounds, true);
+         *     jamEngine.jsonPlay
+         *     (
+         *         "set",
+         *         {
+         *             "target": { "&lt;reference&gt;": [ { "path": { "&lt;property&gt;": "workPath" } } ] },
+         *             "to": jamHelpers.toPathComponentList (pathComponents)
+         *         }
+         *     );
+         *     jamEngine.jsonPlay
+         *     (
+         *         "fill",
+         *         {
+         *             "target": { "&lt;reference&gt;": [ { "path": { "&lt;property&gt;": "workPath" } } ] },
+         *             "wholePath": { "&lt;boolean&gt;": true },
+         *             "using": { "&lt;enumerated&gt;": { "fillContents": "color" } },
+         *             "color": jamHelpers.nameToColorObject ("W3C", "Red"),
+         *             "opacity": { "&lt;unitDouble&gt;": { "percentUnit": 50 } },
+         *             "mode": { "&lt;enumerated&gt;": { "blendMode": "normal" } },
+         *             "radius": { "&lt;unitDouble&gt;": { "pixelsUnit": 0.0 } },
+         *             "antiAlias": { "&lt;boolean&gt;": true }
+         *         }
+         *     );
+         * }
+         */
+        jamShapes.debugMode = false;
+        //
+        /**
+         * @description Get a JSON array of data (simplified path component values) and unit ID string for coordinates 
+         * from a custom shape data structure obtained from a converted custom shapes file (*.csh).
+         * @param {Object} customShape Custom shape data structure in JSON format, obtained from a converted custom shapes file (*.csh)
+         * @param {String} shapeOperation Shape operation:<br />
+         * <ul>
+         * <li>"add"</li>
+         * <li>"subtract"</li>
+         * <li>"intersect"</li>
+         * <li>"xor"</li>
+         * </ul>
+         * @param {Array} bounds Path bounds rectangle with optional unit (either "distanceUnit" or "percentUnit" or "pixelsUnit"):<br />
+         * [ [ left, top, right, bottom ], unit ]
+         * @param {Boolean} [constrainProportions] Constrain proportions using the custom shape aspect ratio (false by default)
+         * @returns {Array} JSON array of data (simplified path component values) and unit ID string for coordinates
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/path-component-list-simplified-format/">Path Component List Simplified Format</a>);
+         * if jamShapes.debugMode is true, returns the path components of the shape's bounding box instead of the shape itself
+         * @see jamShapes.dataFromCustomShapesFile
+         * @see jamShapes.debugMode
+         * @example
+         * var fileData = jamShapes.dataFromCustomShapesFile ("~/JSON Action Manager/tests/resources/Logo-X-Aqua.csh");
+         * if (typeof fileData === 'string')
+         * {
+         *     alert (fileData);
+         * }
+         * else
+         * {
+         *     var customShape = fileData["customShapes"][0];
+         *     var bounds = [ [ 10, 10, 90, 90 ], "percentUnit" ];
+         *     var pathComponents = jamShapes.<strong>pathComponentsFromCustomShape</strong> (customShape, "add", bounds, true);
+         *     jamEngine.jsonPlay
+         *     (
+         *         "set",
+         *         {
+         *             "target": { "&lt;reference&gt;": [ { "path": { "&lt;property&gt;": "workPath" } } ] },
+         *             "to": jamHelpers.toPathComponentList (pathComponents)
+         *         }
+         *     );
+         * }
+         */
+        jamShapes.pathComponentsFromCustomShape = function (customShape, shapeOperation, bounds, constrainProportions)
+        {
+            var rectangle = bounds[0];
+            var unit = bounds[1];   // Optional, may be undefined
+            var left = rectangle[0];
+            var top = rectangle[1];
+            var right = rectangle[2];
+            var bottom = rectangle[3];
+            var width = right - left;
+            var height = bottom - top;
+            if (constrainProportions)
+            {
+                var adjustmentFactor = 1;
+                if ((typeof unit !== 'undefined') && (jamEngine.uniIdStrToId (unit) === jamEngine.uniIdStrToId ("percentUnit")))
+                {
+                    var saveMeaningfulIds = jamEngine.meaningfulIds;
+                    var saveParseFriendly = jamEngine.parseFriendly;
+                    jamEngine.meaningfulIds = true;
+                    jamEngine.parseFriendly = true;
+                    var resultDescObj = jamEngine.jsonGet ([ { "document": [ "<enumerated>", [ "ordinal", "first" ] ] } ]);
+                    jamEngine.meaningfulIds = saveMeaningfulIds;
+                    jamEngine.parseFriendly = saveParseFriendly;
+                    adjustmentFactor = resultDescObj["width"][1][1] / resultDescObj["height"][1][1];
+                }
+                var boundsRatio = (width / height) * adjustmentFactor;
+                var shapeWidth = customShape["bounds"][3] - customShape["bounds"][1];
+                var shapeHeight = customShape["bounds"][2] - customShape["bounds"][0];
+                var shapeRatio = shapeWidth / shapeHeight;
+                if (shapeRatio > boundsRatio)
+                {
+                    shapeHeight = (width / shapeRatio) * adjustmentFactor;
+                    top += (height - shapeHeight) / 2;
+                    height = shapeHeight;
+                }
+                else
+                {
+                    shapeWidth = (height * shapeRatio) / adjustmentFactor;
+                    left += (width - shapeWidth) / 2;
+                    width = shapeWidth;
+                }
+            }
+            var subpaths = [ ];
+            if (this.debugMode)
+            {
+                var subpath =
+                [
+                    [ [ left, top ] ],
+                    [ [ left + width, top ] ],
+                    [ [ left + width, top + height ] ],
+                    [ [ left, top + height ] ]
+                ];
+                subpaths.push ([ subpath, true ]);
+            }
+            else
+            {
+                var pathRecords = customShape["pathRecords"];
+                var subLength = 0;
+                for (var pathRecordIndex = 0; pathRecordIndex < pathRecords.length; pathRecordIndex++)
+                {
+                    var pathRecord = pathRecords[pathRecordIndex];
+                    var selector = pathRecord[0];
+                    var data = pathRecord[1];
+                    switch (selector)
+                    {
+                        case "closedLength":
+                        case "openLength":
+                            subLength = data;
+                            var closedSubpath = (selector === "closedLength");
+                            var subpath = [ ];
+                            break;
+                        case "closedLinked":
+                        case "closedUnlinked":
+                        case "openLinked":
+                        case "openUnlinked":
+                            var backward =
+                            [
+                                left + (data[0][1] * width),
+                                top + (data[0][0] * height)
+                            ];
+                            var anchor =
+                            [
+                                left + (data[1][1] * width),
+                                top + (data[1][0] * height)
+                            ];
+                            var forward =
+                            [
+                                left + (data[2][1] * width),
+                                top + (data[2][0] * height)
+                            ];
+                            var smooth = (selector === "closedLinked") || (selector === "openLinked");
+                            subpath.push ([ anchor, forward, backward, smooth ]);
+                            if (--subLength === 0)
+                            {
+                                subpaths.push ([ subpath, closedSubpath ]);
+                            }
+                            break;
+                    }
+                }
+            }
+            var pathComponentsArr = [ [ [ shapeOperation, subpaths ] ] ];
+            if (unit)
+            {
+                pathComponentsArr.push (unit);
+            }
+            return pathComponentsArr;
+        };
+    } ());
+}
+
+//------------------------------------------------------------------------------
+

@@ -90,5 +90,6 @@ export const DEFAULT_DUMP_PATH: string = APP_DATA_FOLDER + dirSeparator + "lp_ps
 Stdlib.log.setFile(DEFAULT_LOG_PATH);
 export function log(msg: any) { Stdlib.log(msg); }
 export function showdump(o: any) { alert(Stdlib.listProps(o)); }
+export function toUiString(s: string): string { return decodeURI(s) };
 
 } // namespace LabelPlus

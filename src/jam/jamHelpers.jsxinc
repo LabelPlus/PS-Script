@@ -1,0 +1,2379 @@
+﻿//------------------------------------------------------------------------------
+// File: jamHelpers.jsxinc
+// Version: 4.5
+// Release Date: 2016-09-29
+// Copyright: © 2011-2016 Michel MARIANI <http://www.tonton-pixel.com/blog/>
+// Licence: GPL <http://www.gnu.org/licenses/gpl.html>
+//------------------------------------------------------------------------------
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//------------------------------------------------------------------------------
+// Version History:
+//  4.5:
+//  - Incremented version number to keep in sync with other modules.
+//  4.4:
+//  - Normalized error messages.
+//  4.3:
+//  - Moved extra color-related functions to new jamColors module.
+//  4.2:
+//  - Cleaned up code.
+//  4.0:
+//  - Removed reference to 'this' for main global object.
+//  3.6:
+//  - Added support for explicit format as an alternative to existing minimal format
+//    for most important simplified formats.
+//  - Removed rounding of color component numerical values and transparency opacity
+//    in minimal format, for consistency with explicit format.
+//  - Removed jamHelpers.toChannelReference ().
+//  - Removed jamHelpers.hexToColor () and jamHelpers.colorToHex ().
+//  - Added jamHelpers.hexToColorObject () and jamHelpers.hexFromColorObject ().
+//  - Removed jamHelpers.namedColor ().
+//  - Added jamHelpers.nameToColorObject ().
+//  - Added jamHelpers.fromBlendRangeList ().
+//  - Added jamHelpers.fromCurvePointList ().
+//  3.5:
+//  - Fixed simplified format for jamHelpers.toCurvePointList ().
+//  - Improved book color simplified format for jamHelpers.toColorObject () and
+//    jamHelpers.fromColorObject.
+//  3.4:
+//  - Added jamHelpers.defineNamedColorsSet (), jamHelpers.enumerateNamedColors (),
+//    jamHelpers.namedColor (), jamHelpers.hexToColor () and jamHelpers.colorToHex ().
+//  3.3:
+//  - Added links to respective simplified formats specification pages.
+//  3.2:
+//  - Incremented version number to keep in sync with other modules.
+//  3.1:
+//  - Incremented version number to keep in sync with other modules.
+//  3.0:
+//  - Applied the redefined JSON AM Reference format.
+//  2.0:
+//  - Renamed jamHelpers.js to jamHelpers.jsxinc.
+//  - Replaced all single color mode functions:
+//    jamHelpers.toBookColorObject (), etc. with jamHelpers.toColorObject ().
+//  - Added jamHelpers.fromColorObject ().
+//  - Added jamHelpers.toGradientObject () and jamHelpers.fromGradientObject ().
+//  - Renamed jamHelpers.toEnumChannelReference () to
+//    jamHelpers.toChannelReference ().
+//  - Revamped simplified format for jamHelpers.toCurvesAdjustmentList ().
+//  - Renamed jamHelpers.toHueSaturationAdjustmentList () to
+//    jamHelpers.toHueSatAdjustmentV2List ().
+//  - Removed jamHelpers.toHueSatMasterAdjustmentList ();
+//    jamHelpers.toHueSatAdjustmentV2List () should be used instead.
+//  - Revamped simplified format for jamHelpers.toBlendRangeList ().
+//  - Added jamHelpers.fromIntegerList ().
+//  - Revamped simplified format for jamHelpers.toPointObject ().
+//  - Added jamHelpers.toPointList ().
+//  - Revamped simplified format for jamHelpers.toOffsetObject ().
+//  - Revamped simplified format for jamHelpers.toRectangleObject ().
+//  - Removed jamHelpers.toRoundedRectangleObject (), merged into
+//    jamHelpers.toRectangleObject ().
+//  - Revamped simplified format for jamHelpers.toEllipseObject ().
+//  - Revamped simplified format for jamHelpers.toCustomShapeObject ().
+//  - Removed jamHelpers.toPointsPolygonObject (); jamHelpers.toPointList ()
+//    should be used instead (cf. example).
+//  - Revamped simplified format for jamHelpers.toCurvePointList ();
+//    removed unused unit parameter too.
+//  - Revamped simplified format for jamHelpers.toRationalPointList ().
+//  - Revamped simplified format for jamHelpers.toPathComponentList ().
+//  - Added jamHelpers.fromPathComponentList ().
+//  - Moved jamHelpers.toDistanceUnit () and jamHelpers.fromDistanceUnit () to
+//    jamUtils.toDistanceUnit () and jamUtils.fromDistanceUnit ().
+//  - Removed jamHelpers.toHexaString () and jamHelpers.fromHexaString ();
+//    jamEngine.dataToHexaString () and jamEngine.hexaToDataString () should
+//    be used instead.
+//  1.0:
+//  - Initial release.
+//------------------------------------------------------------------------------
+
+/**
+ * @fileOverview
+ * @name jamHelpers.jsxinc
+ * @author Michel MARIANI
+ */
+
+//------------------------------------------------------------------------------
+
+if (typeof jamHelpers !== 'object')
+{
+    /**
+     * Global object (used to simulate a namespace in JavaScript) containing
+     * a set of helper functions for scripts written with the
+     * <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-action-manager/">JSON Action Manager</a> engine.
+     * @author Michel MARIANI
+     * @version 4.5
+     * @namespace
+     */
+    var jamHelpers = { };
+    //
+    (function ()
+    {
+        /**
+         * @description Get a color object in JSON AM Data Format from a simplified color JSON object or JSON array.
+         * @param {Object|Array} color Simplified color JSON object or JSON array
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/color-object-simplified-format/">Color Object Simplified Format</a>)
+         * @returns {Object|Array} Color object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamHelpers.fromColorObject
+         * @example
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "color": { "&lt;property&gt;": "foregroundColor" } } ] },
+         *         "to": jamHelpers.<strong>toColorObject</strong> ({ "luminance": 77, "a": -43, "b": 68 })
+         *     }
+         * );
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "color": { "&lt;property&gt;": "backgroundColor" } } ] },
+         *         "to": jamHelpers.<strong>toColorObject</strong> ([ "RGBColor", [ 184, 0, 184 ] ])
+         *     }
+         * );
+         */
+        jamHelpers.toColorObject = function (color)
+        {
+            var colorObject;
+            if (color.constructor === Object)
+            {
+                function restoreDesc (desc)
+                {
+                    var restoredDesc = { };
+                    for (var key in desc)
+                    {
+                        if (desc.hasOwnProperty (key))
+                        {
+                            var value = desc[key];
+                            var typedValue = null;
+                            switch (key)
+                            {
+                                case "book":
+                                case "name":
+                                    typedValue = [ "<string>", localize (value) ];
+                                    break;
+                                case "bookKey":
+                                    typedValue = [ "<data>", value ];
+                                    break;
+                                case "bookID":
+                                    typedValue = [ "<integer>", value ];
+                                    break;
+                                case "a":
+                                case "b":
+                                case "black":
+                                case "blue":
+                                case "brightness":
+                                case "cyan":
+                                case "gray":
+                                case "green":
+                                case "luminance":
+                                case "magenta":
+                                case "red":
+                                case "saturation":
+                                case "yellowColor":
+                                    typedValue = [ "<double>", value ];
+                                    break;
+                                case "hue":
+                                    typedValue = [ "<unitDouble>", [ "angleUnit", value ] ];
+                                    break;
+                                case "color":
+                                    var colorClass;
+                                    if ((("book" in value) && ("name" in value)) || (("bookID" in value) && ("bookKey" in value)))
+                                    {
+                                        colorClass = "bookColor";
+                                    }
+                                    else if (("cyan" in value) && ("magenta" in value) && ("yellowColor" in value) && ("black" in value))
+                                    {
+                                        colorClass = "CMYKColorClass";
+                                    }
+                                    else if ("gray" in value)
+                                    {
+                                        colorClass = "grayscale";
+                                    }
+                                    else if (("hue" in value) && ("saturation" in value) && ("brightness" in value))
+                                    {
+                                        colorClass = "HSBColorClass";
+                                    }
+                                    else if (("luminance" in value) && ("a" in value) && ("b" in value))
+                                    {
+                                        colorClass = "labColor";
+                                    }
+                                    else if (("red" in value) && ("green" in value) && ("blue" in value))
+                                    {
+                                        colorClass = "RGBColor";
+                                    }
+                                    typedValue = [ "<object>", [ colorClass, restoreDesc (value) ] ];
+                                    break;
+                            }
+                            if (typedValue)
+                            {
+                                restoredDesc[key] = typedValue;
+                            }
+                        }
+                    }
+                    return restoredDesc;
+                }
+                colorObject = restoreDesc ({ "color": color })["color"];
+            }
+            else if (color.constructor === Array)
+            {
+                var colorClass = color[0];
+                switch (jamEngine.uniIdStrToId (colorClass))
+                {
+                    case jamEngine.uniIdStrToId ("bookColor"):
+                        switch (color[1].length)
+                        {
+                            case 2:
+                                if (typeof color[1][0] === 'string')
+                                {
+                                    colorObject =
+                                    [
+                                        "<object>",
+                                        [
+                                            "bookColor",
+                                            {
+                                                "book": [ "<string>", color[1][0] ],
+                                                "name": [ "<string>", color[1][1] ]
+                                            }
+                                        ]
+                                    ];
+                                }
+                                else if (typeof color[1][0] === 'number')
+                                {
+                                    colorObject =
+                                    [
+                                        "<object>",
+                                        [
+                                            "bookColor",
+                                            {
+                                                "bookID": [ "<integer>", color[1][0] ],
+                                                "bookKey": [ "<data>", color[1][1] ]
+                                            }
+                                        ]
+                                    ];
+                                }
+                                break;
+                            case 4:
+                                colorObject =
+                                [
+                                    "<object>",
+                                    [
+                                        "bookColor",
+                                        {
+                                            "book": [ "<string>", color[1][0] ],
+                                            "name": [ "<string>", color[1][1] ],
+                                            "bookID": [ "<integer>", color[1][2] ],
+                                            "bookKey": [ "<data>", color[1][3] ]
+                                        }
+                                    ]
+                                ];
+                                break;
+                        }
+                        break;
+                    case jamEngine.uniIdStrToId ("CMYKColorClass"):
+                        colorObject =
+                        [
+                            "<object>",
+                            [
+                                "CMYKColorClass",
+                                {
+                                    "cyan": [ "<double>", color[1][0] ],
+                                    "magenta": [ "<double>", color[1][1] ],
+                                    "yellowColor": [ "<double>", color[1][2] ],
+                                    "black": [ "<double>", color[1][3] ]
+                                }
+                            ]
+                        ];
+                        break;
+                    case jamEngine.uniIdStrToId ("grayscale"):
+                        colorObject =
+                        [
+                            "<object>",
+                            [
+                                "grayscale",
+                                {
+                                    "gray": [ "<double>", (color[1].constructor === Array) ? color[1][0] : color[1] ]
+                                }
+                            ]
+                        ];
+                        break;
+                    case jamEngine.uniIdStrToId ("HSBColorClass"):
+                        colorObject =
+                        [
+                            "<object>",
+                            [
+                                "HSBColorClass",
+                                {
+                                    "hue": [ "<unitDouble>", [ "angleUnit", color[1][0] ] ],
+                                    "saturation": [ "<double>", color[1][1] ],
+                                    "brightness": [ "<double>", color[1][2] ]
+                                }
+                            ]
+                        ];
+                        break;
+                    case jamEngine.uniIdStrToId ("labColor"):
+                        colorObject =
+                        [
+                            "<object>",
+                            [
+                                "labColor",
+                                {
+                                    "luminance": [ "<double>", color[1][0] ],
+                                    "a": [ "<double>", color[1][1] ],
+                                    "b": [ "<double>", color[1][2] ]
+                                }
+                            ]
+                        ];
+                        break;
+                    case jamEngine.uniIdStrToId ("RGBColor"):
+                        colorObject =
+                        [
+                            "<object>",
+                            [
+                                "RGBColor",
+                                {
+                                    "red": [ "<double>", color[1][0] ],
+                                    "green": [ "<double>", color[1][1] ],
+                                    "blue": [ "<double>", color[1][2] ]
+                                }
+                            ]
+                        ];
+                        break;
+                    default:
+                        throw new Error ("[jamHelpers.toColorObject] Unrecognized color class: " + colorClass);
+                        break;
+                }
+            }
+            return colorObject;
+        };
+        //
+        /**
+         * @description Get a simplified color JSON object or JSON array from a color object in JSON AM Data Format.
+         * @param {Object|Array} colorObject Color object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @param {Boolean} [explicit] Explicit flag: if true, return an explicit JSON object instead of a minimal JSON array
+         * @returns {Object|Array} Simplified color JSON object or JSON array
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/color-object-simplified-format/">Color Object Simplified Format</a>)
+         * @see jamHelpers.toColorObject
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * var resultObj = jamEngine.jsonGet ([ { "application": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } } ]);
+         * var fgColorArr = jamHelpers.<strong>fromColorObject</strong> (resultObj["foregroundColor"], true);
+         * alert (jamJSON.stringify (fgColorArr));
+         * // -> { "hue": 260, "saturation": 48, "brightness": 92 } // Lavender
+         * var bgColorArr = jamHelpers.<strong>fromColorObject</strong> (resultObj["backgroundColor"]);
+         * alert (jamJSON.stringify (bgColorArr));
+         * // -> [ "bookColor", [ "PANTONE® solid coated", "PANTONE 2395 C", 3002, " 2395C" ] ] // Vivid Magenta
+         */
+        jamHelpers.fromColorObject = function (colorObject, explicit)
+        {
+            var color;
+            if (explicit)
+            {
+                color = jamEngine.simplifyObject (colorObject);
+            }
+            else
+            {
+                var normalizedColorObject = jamEngine.normalizeJsonItem (colorObject, { meaningfulIds: true, parseFriendly: true });
+                var colorClass = normalizedColorObject[1][0];
+                var colorDesc = normalizedColorObject[1][1];
+                switch (colorClass)
+                {
+                    case "bookColor":
+                        var book = colorDesc["book"][1];
+                        var name = colorDesc["name"][1];
+                        if (("bookID" in colorDesc) && ("bookKey" in colorDesc))
+                        {
+                            var bookID = colorDesc["bookID"][1];
+                            var bookKey = colorDesc["bookKey"][1];
+                            color = [ colorClass, [ book, name, bookID, bookKey ] ];
+                        }
+                        else
+                        {
+                            color = [ colorClass, [ book, name ] ];
+                        }
+                        break;
+                    case "CMYKColorClass":
+                        var cyan = colorDesc["cyan"][1];
+                        var magenta =  colorDesc["magenta"][1];
+                        var yellowColor = colorDesc["yellowColor"][1];
+                        var black = colorDesc["black"][1];
+                        color = [ colorClass, [ cyan, magenta, yellowColor, black ] ];
+                        break;
+                    case "grayscale":
+                        var gray = colorDesc["gray"][1];
+                        color = [ colorClass, [ gray ] ];
+                        break;
+                    case "HSBColorClass":
+                        var hue = colorDesc["hue"][1][1];
+                        var saturation = colorDesc["saturation"][1];
+                        var brightness = colorDesc["brightness"][1];
+                        color = [ colorClass, [ hue, saturation, brightness ] ];
+                        break;
+                    case "labColor":
+                        var luminance = colorDesc["luminance"][1];
+                        var a = colorDesc["a"][1];
+                        var b = colorDesc["b"][1];
+                        color = [ colorClass, [ luminance, a, b ] ];
+                        break;
+                    case "RGBColor":
+                        var red =  colorDesc["red"][1];
+                        var green = colorDesc["green"][1];
+                        var blue = colorDesc["blue"][1];
+                        color = [ colorClass, [ red, green, blue ] ];
+                        break;
+                    default:
+                        throw new Error ("[jamHelpers.fromColorObject] Unrecognized color class: " + colorClass);
+                        break;
+                }
+            }
+            return color;
+        };
+        //
+        /**
+         * @description Get a color object in JSON AM Data Format from a color name belonging to a named colors set.
+         * @param {String} setName Named colors set name (case-insensitive, whitespace ignored):<br />
+         * <ul>
+         * <li>
+         * "CSS" or "SVG" or "W3C":
+         * <a href="http://www.w3.org/TR/css3-color/#svg-color">CSS Color Module Level 3 - Extended color keywords</a><br />
+         * or <a href="http://www.w3.org/TR/SVG/types.html#ColorKeywords">SVG 1.1 (Second Edition) - Recognized color keyword names</a>
+         * </li>
+         * <li>"X11": <a href="http://www.thomas-guettler.de/rgb.txt.html">Colors of /usr/lib/X11/rgb.txt</a></li>
+         * <li>or name of a custom named colors set defined by jamColors.defineNamedColorsSet ()</li>
+         * </ul>
+         * @param {String} colorName Color name (case-insensitive, whitespace ignored)
+         * @returns {Object|Array} Color object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "color": { "&lt;property&gt;": "backgroundColor" } } ] },
+         *         "to": jamHelpers.<strong>nameToColorObject</strong> ("W3C", "Slate Grey")
+         *     }
+         * );
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "color": { "&lt;property&gt;": "foregroundColor" } } ] },
+         *         "to": jamHelpers.<strong>nameToColorObject</strong> ("X11", "Deep Pink 4")
+         *     }
+         * );
+         */
+        jamHelpers.nameToColorObject = function (setName, colorName)
+        {
+            return this.toColorObject (jamColors.nameToColor (setName, colorName));
+        };
+        //
+        /**
+         * @description Get a color object in JSON AM Data Format from a RGB color string in HTML/CSS hexadecimal notation.
+         * @param {String} hexColorString RGB color string in HTML/CSS hexadecimal notation (3 or 6 digits, starting with an optional # sign)
+         * @returns {Object|Array} Color object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamHelpers.hexFromColorObject
+         * @example
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "color": { "&lt;property&gt;": "backgroundColor" } } ] },
+         *         "to": jamHelpers.<strong>hexToColorObject</strong> ("#F0F")
+         *     }
+         * );
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "color": { "&lt;property&gt;": "foregroundColor" } } ] },
+         *         "to": jamHelpers.<strong>hexToColorObject</strong> ("#00FF00")
+         *     }
+         * );
+         */
+        jamHelpers.hexToColorObject = function (hexColorString)
+        {
+            return this.toColorObject (["RGBColor", jamColors.hexToRgb (hexColorString)]);
+        };
+        //
+        /**
+         * @description Get a RGB color string in HTML/CSS hexadecimal notation from a color object in JSON AM Data Format.
+         * @param {Object|Array} colorObject Color object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @param {Boolean} [noSign] Do not add a leading # sign (false by default)
+         * @param {Boolean} [lowercase] Use lowercase hexadecimal digits (false by default)
+         * @returns {String|Null} RGB color string in HTML/CSS hexadecimal notation (6 digits, starting with a # sign),
+         * or null if color object in JSON AM Data Format is not RGB
+         * @see jamHelpers.hexToColorObject
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * var resultObj = jamEngine.jsonGet ([ { "application": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } } ]);
+         * var fgHexColor = jamHelpers.<strong>hexFromColorObject</strong> (resultObj["foregroundColor"]);
+         * alert (jamJSON.stringify (fgHexColor));  // -> "#FFDEAD"
+         * var bgHexColor = jamHelpers.<strong>hexFromColorObject</strong> (resultObj["backgroundColor"], true, true);
+         * alert (jamJSON.stringify (bgHexColor));  // -> "4b1f5e"
+         */
+        jamHelpers.hexFromColorObject = function (colorObject, noSign, lowercase)
+        {
+            var color = this.fromColorObject (colorObject);
+            return (color[0] === "RGBColor") ? jamColors.rgbToHex (color[1], noSign, lowercase) : null;
+        };
+        //
+        /**
+         * @description Get a gradient object in JSON AM Data Format from a simplified gradient JSON object or JSON array.
+         * @param {Object|Array} gradient Simplified gradient JSON object or JSON array
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/gradient-object-simplified-format/">Gradient Object Simplified Format</a>)
+         * @returns {Object|Array} Gradient object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamHelpers.fromGradientObject
+         * @example
+         * var customStopsGradient =
+         * {
+         *     "gradientForm": "customStops",
+         *     "interpolation": 4096,
+         *     "colors":
+         *     [
+         *         {
+         *             "location": 0, "midpoint": 50, "type": "userStop",
+         *             "color": { "red": 255, "green": 0, "blue": 0 }
+         *         },
+         *         {
+         *             "location": 4096, "midpoint": 50, "type": "userStop",
+         *             "color": { "red": 95, "green": 95, "blue": 0 }
+         *         }
+         *     ],
+         *     "transparency":
+         *     [
+         *         { "location": 0, "midpoint": 50, "opacity": 75 },
+         *         { "location": 4096, "midpoint": 50, "opacity": 100 }
+         *     ]
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "gradientClassEvent",
+         *     {
+         *         "from": jamHelpers.toPointObject ([ [ 50.0, 12.5 ], "percentUnit" ]),
+         *         "to": jamHelpers.toPointObject ([ [ 50.0, 75.0 ], "percentUnit" ]),
+         *         "opacity": { "&lt;unitDouble&gt;": { "percentUnit": 50 } },
+         *         "mode": { "&lt;enumerated&gt;": { "blendMode": "hardLight" } },
+         *         "type": { "&lt;enumerated&gt;": { "gradientType": "linear" } },
+         *         "gradient": jamHelpers.<strong>toGradientObject</strong> (customStopsGradient)
+         *     }
+         * );
+         * @example
+         * var colorNoiseGradient =
+         * [
+         *     "Color Noise",
+         *     "colorNoise",
+         *     345807450,
+         *     false,
+         *     true,
+         *     1024,
+         *     "RGBColor",
+         *     [ 0, 18, 25, 0 ],
+         *     [ 100, 60, 73, 100 ]
+         * ];
+         * jamEngine.jsonPlay
+         * (
+         *     "gradientClassEvent",
+         *     {
+         *         "from": jamHelpers.toPointObject ([ [ 12.5, 50.0 ], "percentUnit" ]),
+         *         "to": jamHelpers.toPointObject ([ [ 75.0, 50.0 ], "percentUnit" ]),
+         *         "opacity": { "&lt;unitDouble&gt;": { "percentUnit": 100 } },
+         *         "mode": { "&lt;enumerated&gt;": { "blendMode": "normal" } },
+         *         "type": { "&lt;enumerated&gt;": { "gradientType": "linear" } },
+         *         "gradient": jamHelpers.<strong>toGradientObject</strong> (colorNoiseGradient)
+         *     }
+         * );
+         */
+        jamHelpers.toGradientObject = function (gradient)
+        {
+            var gradientObject;
+            if (gradient.constructor === Object)
+            {
+                var that = this;
+                function restoreDesc (desc)
+                {
+                    var restoredDesc = { };
+                    for (var key in desc)
+                    {
+                        if (desc.hasOwnProperty (key))
+                        {
+                            var value = desc[key];
+                            var typedValue = null;
+                            var restoredList;
+                            switch (key)
+                            {
+                                case "showTransparency":
+                                case "vectorColor":
+                                    typedValue = [ "<boolean>", value ];
+                                    break;
+                                case "name":
+                                    typedValue = [ "<string>", localize (value) ];
+                                    break;
+                                case "gradientForm":
+                                    typedValue = [ "<enumerated>", [ "gradientForm", value ] ];
+                                    break;
+                                case "type":
+                                    typedValue = [ "<enumerated>", [ "colorStopType", value ] ];
+                                    break;
+                                case "colorSpace":
+                                    typedValue = [ "<enumerated>", [ "colorSpace", value ] ];
+                                    break;
+                                case "location":
+                                case "midpoint":
+                                case "randomSeed":
+                                case "smoothness":
+                                    typedValue = [ "<integer>", value ];
+                                    break;
+                                case "interpolation":
+                                    typedValue = [ "<double>", value ];
+                                    break;
+                                case "opacity":
+                                    typedValue = [ "<unitDouble>", [ "percentUnit", value ] ];
+                                    break;
+                                case "colors":
+                                    restoredList = [ ];
+                                    for (var i = 0; i < value.length; i++)
+                                    {
+                                        restoredList.push ([ "<object>", [ "colorStop", restoreDesc (value[i]) ] ]);
+                                    }
+                                    typedValue = [ "<list>", restoredList ];
+                                    break;
+                                case "transparency":
+                                    restoredList = [ ];
+                                    for (var i = 0; i < value.length; i++)
+                                    {
+                                        restoredList.push ([ "<object>", [ "transparencyStop", restoreDesc (value[i]) ] ]);
+                                    }
+                                    typedValue = [ "<list>", restoredList ];
+                                    break;
+                                case "minimum":
+                                case "maximum":
+                                    restoredList = [ ];
+                                    for (var i = 0; i < value.length; i++)
+                                    {
+                                        restoredList.push ([ "<integer>", value[i] ]);
+                                    }
+                                    typedValue = [ "<list>", restoredList ];
+                                    break;
+                                case "color":
+                                    typedValue = that.toColorObject (value);
+                                    break;
+                                case "gradient":
+                                    typedValue = [ "<object>", [ "gradientClassEvent", restoreDesc (value) ] ];
+                                    break;
+                            }
+                            if (typedValue)
+                            {
+                                restoredDesc[key] = typedValue;
+                            }
+                        }
+                    }
+                    return restoredDesc;
+                }
+                gradientObject = restoreDesc ({ "gradient": gradient })["gradient"];
+            }
+            else if (gradient.constructor === Array)
+            {
+                var gradientObj = { };
+                var gradientName = gradient[0];  // Name
+                if (gradientName)   // Can be null (or empty string)
+                {
+                    gradientObj["name"] = [ "<string>", gradientName ];
+                }
+                var gradientForm = gradient[1];  // Gradient Type
+                gradientObj["gradientForm"] = [ "<enumerated>", [ "gradientForm", gradientForm ] ];
+                switch (jamEngine.uniIdStrToId (gradientForm))
+                {
+                    case jamEngine.uniIdStrToId ("customStops"):    // Solid
+                        gradientObj["interpolation"] = [ "<double>", gradient[2] ];  // Smoothness
+                        var colorStops = gradient[3];
+                        var colorsArr = [ ];
+                        for (var i = 0; i < colorStops.length; i++)
+                        {
+                            var colorStopObj = { };
+                            colorStopObj["location"] = [ "<integer>", colorStops[i][0] ];
+                            colorStopObj["midpoint"] = [ "<integer>", colorStops[i][1] ];
+                            var type = colorStops[i][2];
+                            colorStopObj["type"] = [ "<enumerated>", [ "colorStopType", type ] ];
+                            switch (jamEngine.uniIdStrToId (type))
+                            {
+                                case jamEngine.uniIdStrToId ("userStop"):
+                                    colorStopObj["color"] = this.toColorObject (colorStops[i][3]);
+                                    break;
+                                case jamEngine.uniIdStrToId ("backgroundColor"):
+                                case jamEngine.uniIdStrToId ("foregroundColor"):
+                                    break;
+                                default:
+                                    throw new Error ("[jamHelpers.toGradientObject] Unrecognized color stop type: " + type);
+                                    break;
+                            }
+                            colorsArr.push ([ "<object>", [ "colorStop", colorStopObj ] ]);
+                        }
+                        gradientObj["colors"] = [ "<list>", colorsArr ];
+                        var transparencyStops = gradient[4];
+                        if (typeof transparencyStops !== 'undefined')
+                        {
+                            var transparencyArr = [ ];
+                            for (var j = 0; j < transparencyStops.length; j++)
+                            {
+                                var transparencyStopObj = { };
+                                transparencyStopObj["location"] = [ "<integer>", transparencyStops[j][0] ];
+                                transparencyStopObj["midpoint"] = [ "<integer>", transparencyStops[j][1] ];
+                                transparencyStopObj["opacity"] = [ "<unitDouble>", [ "percentUnit", transparencyStops[j][2] ] ];
+                                transparencyArr.push ([ "<object>", [ "transparencyStop", transparencyStopObj ] ]);
+                            }
+                            gradientObj["transparency"] = [ "<list>", transparencyArr ];
+                        }
+                        break;
+                    case jamEngine.uniIdStrToId ("colorNoise"): // Noise
+                        gradientObj["randomSeed"] = [ "<integer>", gradient[2] ];    // Randomize
+                        gradientObj["showTransparency"] = [ "<boolean>", gradient[3] ];  // Add Transparency
+                        gradientObj["vectorColor"] = [ "<boolean>", gradient[4] ];   // Restrict Colors
+                        gradientObj["smoothness"] = [ "<integer>", gradient[5] ];    // Roughness
+                        var colorSpace = gradient[6];
+                        gradientObj["colorSpace"] = [ "<enumerated>", [ "colorSpace", colorSpace ] ];   // Color Model
+                        switch (jamEngine.uniIdStrToId (colorSpace))
+                        {
+                            case jamEngine.uniIdStrToId ("RGBColor"):
+                            case jamEngine.uniIdStrToId ("HSBColorEnum"):
+                            case jamEngine.uniIdStrToId ("labColor"):
+                                break;
+                            default:
+                                throw new Error ("[jamHelpers.toGradientObject] Unrecognized color space: " + colorSpace);
+                                break;
+                        }
+                        gradientObj["minimum"] = this.toIntegerList (gradient[7]); // Three color components (0 to 100) + transparency (0)
+                        gradientObj["maximum"] = this.toIntegerList (gradient[8]); // Three color components (0 to 100) + transparency (100)
+                        break;
+                    default:
+                        throw new Error ("[jamHelpers.toGradientObject] Unrecognized gradient form: " + gradientForm);
+                        break;
+                }
+                gradientObject = [ "<object>", [ "gradientClassEvent", gradientObj ] ];
+            }
+            return gradientObject;
+        };
+        //
+        /**
+         * @description Get a simplified gradient JSON object or JSON array from a gradient object in JSON AM Data Format.
+         * @param {Object|Array} gradientObject Gradient object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @param {Boolean} [explicit] Explicit flag: if true, return an explicit JSON object instead of a minimal JSON array
+         * @returns {Object|Array} Simplified gradient JSON object or JSON array
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/gradient-object-simplified-format/">Gradient Object Simplified Format</a>)
+         * @see jamHelpers.toGradientObject
+         * @example
+         * var gradientObject =
+         * {
+         *     "&lt;object&gt;":
+         *     {
+         *         "gradientClassEvent":
+         *         {
+         *             "name": { "&lt;string&gt;": "N-86" },
+         *             "gradientForm": { "&lt;enumerated&gt;": { "gradientForm": "colorNoise" } },
+         *             "showTransparency": { "&lt;boolean&gt;": false },
+         *             "vectorColor": { "&lt;boolean&gt;": true },
+         *             "colorSpace": { "&lt;enumerated&gt;": { "colorSpace": "labColor" } },
+         *             "randomSeed": { "&lt;integer&gt;": 17 },
+         *             "smoothness": { "&lt;integer&gt;": 3523 },   // 3523/4096 => 86 %
+         *             "minimum":
+         *             {
+         *                 "&lt;list&gt;":
+         *                 [
+         *                     { "&lt;integer&gt;": 25 },
+         *                     { "&lt;integer&gt;": 0 },
+         *                     { "&lt;integer&gt;": 33 },
+         *                     { "&lt;integer&gt;": 0 }
+         *                 ]
+         *             },
+         *             "maximum":
+         *             {
+         *                 "&lt;list&gt;":
+         *                 [
+         *                     { "&lt;integer&gt;": 75 },
+         *                     { "&lt;integer&gt;": 67 },
+         *                     { "&lt;integer&gt;": 100 },
+         *                     { "&lt;integer&gt;": 100 }
+         *                 ]
+         *             }
+         *         }
+         *     }
+         * };
+         * alert (jamJSON.stringify (jamHelpers.<strong>fromGradientObject</strong> (gradientObject, true), '\t'));
+         * // ->
+         * // {
+         * //     "name": "N-86",
+         * //     "gradientForm": "colorNoise",
+         * //     "randomSeed": 17,
+         * //     "showTransparency": false,
+         * //     "vectorColor": true,
+         * //     "smoothness": 3523,
+         * //     "colorSpace": "labColor",
+         * //     "minimum": [ 25, 0, 33, 0 ],
+         * //     "maximum": [ 75, 67, 100, 100 ]
+         * // }
+         * alert (jamJSON.stringify (jamHelpers.<strong>fromGradientObject</strong> (gradientObject)));
+         * // -> [ "N-86", "colorNoise", 17, false, true, 3523, "labColor", [ 25, 0, 33, 0 ], [ 75, 67, 100, 100 ] ]
+         */
+        jamHelpers.fromGradientObject = function (gradientObject, explicit)
+        {
+            var gradient;
+            if (explicit)
+            {
+                gradient = jamEngine.simplifyObject (gradientObject);
+            }
+            else
+            {
+                gradient = [ ];
+                var normalizedGradientObject = jamEngine.normalizeJsonItem (gradientObject, { meaningfulIds: true, parseFriendly: true });
+                var gradientDesc = normalizedGradientObject[1][1];
+                var name = gradientDesc["name"];
+                gradient.push ((name) ? name[1] : null);
+                var gradientForm = gradientDesc["gradientForm"][1][1];
+                gradient.push (gradientForm);
+                switch (gradientForm)
+                {
+                    case "customStops":
+                        gradient.push (gradientDesc["interpolation"][1]);
+                        var colors = gradientDesc["colors"][1];
+                        var colorStops = [ ];
+                        for (var i = 0; i < colors.length; i++)
+                        {
+                            var colorStop = colors[i][1][1];
+                            var colorStopArr = [ ];
+                            colorStopArr.push (colorStop["location"][1]);
+                            colorStopArr.push (colorStop["midpoint"][1]);
+                            var type = colorStop["type"][1][1];
+                            colorStopArr.push (type);
+                            switch (type)
+                            {
+                                case "userStop":
+                                    colorStopArr.push (this.fromColorObject (colorStop["color"]));
+                                    break;
+                                case "backgroundColor":
+                                case "foregroundColor":
+                                    break;
+                                default:
+                                    throw new Error ("[jamHelpers.fromGradientObject] Unrecognized color stop type: " + type);
+                                    break;
+                            }
+                            colorStops.push (colorStopArr);
+                        }
+                        gradient.push (colorStops);
+                        var transparency = gradientDesc["transparency"][1];
+                        var transparencyStops = [ ];
+                        for (var j = 0; j < transparency.length; j++)
+                        {
+                            var transparencyStop = transparency[j][1][1];
+                            var transparencyStopArr = [ ];
+                            transparencyStopArr.push (transparencyStop["location"][1]);
+                            transparencyStopArr.push (transparencyStop["midpoint"][1]);
+                            transparencyStopArr.push (transparencyStop["opacity"][1][1]);
+                            transparencyStops.push (transparencyStopArr);
+                        }
+                        gradient.push (transparencyStops);
+                        break;
+                    case "colorNoise":
+                        gradient.push (gradientDesc["randomSeed"][1]);
+                        gradient.push (gradientDesc["showTransparency"][1]);
+                        gradient.push (gradientDesc["vectorColor"][1]);
+                        gradient.push (gradientDesc["smoothness"][1]);
+                        var colorSpace = gradientDesc["colorSpace"][1][1]
+                        gradient.push (colorSpace);
+                        switch (colorSpace)
+                        {
+                            case "RGBColor":
+                            case "HSBColorEnum":
+                            case "labColor":
+                                break;
+                            default:
+                                throw new Error ("[jamHelpers.fromGradientObject] Unrecognized color space: " + colorSpace);
+                                break;
+                        }
+                        gradient.push (this.fromIntegerList (gradientDesc["minimum"]));
+                        gradient.push (this.fromIntegerList (gradientDesc["maximum"]));
+                        break;
+                    default:
+                        throw new Error ("[jamHelpers.fromGradientObject] Unrecognized gradient form: " + gradientForm);
+                        break;
+                }
+            }
+            return gradient;
+        };
+        //
+        /**
+         * @description Get a curves adjustment list in JSON AM Data Format from a JSON array of channel and individual channel curves values.
+         * @param {Array} curvesAdjustmentsArr JSON array of channel and individual channel curves values
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/curves-adjustment-list-simplified-format/">Curves Adjustment List Simplified Format</a>)
+         * @returns {Object|Array} Curves adjustment list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * var curvesAdjustments =
+         * [
+         *     [ "red", [ "curve", [ [ 0, 0 ], [ 77, 51 ], [ 178, 204 ], [ 255, 255 ] ] ] ],
+         *     [ "green", [ "curve", [ [ 0, 255 ], [ 127, 0 ], [ 255, 255 ] ] ] ],
+         *     [ "blue", [ "curve", [ [ 0, 255 ], [ 255, 0 ] ] ] ]
+         * ];
+         * jamEngine.jsonPlay
+         * (
+         *     "make",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "adjustmentLayer": { "&lt;class&gt;": null } } ] },
+         *         "using":
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "adjustmentLayer":
+         *                 {
+         *                     "name": { "&lt;string&gt;": "Curves" },
+         *                     "opacity": { "&lt;unitDouble&gt;": { "percentUnit": 75 } },
+         *                     "type":
+         *                     {
+         *                         "&lt;object&gt;":
+         *                         {
+         *                             "curves":
+         *                             {
+         *                                 "adjustment": jamHelpers.<strong>toCurvesAdjustmentList</strong> (curvesAdjustments)
+         *                             }
+         *                         }
+         *                     }
+         *                 }
+         *             }
+         *         }
+         *     }
+         * );
+         */
+        jamHelpers.toCurvesAdjustmentList = function (curvesAdjustmentsArr)
+        {
+            var curvesAdjustmentListArr = [ ];
+            for (var i = 0; i < curvesAdjustmentsArr.length; i++)
+            {
+                var curvesAdjustment = curvesAdjustmentsArr[i];
+                var channel = [ "<reference>", [ [ "channel", [ "<enumerated>", [ "channel", curvesAdjustment[0] ] ] ] ] ];
+                var info = curvesAdjustment[1];
+                var type = info[0];
+                var points = info[1];
+                var pointArr = [ ];
+                switch (jamEngine.uniIdStrToId (type))
+                {
+                    case jamEngine.uniIdStrToId ("mapping"):
+                        for (var j = 0; j < points.length; j++)
+                        {
+                            pointArr.push ([ "<integer>", points[j] ]);
+                        }
+                        var mapping = [ "<list>", pointArr ];
+                        curvesAdjustmentListArr.push ([ "<object>", [ "curvesAdjustment", { "channel": channel, "mapping": mapping } ] ]);
+                        break;
+                    case jamEngine.uniIdStrToId ("curve"):
+                        for (var j = 0; j < points.length; j++)
+                        {
+                            var point =
+                            [
+                                "<object>",
+                                [
+                                    "point",
+                                    {
+                                        "horizontal": [ "<double>", points[j][0] ],
+                                        "vertical": [ "<double>", points[j][1] ]
+                                    }
+                                ]
+                            ];
+                            pointArr.push (point);
+                        }
+                        var curve = [ "<list>", pointArr ];
+                        curvesAdjustmentListArr.push ([ "<object>", [ "curvesAdjustment", { "channel": channel, "curve": curve } ] ]);
+                        break;
+                    default:
+                        throw new Error ("[jamHelpers.toCurvesAdjustmentList] Unrecognized curve type");
+                        break;
+                }
+            }
+            return [ "<list>", curvesAdjustmentListArr ];
+        };
+        //
+        /**
+         * @description Get a hue/saturation adjustment list in JSON AM Data Format from a JSON array of master and local color ranges.
+         * @param {Array} hueSatAdjustmentsArr JSON array of master and local color ranges
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/huesaturation-adjustment-list-simplified-format/">Hue/Saturation Adjustment List Simplified Format</a>)
+         * @returns {Object|Array} Hue/saturation adjustment list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * jamEngine.jsonPlay
+         * (
+         *     "hueSaturation",
+         *     {
+         *         "colorize": { "&lt;boolean&gt;": true },
+         *         "adjustment": jamHelpers.<strong>toHueSatAdjustmentV2List</strong> ([ [ 210, 30, 10 ] ])
+         *     }
+         * );
+         * @example
+         * var hueSatAdjustments =
+         * [
+         *     [ 20, 0, 0 ],    // Master
+         *     [ 1, 315, 345, 15, 45, 0, 50, 0 ],  // Reds
+         *     [ 3, 75, 105, 135, 165, 0, 60, 0 ]  // Greens
+         * ];
+         * jamEngine.jsonPlay
+         * (
+         *     "hueSaturation",
+         *     {
+         *         "adjustment": jamHelpers.<strong>toHueSatAdjustmentV2List</strong> (hueSatAdjustments)
+         *     }
+         * );
+         */
+        jamHelpers.toHueSatAdjustmentV2List = function (hueSatAdjustmentsArr)
+        {
+            var hueSatAdjustmentListArr = [ ];
+            for (var i = 0; i < hueSatAdjustmentsArr.length; i++)
+            {
+                var hueSatAdjustmentArr = hueSatAdjustmentsArr[i];
+                var hueSatAdjustmentObj;
+                if ((hueSatAdjustmentArr.length === 3) && (i === 0)) // Master
+                {
+                    hueSatAdjustmentObj =
+                    {
+                        "hue": [ "<integer>", hueSatAdjustmentArr[0] ],
+                        "saturation": [ "<integer>", hueSatAdjustmentArr[1] ],
+                        "lightness": [ "<integer>", hueSatAdjustmentArr[2] ]
+                    };
+                }
+                else if (hueSatAdjustmentArr.length === (1 + 4 + 3)) // Local
+                {
+                    hueSatAdjustmentObj =
+                    {
+                        "localRange": [ "<integer>", hueSatAdjustmentArr[0] ],
+                        "beginRamp": [ "<integer>", hueSatAdjustmentArr[1] ],
+                        "beginSustain": [ "<integer>", hueSatAdjustmentArr[2] ],
+                        "endSustain": [ "<integer>", hueSatAdjustmentArr[3] ],
+                        "endRamp": [ "<integer>", hueSatAdjustmentArr[4] ],
+                        "hue": [ "<integer>", hueSatAdjustmentArr[5] ],
+                        "saturation": [ "<integer>", hueSatAdjustmentArr[6] ],
+                        "lightness": [ "<integer>", hueSatAdjustmentArr[7] ]
+                    };
+                }
+                hueSatAdjustmentListArr.push ([ "<object>", [ "hueSatAdjustmentV2", hueSatAdjustmentObj ] ]);
+            }
+            return [ "<list>", hueSatAdjustmentListArr ];
+        };
+        //
+        /**
+         * @description Get a blend range list in JSON AM Data Format from a JSON array of individual channel blend ranges.
+         * @param {Array} blendRanges JSON array of individual channel blend ranges, each one being either a JSON object or a JSON array
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/blend-range-list-simplified-format/">Blend Range List Simplified Format</a>)
+         * @returns {Object|Array} Blend range list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamHelpers.fromBlendRangeList
+         * @example
+         * var blendRanges =
+         * [
+         *     {
+         *         "channel": "gray",
+         *         "srcBlackMin": 0,
+         *         "srcBlackMax": 80,
+         *         "srcWhiteMin": 255,
+         *         "srcWhiteMax": 255,
+         *         "destBlackMin": 0,
+         *         "destBlackMax": 0,
+         *         "destWhiteMin": 255,
+         *         "destWhiteMax": 255
+         *     },
+         *     {
+         *         "channel": "red",
+         *         "srcBlackMin": 0,
+         *         "srcBlackMax": 0,
+         *         "srcWhiteMin": 255,
+         *         "srcWhiteMax": 255,
+         *         "destBlackMin": 0,
+         *         "destBlackMax": 0,
+         *         "destWhiteMin": 145,
+         *         "destWhiteMax": 255
+         *     }
+         * ];
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "layer": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } } ] },
+         *         "to":
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "layer":
+         *                 {
+         *                     "blendRange": jamHelpers.<strong>toBlendRangeList</strong> (blendRanges)
+         *                 }
+         *             }
+         *         }
+         *     }
+         * );
+         */
+        jamHelpers.toBlendRangeList = function (blendRanges)
+        {
+            var blendRangeListArr = [ ];
+            var blendRangeObject;
+            for (var i = 0; i < blendRanges.length; i++)
+            {
+                var blendRange = blendRanges[i];
+                if (blendRange.constructor === Object)
+                {
+                    function restoreDesc (desc)
+                    {
+                        var restoredDesc = { };
+                        for (var key in desc)
+                        {
+                            if (desc.hasOwnProperty (key))
+                            {
+                                var value = desc[key];
+                                var typedValue = null;
+                                switch (key)
+                                {
+                                    case "channel":
+                                        typedValue = [ "<reference>", [ [ "channel", [ "<enumerated>", [ "channel", value ] ] ] ] ]; // Special handling
+                                        break;
+                                    case "srcBlackMin":
+                                    case "srcBlackMax":
+                                    case "srcWhiteMin":
+                                    case "srcWhiteMax":
+                                    case "destBlackMin":
+                                    case "destBlackMax":
+                                    case "destWhiteMin":
+                                    case "destWhiteMax":
+                                        typedValue = [ "<integer>", value ];
+                                        break;
+                                    case "blendRange":
+                                        typedValue = [ "<object>", [ "blendRange", restoreDesc (value) ] ];
+                                        break;
+                                }
+                                if (typedValue)
+                                {
+                                    restoredDesc[key] = typedValue;
+                                }
+                            }
+                        }
+                        return restoredDesc;
+                    }
+                    blendRangeObject = restoreDesc ({ "blendRange": blendRange })["blendRange"];
+                }
+                else if (blendRange.constructor === Array)
+                {
+                    blendRangeObject =
+                    [
+                        "<object>",
+                        [
+                            "blendRange",
+                            {
+                                "channel": [ "<reference>", [ [ "channel", [ "<enumerated>", [ "channel", blendRange[0] ] ] ] ] ],
+                                "srcBlackMin": [ "<integer>", blendRange[1] ],
+                                "srcBlackMax": [ "<integer>", blendRange[2] ],
+                                "srcWhiteMin": [ "<integer>", blendRange[3] ],
+                                "srcWhiteMax": [ "<integer>", blendRange[4] ],
+                                "destBlackMin": [ "<integer>", blendRange[5] ],
+                                "destBlackMax": [ "<integer>", blendRange[6] ],
+                                "destWhiteMin": [ "<integer>", blendRange[7] ],
+                                "destWhiteMax": [ "<integer>", blendRange[8] ]
+                            }
+                        ]
+                    ];
+                }
+                blendRangeListArr.push (blendRangeObject);
+            }
+            return [ "<list>", blendRangeListArr ];
+        };
+        //
+        /**
+         * @description Get a simplified blend range JSON array from a blend range list in JSON AM Data Format.
+         * @param {Object|Array} blendRangeList Blend range list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @param {Boolean} [explicit] Explicit flag: if true, return a JSON array made of explicit JSON objects instead of minimal JSON arrays
+         * @returns {Array} Simplified blend range JSON array
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/blend-range-list-simplified-format/">Blend Range List Simplified Format</a>)
+         * @see jamHelpers.toBlendRangeList
+         * @example
+         * var blendRangeList =
+         * {
+         *     "&lt;list&gt;":
+         *     [
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "blendRange":
+         *                 {
+         *                     "channel":
+         *                     {
+         *                         "&lt;reference&gt;": [ { "channel": { "&lt;enumerated&gt;": { "channel": "gray" } } } ]
+         *                     },
+         *                     "srcBlackMin": { "&lt;integer&gt;": 0 },
+         *                     "srcBlackMax": { "&lt;integer&gt;": 80 },
+         *                     "srcWhiteMin": { "&lt;integer&gt;": 255 },
+         *                     "srcWhiteMax": { "&lt;integer&gt;": 255 },
+         *                     "destBlackMin": { "&lt;integer&gt;": 0 },
+         *                     "destBlackMax": { "&lt;integer&gt;": 0 },
+         *                     "destWhiteMin": { "&lt;integer&gt;": 145 },
+         *                     "destWhiteMax": { "&lt;integer&gt;": 255 }
+         *                 }
+         *             }
+         *         }
+         *     ]
+         * };
+         * alert (jamJSON.stringify (jamHelpers.<strong>fromBlendRangeList</strong> (blendRangeList, true), '\t'));
+         * // ->
+         * // [
+         * //     {
+         * //         "channel": "gray",
+         * //         "srcBlackMin": 0,
+         * //         "srcBlackMax": 80,
+         * //         "srcWhiteMin": 255,
+         * //         "srcWhiteMax": 255,
+         * //         "destBlackMin": 0,
+         * //         "destBlackMax": 0,
+         * //         "destWhiteMin": 145,
+         * //         "destWhiteMax": 255
+         * //     }
+         * // ]
+         * alert (jamJSON.stringify (jamHelpers.<strong>fromBlendRangeList</strong> (blendRangeList)));
+         * // ->
+         * // [ [ "gray", 0, 80, 255, 255, 0, 0, 145, 255 ] ]
+         */
+        jamHelpers.fromBlendRangeList = function (blendRangeList, explicit)
+        {
+            var blendRanges;
+            if (explicit)
+            {
+                var replaceChannelHook = function (desc, key, getDefaultValue)
+                {
+                    var replacedValue = undefined;
+                    if (key === "channel")  // Special handling
+                    {
+                        var value = getDefaultValue (desc, key);
+                        replacedValue = value[0]["channel"];
+                    }
+                    return replacedValue;
+                };
+                blendRanges = jamEngine.simplifyList (blendRangeList, replaceChannelHook);
+            }
+            else
+            {
+                blendRanges = [ ];
+                var normalizedBlendRangeList = jamEngine.normalizeJsonItem (blendRangeList, { meaningfulIds: true, parseFriendly: true });
+                for (index = 0; index < normalizedBlendRangeList[1].length; index++)
+                {
+                    var blendRange = normalizedBlendRangeList[1][index][1][1];
+                    var blendRangeArr =
+                    [
+                        blendRange["channel"][1][0][1][1][1],
+                        blendRange["srcBlackMin"][1],
+                        blendRange["srcBlackMax"][1],
+                        blendRange["srcWhiteMin"][1],
+                        blendRange["srcWhiteMax"][1],
+                        blendRange["destBlackMin"][1],
+                        blendRange["destBlackMax"][1],
+                        blendRange["destWhiteMin"][1],
+                        blendRange["destWhiteMax"][1]
+                    ];
+                    blendRanges.push (blendRangeArr);
+                }
+            }
+            return blendRanges;
+        };
+        //
+        /**
+         * @description Get an integer list in JSON AM Data Format from a JSON array of integer values.
+         * @param {Array} integersArr JSON array of integer values
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/integer-list-simplified-format/">Integer List Simplified Format</a>)
+         * @returns {Object|Array} Integer list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamHelpers.fromIntegerList
+         * @example
+         * var customMatrix =
+         * [
+         *     0,  0,  0,  0,  0,
+         *     0,  1,  1,  1,  0,
+         *     0,  1, -8,  1,  0,
+         *     0,  1,  1,  1,  0,
+         *     0,  0,  0,  0,  0
+         * ];
+         * jamEngine.jsonPlay
+         * (
+         *     "custom",
+         *     {
+         *         "scale": { "&lt;integer&gt;": 1 },
+         *         "offset": { "&lt;integer&gt;": 0 },
+         *         "matrix": jamHelpers.<strong>toIntegerList</strong> (customMatrix)
+         *     }
+         * );
+         */
+        jamHelpers.toIntegerList = function (integersArr)
+        {
+            var integerListArr = [ ];
+            for (var i = 0; i < integersArr.length; i++)
+            {
+                integerListArr.push ([ "<integer>", integersArr[i] ]);
+            }
+            return [ "<list>", integerListArr ];
+        };
+        //
+        /**
+         * @description Get a JSON array of integer values from an integer list in JSON AM Data Format.
+         * @param {Object|Array} integerList Integer list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Array} JSON array of integer values
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/integer-list-simplified-format/">Integer Simplified List Format</a>)
+         * @see jamHelpers.toIntegerList
+         * @example
+         * var integerList =
+         * {
+         *     "&lt;list&gt;":
+         *     [
+         *         { "&lt;integer&gt;": 0 },
+         *         { "&lt;integer&gt;": 25 },
+         *         { "&lt;integer&gt;": 50 },
+         *         { "&lt;integer&gt;": 75 },
+         *         { "&lt;integer&gt;": 100 }
+         *     ]
+         * };
+         * alert (jamJSON.stringify (jamHelpers.<strong>fromIntegerList</strong> (integerList)));
+         * // -> [ 0, 25, 50, 75, 100 ]
+         */
+        jamHelpers.fromIntegerList = function (integerList)
+        {
+            var normalizedIntegerList = jamEngine.normalizeJsonItem (integerList, { meaningfulIds: true, parseFriendly: true });
+            var integersArr = [ ];
+            var integers = normalizedIntegerList[1];
+            for (var i = 0; i < integers.length; i++)
+            {
+                integersArr.push (integers[i][1]);
+            }
+            return integersArr;
+        };
+        //
+        function toUnitDouble (value, unit)
+        {
+            return (typeof unit === 'undefined') ? [ "<double>", value ] : [ "<unitDouble>", [ unit, value ] ];
+        }
+        //
+        /**
+         * @description Get a point object in JSON AM Data Format from a JSON array of data (coordinate values) and optional unit ID string.
+         * @param {Array} pointArr JSON array of data: [ horizontal, vertical ], and optional unit ID string ("distanceUnit", "percentUnit", "pixelsUnit", etc.)
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/point-object-simplified-format/">Point Object Simplified Format</a>)
+         * @returns {Object|Array} Point object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * jamEngine.jsonPlay
+         * (
+         *     "lensFlare",
+         *     {
+         *         "brightness": { "&lt;integer&gt;": 120 },
+         *         "flareCenter": jamHelpers.<strong>toPointObject</strong> ([ [ 0.75, 0.75 ] ]),
+         *         "lens": { "&lt;enumerated&gt;": { "lens": "zoom" } }
+         *     }
+         * );
+         */
+        jamHelpers.toPointObject = function (pointArr)
+        {
+            var data = pointArr[0];
+            var unit = pointArr[1];  // Optional, may be undefined
+            var pointObject =
+            [
+                "<object>",
+                [
+                    "point",
+                    {
+                        "horizontal": toUnitDouble (data[0], unit),
+                        "vertical": toUnitDouble (data[1], unit)
+                    }
+                ]
+            ];
+            return pointObject;
+        };
+        //
+        /**
+         * @description Get a point list in JSON AM Data Format from a JSON array of data (list of points) and optional unit ID string.
+         * @param {Array} pointsArr JSON array of data (list of points as JSON arrays of 2 numeric coordinates: [ horizontal, vertical ]) and an optional unit ID string ("distanceUnit", "percentUnit", "pixelsUnit", etc.)
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/point-list-simplified-format/">Point List Simplified Format</a>)
+         * @returns {Object|Array} Point list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamHelpers.fromPointList
+         * @example
+         * var points = [ [ [ 467, 116 ], [ 482, 335 ], [ 313, 274 ], [ 366, 102 ] ], "pixelsUnit" ];
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "channel": { "&lt;property&gt;": "selection" } } ] },
+         *         "to": { "&lt;object&gt": { "polygon": { "points": jamHelpers.<strong>toPointList</strong> (points) } } },
+         *         "feather": { "&lt;unitDouble&gt;": { "pixelsUnit": 5 } },
+         *         "antiAlias": { "&lt;boolean&gt;": true }
+         *     }
+         * );
+         */
+        jamHelpers.toPointList = function (pointsArr)
+        {
+            var data = pointsArr[0];
+            var unit = pointsArr[1];  // Optional, may be undefined
+            var pointListArr = [ ];
+            for (var i = 0; i < data.length; i++)
+            {
+                pointListArr.push
+                (
+                    [
+                        "<object>",
+                        [
+                            "point",
+                            {
+                                "horizontal": toUnitDouble (data[i][0], unit),
+                                "vertical": toUnitDouble (data[i][1], unit)
+                            }
+                        ]
+                    ]
+                );
+            }
+            return [ "<list>", pointListArr ];
+        };
+        //
+        //
+        /**
+         * @description Get a JSON array of data (list of points) and optional unit ID string from a point list in JSON AM Data Format.
+         * @param {Object|Array} pointList Point list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @returns {Array} JSON array of data (list of points as JSON arrays of 2 numeric coordinates: [ horizontal, vertical ]) and optional unit ID string for coordinates
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/point-list-simplified-format/">Point List Simplified Format</a>)
+         * @see jamHelpers.toPointList
+         * @example
+         * var pointList =
+         * {
+         *     "&lt;list&gt;":
+         *     [
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "point":
+         *                 {
+         *                     "horizontal": { "&lt;unitDouble&gt;": { "percentUnit": 80 } },
+         *                     "vertical": { "&lt;unitDouble&gt;": { "percentUnit": 50 } }
+         *                 }
+         *             }
+         *         },
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "point":
+         *                 {
+         *                     "horizontal": { "&lt;unitDouble&gt;": { "percentUnit": 20 } },
+         *                     "vertical": { "&lt;unitDouble&gt;": { "percentUnit": 20 } }
+         *                 }
+         *             }
+         *         },
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "point":
+         *                 {
+         *                     "horizontal": { "&lt;unitDouble&gt;": { "percentUnit": 20 } },
+         *                     "vertical": { "&lt;unitDouble&gt;": { "percentUnit": 80 } }
+         *                 }
+         *             }
+         *         }
+         *     ]
+         * };
+         * alert (jamJSON.stringify (jamHelpers.<strong>fromPointList</strong> (pointList)));
+         * // -> [ [ [ 80, 50 ], [ 20, 20 ], [ 20, 80 ] ], "percentUnit" ]
+         */
+        jamHelpers.fromPointList = function (pointList)
+        {
+            var pointsArr = [ ];
+            var normalizedPointList = jamEngine.normalizeJsonItem (pointList, { meaningfulIds: true, parseFriendly: true });
+            var data = [ ];
+            var unit;
+            function getValue (coordinate)
+            {
+                var value;
+                switch (coordinate[0])
+                {
+                    case "<unitDouble>":
+                        unit = coordinate[1][0];
+                        value = coordinate[1][1];
+                        break;
+                    case "<double>":
+                        unit = undefined;
+                        value = coordinate[1];
+                        break;
+                }
+                return value;
+            }
+            var pointListArr = normalizedPointList[1];
+            for (var i = 0; i < pointListArr.length; i++)
+            {
+                data.push ([ getValue (pointListArr[i][1][1]["horizontal"]), getValue (pointListArr[i][1][1]["vertical"]) ]);
+            }
+            pointsArr.push (data);
+            if (unit)
+            {
+                pointsArr.push (unit);
+            }
+            return pointsArr;
+        };
+        //
+        /**
+         * @description Get an offset object in JSON AM Data Format from a JSON array of data (offset values) and optional unit ID string.
+         * @param {Array} offsetArr JSON array of data: [ horizontal, vertical ], and optional unit ID string ("distanceUnit", "percentUnit", "pixelsUnit", etc.)
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/offset-object-simplified-format/">Offset Object Simplified Format</a>)
+         * @returns {Object|Array} Offset object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * jamEngine.jsonPlay
+         * (
+         *     "move",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "layer": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } } ] },
+         *         "to": jamHelpers.<strong>toOffsetObject</strong> ([ [ 50, 50 ], "percentUnit" ])
+         *     }
+         * );
+         */
+        jamHelpers.toOffsetObject = function (offsetArr)
+        {
+            var data = offsetArr[0];
+            var unit = offsetArr[1];  // Optional, may be undefined
+            var offsetObject =
+            [
+                "<object>",
+                [
+                    "offset",
+                    {
+                        "horizontal": toUnitDouble (data[0], unit),
+                        "vertical": toUnitDouble (data[1], unit)
+                    }
+                ]
+            ];
+            return offsetObject;
+        };
+        //
+        /**
+         * @description Get a rectangle object in JSON AM Data Format from a JSON array of data (bound values and optional radius) and optional unit ID string.
+         * @param {Array} rectangleArr JSON array of data: [ left, top, right, bottom ] for plain rectangles or [ left, top, right, bottom, radius ] for rounded rectangles, and optional unit ID string ("distanceUnit", "percentUnit", "pixelsUnit", etc.)
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/rectangle-object-simplified-format/">Rectangle Object Simplified Format</a>)
+         * @returns {Object|Array} Rectangle object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * // Plain rectangle
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "channel": { "&lt;property&gt;": "selection" } } ] },
+         *         "to": jamHelpers.<strong>toRectangleObject</strong> ([ [ 10, 10, 90, 90 ], "percentUnit" ])
+         *     }
+         * );
+         * @example
+         * // Rounded rectangle
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "path": { "&lt;property&gt;": "workPath" } } ] },
+         *         "to": jamHelpers.<strong>toRectangleObject</strong> ([ [ 10, 10, 90, 90, 10 ], "percentUnit" ])
+         *     }
+         * );
+         */
+        jamHelpers.toRectangleObject = function (rectangleArr)
+        {
+            var data = rectangleArr[0];
+            var unit = rectangleArr[1];  // Optional, may be undefined
+            var rectangleObj =
+            {
+                "left": toUnitDouble (data[0], unit),
+                "top": toUnitDouble (data[1], unit),
+                "right": toUnitDouble (data[2], unit),
+                "bottom": toUnitDouble (data[3], unit)
+            };
+            if (data.length === 5)
+            {
+                rectangleObj["radius"] = toUnitDouble (data[4], unit);
+            }
+            return [ "<object>", [ "rectangle", rectangleObj ] ];
+        };
+        //
+        /**
+         * @description Get an ellipse object in JSON AM Data Format from a JSON array of data (bound values) and optional unit ID string.
+         * @param {Array} ellipseArr JSON array of data: [ left, top, right, bottom ], and optional unit ID string ("distanceUnit", "percentUnit", "pixelsUnit", etc.)
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/ellipse-object-simplified-format/">Ellipse Object Simplified Format</a>)
+         * @returns {Object|Array} Ellipse object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "path": { "&lt;property&gt;": "workPath" } } ] },
+         *         "to": jamHelpers.<strong>toEllipseObject</strong> ([ [ 10, 10, 90, 90 ], "percentUnit" ])
+         *     }
+         * );
+         */
+        jamHelpers.toEllipseObject = function (ellipseArr)
+        {
+            var data = ellipseArr[0];
+            var unit = ellipseArr[1];  // Optional, may be undefined
+            var ellipseObject =
+            [
+                "<object>",
+                [
+                    "ellipse",
+                    {
+                        "left": toUnitDouble (data[0], unit),
+                        "top": toUnitDouble (data[1], unit),
+                        "right": toUnitDouble (data[2], unit),
+                        "bottom": toUnitDouble (data[3], unit)
+                    }
+                ]
+            ];
+            return ellipseObject;
+        };
+        //
+        /**
+         * @description Get a custom shape object in JSON AM Data Format from a JSON array of data (name and bound values) and optional unit ID string.
+         * @param {Array} customShapeArr JSON array of data: [ name, left, top, right, bottom ], and optional unit ID string ("distanceUnit", "percentUnit", "pixelsUnit", etc.)
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/custom-shape-object-simplified-format/">Custom Shape Object Simplified Format</a>)
+         * @returns {Object|Array} Custom shape object in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "path": { "&lt;property&gt;": "workPath" } } ] },
+         *         "to": jamHelpers.<strong>toCustomShapeObject</strong> ([ [ "Yin Yang", 20, 20, 80, 80 ], "percentUnit" ])
+         *     }
+         * );
+         */
+        jamHelpers.toCustomShapeObject = function (customShapeArr)
+        {
+            var data = customShapeArr[0];
+            var unit = customShapeArr[1];  // Optional, may be undefined
+            var customShapeObject =
+            [
+                "<object>",
+                [
+                    "customShape",
+                    {
+                        "name": [ "<string>", data[0] ],
+                        "left": toUnitDouble (data[1], unit),
+                        "top": toUnitDouble (data[2], unit),
+                        "right": toUnitDouble (data[3], unit),
+                        "bottom": toUnitDouble (data[4], unit)
+                    }
+                ]
+            ];
+            return customShapeObject;
+        };
+        //
+        /**
+         * @description Get a curve point list in JSON AM Data Format from a JSON array of curve points.
+         * @param {Array} curvePoints JSON array of curve points, each one being either a JSON object or a JSON array
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/curve-point-list-simplified-format/">Curve Point List Simplified Format</a>)
+         * @returns {Object|Array} Curve point list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamHelpers.fromCurvePointList
+         * @example
+         * var curvePoints =
+         * [
+         *     { "horizontal": 0, "vertical": 0 },
+         *     { "horizontal": 75, "vertical": 150 },
+         *     { "horizontal": 175, "vertical": 25, "continuity": false },
+         *     { "horizontal": 255, "vertical": 255 }
+         * ];
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target":
+         *         {
+         *             "&lt;reference&gt;":
+         *             [
+         *                 { "property": { "&lt;property&gt;": "layerEffects" } },
+         *                 { "layer": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } }
+         *             ]
+         *         },
+         *         "to":
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "layerEffects":
+         *                 {
+         *                     "scale": { "&lt;unitDouble&gt;": { "percentUnit": 100 } },
+         *                     "chromeFX":
+         *                     {
+         *                         "&lt;object&gt;":
+         *                         {
+         *                             "chromeFX":
+         *                             {
+         *                                 "enabled": { "&lt;boolean&gt;": true },
+         *                                 "mode": { "&lt;enumerated&gt;": { "blendMode": "normal" } },
+         *                                 "color": jamHelpers.toColorObject ([ "HSBColorClass", [ 190, 100, 100 ] ]),
+         *                                 "antiAlias": { "&lt;boolean&gt;": true },
+         *                                 "invert": { "&lt;boolean&gt;": false },
+         *                                 "opacity": { "&lt;unitDouble&gt;": { "percentUnit": 90 } },
+         *                                 "localLightingAngle": { "&lt;unitDouble&gt;": { "angleUnit": 45 } },
+         *                                 "distance": { "&lt;unitDouble&gt;": { "pixelsUnit": 10 } },
+         *                                 "blur": { "&lt;unitDouble&gt;": { "pixelsUnit": 15 } },
+         *                                 "mappingShape":
+         *                                 {
+         *                                     "&lt;object&gt;":
+         *                                     {
+         *                                         "shapingCurve":
+         *                                         {
+         *                                             "curve": jamHelpers.<strong>toCurvePointList</strong> (curvePoints)
+         *                                         }
+         *                                     }
+         *                                 }
+         *                             }
+         *                         }
+         *                     }
+         *                 }
+         *             }
+         *         }
+         *     }
+         * );
+         */
+        jamHelpers.toCurvePointList = function (curvePoints)
+        {
+            var curvePointListArr = [ ];
+            var curvePointObject;
+            for (var i = 0; i < curvePoints.length; i++)
+            {
+                var curvePoint = curvePoints[i];
+                if (curvePoint.constructor === Object)
+                {
+                    function restoreDesc (desc)
+                    {
+                        var restoredDesc = { };
+                        for (var key in desc)
+                        {
+                            if (desc.hasOwnProperty (key))
+                            {
+                                var value = desc[key];
+                                var typedValue = null;
+                                switch (key)
+                                {
+                                    case "continuity":
+                                        typedValue = [ "<boolean>", value ];
+                                        break;
+                                    case "horizontal":
+                                    case "vertical":
+                                        typedValue = [ "<double>", value ];
+                                        break;
+                                    case "curvePoint":
+                                        typedValue = [ "<object>", [ "curvePoint", restoreDesc (value) ] ];
+                                        break;
+                                }
+                                if (typedValue)
+                                {
+                                    restoredDesc[key] = typedValue;
+                                }
+                            }
+                        }
+                        return restoredDesc;
+                    }
+                    curvePointObject = restoreDesc ({ "curvePoint": curvePoint })["curvePoint"];
+                }
+                else if (curvePoint.constructor === Array)
+                {
+                    switch (curvePoint.length)
+                    {
+                        case 2:
+                            // smooth point by default
+                            curvePointObject =
+                            [
+                                "<object>",
+                                [
+                                    "curvePoint",
+                                    {
+                                        "horizontal": [ "<double>", curvePoint[0] ],
+                                        "vertical": [ "<double>", curvePoint[1] ]
+                                    }
+                                ]
+                            ];
+                            break;
+                        case 3:
+                            // curvePoint[2] should be either true (smooth) or false (corner)
+                            curvePointObject =
+                            [
+                                "<object>",
+                                [
+                                    "curvePoint",
+                                    {
+                                        "horizontal": [ "<double>", curvePoint[0] ],
+                                        "vertical": [ "<double>", curvePoint[1] ],
+                                        "continuity": [ "<boolean>", curvePoint[2] ]
+                                    }
+                                ]
+                            ];
+                            break;
+                    }
+                }
+                curvePointListArr.push (curvePointObject);
+            }
+            return [ "<list>", curvePointListArr ];
+        };
+        //
+        /**
+         * @description Get a simplified curve point JSON array from a curve point list in JSON AM Data Format.
+         * @param {Object|Array} curvePointList Curve point list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @param {Boolean} [explicit] Explicit flag: if true, return a JSON array made of explicit JSON objects instead of minimal JSON arrays
+         * @returns {Array} Simplified curve point JSON array
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/curve-point-list-simplified-format/">Curve Point List Simplified Format</a>)
+         * @see jamHelpers.toCurvePointList
+         * @example
+         * var curvePointList =
+         * {
+         *     "&lt;list&gt;":
+         *     [
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "curvePoint":
+         *                 {
+         *                     "horizontal": { "&lt;double&gt;": 0 },
+         *                     "vertical": { "&lt;double&gt;": 0 }
+         *                 }
+         *             }
+         *         },
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "curvePoint":
+         *                 {
+         *                     "horizontal": { "&lt;double&gt;": 75 },
+         *                     "vertical": { "&lt;double&gt;": 150 }
+         *                 }
+         *             }
+         *         },
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "curvePoint":
+         *                 {
+         *                     "horizontal": { "&lt;double&gt;": 175 },
+         *                     "vertical": { "&lt;double&gt;": 25 },
+         *                     "continuity": { "&lt;boolean&gt;": false }
+         *                 }
+         *             }
+         *         },
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "curvePoint":
+         *                 {
+         *                     "horizontal": { "&lt;double&gt;": 255 },
+         *                     "vertical": { "&lt;double&gt;": 255 }
+         *                 }
+         *             }
+         *         }
+         *     ]
+         * };
+         * alert (jamJSON.stringify (jamHelpers.<strong>fromCurvePointList</strong> (curvePointList, true), '\t'));
+         * // ->
+         * // [
+         * //     {
+         * //         "horizontal": 0,
+         * //         "vertical": 0
+         * //     },
+         * //     {
+         * //         "horizontal": 75,
+         * //         "vertical": 150
+         * //     },
+         * //     {
+         * //         "horizontal": 175,
+         * //         "vertical": 25,
+         * //         "continuity": false
+         * //     },
+         * //     {
+         * //         "horizontal": 255,
+         * //         "vertical": 255
+         * //     }
+         * // ]
+         * alert (jamJSON.stringify (jamHelpers.<strong>fromCurvePointList</strong> (curvePointList)));
+         * // ->
+         * // [ [ 0, 0 ], [ 75, 150 ], [ 175, 25, false ], [ 255, 255 ] ]
+         */
+        jamHelpers.fromCurvePointList = function (curvePointList, explicit)
+        {
+            var curvePoints;
+            if (explicit)
+            {
+                curvePoints = jamEngine.simplifyList (curvePointList);
+            }
+            else
+            {
+                curvePoints = [ ];
+                var normalizedCurvePointList = jamEngine.normalizeJsonItem (curvePointList, { meaningfulIds: true, parseFriendly: true });
+                for (index = 0; index < normalizedCurvePointList[1].length; index++)
+                {
+                    var curvePoint = normalizedCurvePointList[1][index][1][1];
+                    var curvePointArr =
+                    [
+                        curvePoint["horizontal"][1],
+                        curvePoint["vertical"][1]
+                    ];
+                    if ("continuity" in curvePoint)
+                    {
+                        curvePointArr.push (curvePoint["continuity"][1]);
+                    }
+                    curvePoints.push (curvePointArr);
+                }
+            }
+            return curvePoints;
+        };
+        //
+        /**
+         * @description Get a rational point list in JSON AM Data Format from a JSON array of a list of rational points and optional unit ID string.
+         * @param {Array} rationalPointsArr JSON array of a list of rational points (as JSON arrays of 2 numeric coordinates: [ horizontal, vertical ]) and an optional unit ID string ("distanceUnit", "percentUnit", "pixelsUnit", etc.)
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/rational-point-list-simplified-format/">Rational Point List Simplified Format</a>)
+         * @returns {Object|Array} Rational point list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @example
+         * var bounds = [ [ 0, 0, 100, 100 ], "percentUnit" ];
+         * var meshPoints =
+         * [
+         *     [
+         *         [ 0, 0 ], [ 50, 0 ], [ 50, 0 ], [ 100, 0 ],
+         *         [ 0, 50 ], [ 100 / 3, 100 / 3 ], [ 200 / 3, 100 / 3 ], [ 100, 50 ],
+         *         [ 0, 50 ], [ 100 / 3, 200 / 3 ], [ 200 / 3, 200 / 3 ], [ 100, 50 ],
+         *         [ 0, 100 ], [ 50, 100 ], [ 50, 100 ], [ 100, 100 ]
+         *     ],
+         *     "percentUnit"
+         * ];
+         * jamEngine.jsonPlay
+         * (
+         *     "transform",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "layer": { "&lt;enumerated&gt;": { "ordinal": "targetEnum" } } } ] },
+         *         "freeTransformCenterState": { "&lt;enumerated&gt;": { "quadCenterState": "QCSAverage" } },
+         *         "warp":
+         *         {
+         *             "&lt;object&gt;":
+         *             {
+         *                 "warp":
+         *                 {
+         *                     "warpStyle": { "&lt;enumerated&gt;": { "warpStyle": "warpCustom" } },
+         *                     "bounds": jamHelpers.toRectangleObject (bounds),
+         *                     "uOrder": { "&lt;integer&gt;": 4 },
+         *                     "vOrder": { "&lt;integer&gt;": 4 },
+         *                     "customEnvelopeWarp":
+         *                     {
+         *                         "&lt;object&gt;":
+         *                         {
+         *                             "customEnvelopeWarp":
+         *                             {
+         *                                 "meshPoints": jamHelpers.<strong>toRationalPointList</strong> (meshPoints)
+         *                             }
+         *                         }
+         *                     }
+         *                 }
+         *             }
+         *         }
+         *     }
+         * );
+         */
+        jamHelpers.toRationalPointList = function (rationalPointsArr)
+        {
+            var data = rationalPointsArr[0];
+            var unit = rationalPointsArr[1];  // Optional, may be undefined
+            var rationalPointListArr = [ ];
+            for (var i = 0; i < data.length; i++)
+            {
+                rationalPointListArr.push
+                (
+                    [
+                        "<object>",
+                        [
+                            "rationalPoint",
+                            {
+                                "horizontal": toUnitDouble (data[i][0], unit),
+                                "vertical": toUnitDouble (data[i][1], unit)
+                            }
+                        ]
+                    ]
+                );
+            }
+            return [ "<list>", rationalPointListArr ];
+        };
+        //
+        /**
+         * @description Get a path component list in JSON AM Data Format from either a JSON object or a JSON array (made of two elements: simplified path component values and unit ID string for coordinates).
+         * @param {Object|Array} pathComponents JSON object or JSON array made of two elements: simplified path component values and unit ID string for coordinates ("distanceUnit", "percentUnit", "pixelsUnit")
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/path-component-list-simplified-format/">Path Component List Simplified Format</a>)
+         * @returns {Object|Array} Path component list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @see jamHelpers.fromPathComponentList
+         * @example
+         * // Self-intersecting five-pointed star path
+         * var starPath =
+         * {
+         *     "pathComponents":
+         *     [
+         *         {
+         *             "shapeOperation": "add",
+         *             "windingFill": true,
+         *             "subpathListKey":
+         *             [
+         *                 {
+         *                     "closedSubpath": true,
+         *                     "points":
+         *                     [
+         *                         { "anchor": { "horizontal": 12.5, "vertical": 41 } },
+         *                         { "anchor": { "horizontal": 87.5, "vertical": 41 } },
+         *                         { "anchor": { "horizontal": 23, "vertical": 85.5 } },
+         *                         { "anchor": { "horizontal": 50, "vertical": 14.5 } },
+         *                         { "anchor": { "horizontal": 77, "vertical": 85.5 } }
+         *                     ]
+         *                 }
+         *             ]
+         *         }
+         *     ],
+         *     "unit": "percentUnit"
+         * };
+         * jamEngine.jsonPlay
+         * (
+         *     "set",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "path": { "&lt;property&gt;": "workPath" } } ] },
+         *         "to": jamHelpers.<strong>toPathComponentList</strong> (starPath)
+         *     }
+         * );
+         * jamEngine.jsonPlay
+         * (
+         *     "fill",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "path": { "&lt;property&gt;": "workPath" } } ] },
+         *         "wholePath": { "&lt;boolean&gt;": true },
+         *         "using": { "&lt;enumerated&gt;": { "fillContents": "color" } },
+         *         "color": jamHelpers.toColorObject ([ "RGBColor", [ 255, 0, 255 ] ]),  // Magenta
+         *         "opacity": { "&lt;unitDouble&gt;": { "percentUnit": 100 } },
+         *         "mode": { "&lt;enumerated&gt;": { "blendMode": "normal" } },
+         *         "radius": { "&lt;unitDouble&gt;": { "pixelsUnit": 0.0 } },
+         *         "antiAlias": { "&lt;boolean&gt;": true }
+         *     }
+         * );
+         * jamEngine.jsonPlay
+         * (
+         *     "delete",
+         *     {
+         *         "target": { "&lt;reference&gt;": [ { "path": { "&lt;property&gt;": "workPath" } } ] }
+         *     }
+         * );
+         */
+        jamHelpers.toPathComponentList = function (pathComponents)
+        {
+            var pathComponentList;
+            if (pathComponents.constructor === Object)
+            {
+                var unit;
+                if ("unit" in pathComponents)
+                {
+                    unit = pathComponents["unit"];
+                }
+                var data = pathComponents["pathComponents"];
+                function restoreDesc (desc)
+                {
+                    var restoredDesc = { };
+                    for (var key in desc)
+                    {
+                        if (desc.hasOwnProperty (key))
+                        {
+                            var value = desc[key];
+                            var typedValue = null;
+                            var restoredList;
+                            switch (key)
+                            {
+                                case "closedSubpath":
+                                case "smooth":
+                                case "windingFill":
+                                    typedValue = [ "<boolean>", value ];
+                                    break;
+                                case "shapeOperation":
+                                    typedValue = [ "<enumerated>", [ "shapeOperation", value ] ];
+                                    break;
+                                case "horizontal":
+                                case "vertical":
+                                    typedValue = toUnitDouble (value, unit);
+                                    break;
+                                case "anchor":
+                                case "backward":
+                                case "forward":
+                                    typedValue = [ "<object>", [ "point", restoreDesc (value) ] ];
+                                    break;
+                                case "subpathListKey":
+                                    restoredList = [ ];
+                                    for (var i = 0; i < value.length; i++)
+                                    {
+                                        restoredList.push ([ "<object>", [ "subpathsList", restoreDesc (value[i]) ] ]);
+                                    }
+                                    typedValue = [ "<list>", restoredList ];
+                                    break;
+                                case "points":
+                                    restoredList = [ ];
+                                    for (var i = 0; i < value.length; i++)
+                                    {
+                                        restoredList.push ([ "<object>", [ "pathPoint", restoreDesc (value[i]) ] ]);
+                                    }
+                                    typedValue = [ "<list>", restoredList ];
+                                    break;
+                                case "pathComponents":
+                                    restoredList = [ ];
+                                    for (var i = 0; i < value.length; i++)
+                                    {
+                                        restoredList.push ([ "<object>", [ "pathComponent", restoreDesc (value[i]) ] ]);
+                                    }
+                                    typedValue = [ "<list>", restoredList ];
+                                    break;
+                            }
+                            if (typedValue)
+                            {
+                                restoredDesc[key] = typedValue;
+                            }
+                        }
+                    }
+                    return restoredDesc;
+                }
+                pathComponentList = restoreDesc ({ "pathComponents": data })["pathComponents"];
+            }
+            else if (pathComponents.constructor === Array)
+            {
+                var pathComponentListArr = [ ];
+                var data = pathComponents[0];
+                var unit = pathComponents[1];
+                for (var i = 0; i < data.length; i++)
+                {
+                    var shapeOperation = data[i][0];
+                    var subpaths = data[i][1];
+                    var windingFill = data[i][2];
+                    var subpathArr = [ ];
+                    for (var j = 0; j < subpaths.length; j++)
+                    {
+                        var points = subpaths[j][0];
+                        var closedSubpath = subpaths[j][1];
+                        var pointArr = [ ];
+                        for (var k = 0; k < points.length; k++)
+                        {
+                            var point = points[k];
+                            switch (point.length)
+                            {
+                                case 1:
+                                    pointArr.push
+                                    (
+                                        [
+                                            "<object>",
+                                            [
+                                                "pathPoint",
+                                                {
+                                                    "anchor":
+                                                    [
+                                                        "<object>",
+                                                        [
+                                                            "point",
+                                                            {
+                                                                "horizontal": toUnitDouble (point[0][0], unit),
+                                                                "vertical": toUnitDouble (point[0][1], unit)
+                                                            }
+                                                        ]
+                                                    ]
+                                                }
+                                            ]
+                                        ]
+                                    );
+                                    break;
+                                case 3:
+                                case 4:
+                                    pointArr.push
+                                    (
+                                        [
+                                            "<object>",
+                                            [
+                                                "pathPoint",
+                                                {
+                                                    "anchor":
+                                                    [
+                                                        "<object>",
+                                                        [
+                                                            "point",
+                                                            {
+                                                                "horizontal": toUnitDouble (point[0][0], unit),
+                                                                "vertical": toUnitDouble (point[0][1], unit)
+                                                            }
+                                                        ]
+                                                    ],
+                                                    "forward":
+                                                    [
+                                                        "<object>",
+                                                        [
+                                                            "point",
+                                                            {
+                                                                "horizontal": toUnitDouble (point[1][0], unit),
+                                                                "vertical": toUnitDouble (point[1][1], unit)
+                                                            }
+                                                        ]
+                                                    ],
+                                                    "backward":
+                                                    [
+                                                        "<object>",
+                                                        [
+                                                            "point",
+                                                            {
+                                                                "horizontal": toUnitDouble (point[2][0], unit),
+                                                                "vertical": toUnitDouble (point[2][1], unit)
+                                                            }
+                                                        ]
+                                                    ],
+                                                    "smooth": [ "<boolean>", point[3] || false ]
+                                                }
+                                            ]
+                                        ]
+                                    );
+                                    break;
+                            }
+                        }
+                        var subpath = { };
+                        if (closedSubpath)
+                        {
+                            subpath["closedSubpath"] = [ "<boolean>", closedSubpath ];
+                        }
+                        subpath["points"] = [ "<list>", pointArr ];
+                        subpathArr.push ([ "<object>", [ "subpathsList", subpath ] ]);
+                    }
+                    var pathComponent = { };
+                    pathComponent["shapeOperation"] = [ "<enumerated>", [ "shapeOperation", shapeOperation ] ];
+                    if (windingFill)
+                    {
+                        pathComponent["windingFill"] = [ "<boolean>", windingFill ];
+                    }
+                    pathComponent["subpathListKey"] = [ "<list>", subpathArr ];
+                    pathComponentListArr.push ([ "<object>", [ "pathComponent", pathComponent ] ]);
+                }
+                pathComponentList = [ "<list>", pathComponentListArr ];
+            }
+            return pathComponentList;
+        };
+        //
+        /**
+         * @description Get either a JSON object or a JSON array (made of two elements: simplified path component values and unit ID string for coordinates) from a path component list in JSON AM Data Format.
+         * @param {Object|Array} pathComponentList Path component list in <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-am-data-format/">JSON AM Data Format</a>
+         * @param {Boolean} [explicit] Explicit flag: if true, return an explicit JSON object instead of a minimal JSON array
+         * @returns {Array|Object} JSON object or JSON array made of two elements: simplified path component values and unit ID string for coordinates ("distanceUnit", "percentUnit", "pixelsUnit")
+         * (cf. <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-simplified-formats/path-component-list-simplified-format/">Path Component List Simplified Format</a>)
+         * @see jamHelpers.toPathComponentList
+         * @example
+         * jamEngine.meaningfulIds = true;
+         * jamEngine.parseFriendly = true;
+         * var resultObj = jamEngine.jsonGet ([ { "path": { "&lt;property&gt;": "workPath" } } ]);
+         * var pathComponentArr =
+         *     jamHelpers.<strong>fromPathComponentList</strong> (resultObj["pathContents"][1][1]["pathComponents"], true);
+         * jamUtils.writeJsonFile (new File ("~/Desktop/work-path.json"), pathComponentArr, '\t');
+         */
+        jamHelpers.fromPathComponentList = function (pathComponentList, explicit)
+        {
+            var pathComponents;
+            if (explicit)
+            {
+                pathComponents = { };
+                var unit;
+                var done = false;
+                function getUnitHook (desc, key)
+                {
+                    if (!done)
+                    {
+                        if (key === "horizontal")   // Unit used by the first encountered horizontal coordinate, assumed to be the same for all others
+                        {
+                            var value = desc[key];
+                            if (value[0] === "<unitDouble>")
+                            {
+                                unit = value[1][0];
+                            }
+                            done = true;
+                        }
+                    }
+                    return undefined;
+                }
+                pathComponents["pathComponents"] = jamEngine.simplifyList (pathComponentList, getUnitHook);
+                if (unit)
+                {
+                    pathComponents["unit"] = unit;
+                }
+            }
+            else
+            {
+                pathComponents = [ ];
+                var normalizedPathComponentList = jamEngine.normalizeJsonItem (pathComponentList, { meaningfulIds: true, parseFriendly: true });
+                var data = [ ];
+                var unit;
+                function getValue (coordinate)
+                {
+                    var value;
+                    switch (coordinate[0])
+                    {
+                        case "<unitDouble>":
+                            unit = coordinate[1][0];
+                            value = coordinate[1][1];
+                            break;
+                        case "<double>":
+                            unit = undefined;
+                            value = coordinate[1];
+                            break;
+                    }
+                    return value;
+                }
+                var pathComponentListArr = normalizedPathComponentList[1];
+                for (var i = 0; i < pathComponentListArr.length; i++)
+                {
+                    var pathComponent = pathComponentListArr[i][1][1];
+                    var shapeOperation = pathComponent["shapeOperation"][1][1];
+                    var windingFill = ("windingFill" in pathComponent) ? pathComponent["windingFill"][1] : false;
+                    var subpathsArr = [ ];
+                    var subpathListArr = pathComponent["subpathListKey"][1];
+                    for (var j = 0; j < subpathListArr.length; j++)
+                    {
+                        var subpathsList = subpathListArr[j][1][1];
+                        var closedSubpath = ("closedSubpath" in subpathsList) ? subpathsList["closedSubpath"][1] : false;
+                        var pathPointsArr = [ ];
+                        var pointsArr = subpathsList["points"][1];
+                        for (var k = 0; k < pointsArr.length; k++)
+                        {
+                            var pathPoint = pointsArr[k][1][1];
+                            var pathPointArr = [ ];
+                            var anchor = pathPoint["anchor"][1][1];
+                            pathPointArr.push ([ getValue (anchor["horizontal"]), getValue (anchor["vertical"]) ]);
+                            if ("forward" in pathPoint)
+                            {
+                                var forward = pathPoint["forward"][1][1];
+                                pathPointArr.push ([ getValue (forward["horizontal"]), getValue (forward["vertical"]) ]);
+                            }
+                            if ("backward" in pathPoint)
+                            {
+                                var backward = pathPoint["backward"][1][1];
+                                pathPointArr.push ([ getValue (backward["horizontal"]), getValue (backward["vertical"]) ]);
+                            }
+                            var smooth = ("smooth" in pathPoint) ? pathPoint["smooth"][1] : false;
+                            if (smooth)
+                            {
+                                pathPointArr.push (smooth);
+                            }
+                            pathPointsArr.push (pathPointArr);
+                        }
+                        var subpathArr = [ ];
+                        subpathArr.push (pathPointsArr);
+                        if (closedSubpath)
+                        {
+                            subpathArr.push (closedSubpath);
+                        }
+                        subpathsArr.push (subpathArr);
+                    }
+                    var pathComponentArr = [ ];
+                    pathComponentArr.push (shapeOperation);
+                    pathComponentArr.push (subpathsArr);
+                    if (windingFill)
+                    {
+                        pathComponentArr.push (windingFill);
+                    }
+                    data.push (pathComponentArr);
+                }
+                pathComponents.push (data);
+                if (unit)
+                {
+                    pathComponents.push (unit);
+                }
+            }
+            return pathComponents;
+        };
+    } ());
+}
+
+//------------------------------------------------------------------------------
+

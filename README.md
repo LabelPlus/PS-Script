@@ -6,7 +6,9 @@
 
 LabelPlus是一个用于图片翻译的工具包，本工程是其中的Photoshop文本导入工具，它读入翻译文本，并将文本逐条添加到PSD档中。
 
-脚本大量使用[xtools(BSD license)](http://ps-scripts.sourceforge.net/xtools.html)中的工具函数。
+脚本用到的开源项目：
+* [xtools(BSD license)](http://ps-scripts.sourceforge.net/xtools.html)中部分工具函数及UI框架
+* [JSON Action Manager](http://www.tonton-pixel.com/json-photoshop-scripting/json-action-manager/index.html)中的JSON解析库
 
 功能一览：
 

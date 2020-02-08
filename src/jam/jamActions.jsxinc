@@ -1,0 +1,782 @@
+﻿//------------------------------------------------------------------------------
+// File: jamActions.jsxinc
+// Version: 4.5
+// Release Date: 2016-09-29
+// Copyright: © 2011-2016 Michel MARIANI <http://www.tonton-pixel.com/blog/>
+// Licence: GPL <http://www.gnu.org/licenses/gpl.html>
+//------------------------------------------------------------------------------
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//------------------------------------------------------------------------------
+// Version History:
+//  4.5:
+//  - Incremented version number to keep in sync with other modules.
+//  4.4:
+//  - Normalized error messages.
+//  4.1:
+//  - Simplified test in jamActions.isActionsPalette ().
+//  4.0:
+//  - Removed reference to 'this' for main global object.
+//  3.6:
+//  - Incremented version number to keep in sync with other modules.
+//  3.5:
+//  - Added jamActions.readActionDescriptor () to public functions, along with
+//    an extra insertVersionPrefix parameter.
+//  3.4:
+//  - Incremented version number to keep in sync with other modules.
+//  3.3:
+//  - Initial release.
+//------------------------------------------------------------------------------
+
+/**
+ * @fileOverview
+ * @name jamActions.jsxinc
+ * @author Michel MARIANI
+ */
+
+//------------------------------------------------------------------------------
+
+if (typeof jamActions !== 'object')
+{
+    /**
+     * Global object (used to simulate a namespace in JavaScript) containing
+     * a set of functions related to decoding actions files into a format usable by scripts written with the
+     * <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-action-manager/">JSON Action Manager</a> engine.<br />
+     * Uses information found in the document
+     * <a href="http://www.tonton-pixel.com/Photoshop%20Additional%20File%20Formats/actions-file-format.html">Photoshop Actions File Format</a>.
+     * @author Michel MARIANI
+     * @version 4.5
+     * @namespace
+     */
+    var jamActions = { };
+    //
+    (function ()
+    {
+        /**
+         * @description Test if a given file is an actions file (*.atn).
+         * @param {Object} file File object
+         * @returns {Boolean} true if actions file
+         * @example
+         * function actionsFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamActions.<strong>isActionsFile</strong> (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? actionsFileFilter : "Actions Files:*.atn,All Files:*";
+         * var actionsFile = File.openDialog ("Select an actions file:", select);
+         * if (actionsFile !== null)
+         * {
+         *     alert ("OK!");
+         * }
+         */
+        jamActions.isActionsFile = function (file)
+        {
+            return (file.type === '8BAC') || file.name.match (/\.atn$/i);
+        };
+        //
+        /**
+         * @description Test if a given file is an actions palette file (Actions Palette.psp).
+         * @param {Object} file File object
+         * @returns {Boolean} true if actions palette file
+         * @example
+         * function actionsPaletteFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamActions.<strong>isActionsPalette</strong> (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? actionsPaletteFilter : "Actions Palette File:*.psp,All Files:*.*";
+         * var actionsPaletteFile = File.openDialog ("Select an actions palette file:", select);
+         * if (actionsPaletteFile !== null)
+         * {
+         *     alert ("OK!");
+         * }
+         */
+        jamActions.isActionsPalette = function (file)
+        {
+            return ((file.type === '8BPF') && file.name.match (/^Actions Palette$/i)) || file.name.match (/^Actions Palette.psp$/i);
+        };
+        //
+        function readBEInt (file, byteCount)
+        {
+            var bytes = file.read (byteCount);
+            var intValue = 0;
+            for (var index = 0; index < byteCount; index++)
+            {
+                intValue = (intValue << 8) + bytes.charCodeAt (index);
+            }
+            return intValue;
+        }
+        //
+        function readBytes (file, byteCount)
+        {
+            return file.read (byteCount);
+        }
+        //
+        function readByteString (file)
+        {
+            var stringLength = readBEInt (file, 4);
+            return readBytes (file, stringLength);
+        }
+        //
+        function readUnicodeString (file)
+        {
+            var unicodeString = "";
+            var unicodeLength = readBEInt (file, 4);    // Includes terminating null
+            for (var index = 0; index < unicodeLength; index++)
+            {
+                var unicodeChar = readBEInt (file, 2);
+                if (unicodeChar !== 0)
+                {
+                    unicodeString += String.fromCharCode (unicodeChar);
+                }
+            }
+            return unicodeString;
+        }
+        //
+        function readEventId (file)
+        {
+            var eventId = 0;
+            var eventType = readBytes (file, 4);
+            switch (eventType)
+            {
+                case 'TEXT':
+                    eventId = app.stringIDToTypeID (readByteString (file));
+                    break;
+                case 'long':
+                    eventId = app.charIDToTypeID (readBytes (file, 4));
+                    break;
+                default:
+                    throw new Error ("[jamActions readEventId] Unrecognized event type: '" + eventType + "'");
+                    break;
+            }
+            return eventId;
+        }
+        //
+        function skipDouble (file)
+        {
+            file.seek (8, 1);
+        }
+        //
+        function skipDoubles (file, doubleCount)
+        {
+            file.seek (doubleCount * 8, 1);
+        }
+        //
+        function skipInt8 (file)
+        {
+            file.seek (1, 1);
+        }
+        //
+        function skipInt16 (file)
+        {
+            file.seek (2, 1);
+        }
+        //
+        function skipInt32 (file)
+        {
+            file.seek (4, 1);
+        }
+        //
+        function skipInt64 (file)
+        {
+            file.seek (8, 1);
+        }
+        //
+        function skipBytes (file, byteCount)
+        {
+            file.seek (byteCount, 1);
+        }
+        //
+        function skipByteString (file)
+        {
+            var stringLength = readBEInt (file, 4);
+            skipBytes (file, stringLength);
+        }
+        //
+        function skipUnicodeString (file)
+        {
+            var unicodeLength = readBEInt (file, 4);    // Includes terminating null
+            skipBytes (file, unicodeLength * 2);
+        }
+        //
+        function skipId (file)
+        {
+            var idLength = readBEInt (file, 4);
+            if (idLength)
+            {
+                skipBytes (file, idLength);
+            }
+            else
+            {
+                skipBytes (file, 4);
+            }
+        }
+        //
+        function skipClass (file)
+        {
+            skipUnicodeString (file);   // Class ID name (usually empty)
+            skipId (file);  // Class ID
+        }
+        //
+        function skipObject (file)
+        {
+            skipClass (file);
+            var itemCount = readBEInt (file, 4);
+            for (var itemIndex = 0; itemIndex < itemCount; itemIndex++)
+            {
+                skipId (file);  // Key ID
+                skipItem (file);
+            }
+        }
+        //
+        function skipList (file)
+        {
+            var itemCount = readBEInt (file, 4);
+            for (var itemIndex = 0; itemIndex < itemCount; itemIndex++)
+            {
+                skipItem (file);
+            }
+        }
+        //
+        function skipItem (file)
+        {
+            var typeId = readBytes (file, 4);
+            switch (typeId)
+            {
+                // Reference
+                case 'obj ':
+                    skipReference (file);
+                    break;
+                // Object descriptor
+                case 'Objc':
+                case 'GlbO':
+                    skipObject (file);
+                    break;
+                // Class
+                case 'type':
+                case 'GlbC':
+                    skipClass (file);
+                    break;
+                // List
+                case 'VlLs':
+                    skipList (file);
+                    break;
+                // Double
+                case 'doub':
+                    skipDouble (file);
+                    break;
+                // Unit double
+                case 'UntF':
+                    skipBytes (file, 4);    // Unit
+                    skipDouble (file);      // Double
+                    break;
+                // String
+                case 'TEXT':
+                    skipUnicodeString (file);
+                    break;
+                // Enumerated
+                case 'enum':
+                    skipId (file);  // Enum type
+                    skipId (file);  // Enum value
+                    break;
+                // Integer
+                case 'long':
+                    skipInt32 (file);   // Signed integer
+                    break;
+                // Large integer
+                case 'comp':
+                    skipInt64 (file);   // Signed integer
+                    break;
+                // Boolean
+                case 'bool':
+                    skipInt8 (file);
+                    break;
+                // File alias
+                case 'alis':
+                    skipByteString (file);
+                    break;
+                // File path
+                case 'Pth ':
+                    skipByteString (file);
+                    break;
+                // Raw data
+                case 'tdta':
+                    skipByteString (file);
+                    break;
+                // Object array (undocumented; used for polygonal selections...)
+                case 'ObAr':
+                    var objCount = readBEInt (file, 4);
+                    skipClass (file);
+                    var itemCount = readBEInt (file, 4);
+                    for (var itemIndex = 0; itemIndex < itemCount; itemIndex++)
+                    {
+                        skipId (file);      // Key ID
+                        skipInt32 (file);   // Item type: 'UnFl' (undocumented; assumed to be "Unit floats")...
+                        skipInt32 (file);   // Unit ID
+                        var doublesCount = readBEInt (file, 4); // Should be equal to objCount!
+                        skipDoubles (file, doublesCount);
+                    }
+                    break;
+                default:
+                    throw new Error ("[jamActions skipItem] Unrecognized item type: '" + typeId + "'");
+                    break;
+            }
+        }
+        //
+        function skipReference (file)
+        {
+            var itemCount = readBEInt (file, 4);
+            for (var itemIndex = 0; itemIndex < itemCount; itemIndex++)
+            {
+                var formId = readBytes (file, 4);
+                skipClass (file);   // Desired class
+                switch (formId)
+                {
+                    // Class
+                    case 'Clss':
+                        break;
+                    // Property
+                    case 'prop':
+                        skipId (file);
+                        break;
+                    // Enumerated
+                    case 'Enmr':
+                        skipId (file);  // Enum type
+                        skipId (file);  // Enum value
+                        break;
+                    // Offset
+                    case 'rele':
+                        skipInt32 (file);   // Signed integer
+                        break;
+                    // Identifier
+                    case 'Idnt':
+                        skipInt32 (file);   // Unsigned integer
+                        break;
+                    // Index
+                    case 'indx':
+                        skipInt32 (file);   // Unsigned integer
+                        break;
+                    // Name
+                    case 'name':
+                        skipUnicodeString (file);
+                        break;
+                    default:
+                        throw new Error ("[jamActions skipReference] Unrecognized item form: '" + formId + "'");
+                        break;
+                }
+            }
+        }
+        //
+        /**
+         * @description Read an ActionDescriptor object from the current position of an open file stream [available in CS2 or later].
+         * @param {Object} file File object
+         * @param {Boolean} insertVersionPrefix Insert missing version prefix at the beginning of the file stream
+         * @returns {Object} ActionDescriptor object
+         * @example
+         * var actionDescriptor = jamActions.<strong>readActionDescriptor</strong> (inFile);
+         * var resultDescriptorObj = jamEngine.classIdAndActionDescriptorToJson (0, actionDescriptor);
+         * $.writeln (jamJSON.stringify (resultDescriptorObj["&lt;descriptor&gt;"], '\t'));
+         */
+        jamActions.readActionDescriptor = function (file, insertVersionPrefix)
+        {
+            var versionPrefix = "\x00\x00\x00\x10";
+            var start = file.tell ();
+            if (!insertVersionPrefix)
+            {
+                if (file.read (4) === versionPrefix)
+                {
+                    versionPrefix = "";
+                }
+                else
+                {
+                    throw new Error ('[jamActions.readActionDescriptor] Unrecognized version prefix');
+                }
+            }
+            skipObject (file);
+            var end = file.tell ();
+            file.seek (start, 0);
+            var stream = versionPrefix + file.read (end - start);
+            var actionDescriptor = new ActionDescriptor ();
+            actionDescriptor.fromStream (stream);
+            return actionDescriptor;
+        };
+        //
+        /**
+         * @description Convert an actions file (*.atn) or actions palette file (Actions Palette.psp) into a data structure
+         * in literal object format [available in CS2 or later].
+         * @param {String|Object} actionsFile Actions file (or actions palette file) path string or File object
+         * @param {Boolean} [isPalette] true if actions palette file
+         * @returns {Object|String} Converted actions file data structure in literal object format, or error message string
+         * <p style="margin: 0.5em 0 0 0em;">
+         * The actions file data structure is defined as a literal object with two members: either<br />
+         * <code>{ fileVersion: <em>fileVersion</em>, actionSets: <em>actionSets</em> }</code> for an actions palette file, or <br />
+         * <code>{ fileVersion: <em>fileVersion</em>, actionSet: <em>actionSet</em> }</code> for an actions file.
+         * </p>
+         * <p style="margin: 0.5em 0 0 1.25em;">
+         * <code><em>fileVersion</em></code>: number<br />
+         * <code><em>actionSets</em></code>: literal array [ ] of <code><em>actionSet</em></code><br />
+         * <code><em>actionSet</em></code>: literal object with three members:
+         * <code>{ name: <em>name</em>, expanded: <em>expanded</em>, actions: <em>actions</em> }</code>
+         * </p>
+         * <p style="margin: 0.5em 0 0 2.5em;">
+         * <code><em>name</em></code>: string<br />
+         * <code><em>expanded</em></code>: boolean<br />
+         * <code><em>actions</em></code>: literal array [ ] of <code><em>action</em></code>
+         * </p>
+         * <p style="margin: 0.5em 0 0 3.75em;">
+         * <code><em>action</em></code>: literal object with seven members:<br />
+         * <code>{ functionKey: <em>functionKey</em>, shiftKey: <em>shiftKey</em>, commandKey: <em>commandKey</em>,
+         * colorIndex: <em>colorIndex</em>, name: <em>name</em>, expanded: <em>expanded</em>, commands: <em>commands</em> }</code>
+         * </p>
+         * <p style="margin: 0.5em 0 0 5em;">
+         * <code><em>functionKey</em></code>: number<br />
+         * <code><em>shiftKey</em></code>: boolean<br />
+         * <code><em>commandKey</em></code>: boolean<br />
+         * <code><em>colorIndex</em></code>: number<br />
+         * <code><em>name</em></code>: string<br />
+         * <code><em>expanded</em></code>: boolean<br />
+         * <code><em>commands</em></code>: literal array [ ] of <code><em>command</em></code>
+         * </p>
+         * <p style="margin: 0.5em 0 0 6.25em;">
+         * <code><em>command</em></code>: literal object with six or seven members: either<br />
+         * <code>{ expanded: <em>expanded</em>, enabled: <em>enabled</em>, withDialog: <em>withDialog</em>, dialogOptions: <em>dialogOptions</em>,
+         * eventId: <em>eventId</em>, dictionaryName: <em>dictionaryName</em> }</code> or<br />
+         * <code>{ expanded: <em>expanded</em>, enabled: <em>enabled</em>, withDialog: <em>withDialog</em>, dialogOptions: <em>dialogOptions</em>,
+         * eventId: <em>eventId</em>, dictionaryName: <em>dictionaryName</em>, actionDescriptor: <em>actionDescriptor</em> }</code><br />
+         * </p>
+         * <p style="margin: 0.5em 0 0 7.5em;">
+         * <code><em>expanded</em></code>: boolean<br />
+         * <code><em>enabled</em></code>: boolean<br />
+         * <code><em>withDialog</em></code>: boolean<br />
+         * <code><em>dialogOptions</em></code>: number<br />
+         * <code><em>eventId</em></code>: number<br />
+         * <code><em>dictionaryName</em></code>: string<br />
+         * <code><em>actionDescriptor</em></code>: ActionDescriptor object (optional)
+         * </p>
+         * @example
+         * function actionsFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamActions.isActionsFile (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? actionsFileFilter : "Actions Files:*.atn,All Files:*";
+         * var actionsFile = File.openDialog ("Select an actions file:", select);
+         * if (actionsFile !== null)
+         * {
+         *     var fileData = jamActions.<strong>dataFromActionsFile</strong> (actionsFile);
+         *     if (typeof fileData === 'string')
+         *     {
+         *         alert (fileData + "\n" + "Actions file: “" + File.decode (actionsFile.name) + "”");
+         *     }
+         *     else
+         *     {
+         *         alert ("Action set name: “" + fileData.actionSet.name + "”");
+         *         alert ("Number of actions: " + fileData.actionSet.actions.length);
+         *     }
+         * }
+         */
+        jamActions.dataFromActionsFile = function (actionsFile, isPalette)
+        {
+            var that = this;
+            function parseActionSet (file)
+            {
+                var actionSet = { };
+                actionSet.name = localize (readUnicodeString (file));
+                actionSet.expanded = (readBEInt (file, 1) !== 0);
+                var actionCount = readBEInt (file, 4);
+                actionSet.actions = [ ];
+                for (var actionIndex = 0; actionIndex < actionCount; actionIndex++)
+                {
+                    var action = { };
+                    action.functionKey = readBEInt (file, 2);
+                    action.shiftKey = (readBEInt (file, 1) !== 0);
+                    action.commandKey = (readBEInt (file, 1) !== 0);
+                    action.colorIndex = readBEInt (file, 2);
+                    action.name = localize (readUnicodeString (file));
+                    action.expanded = (readBEInt (file, 1) !== 0);
+                    var commandCount = readBEInt (file, 4);
+                    action.commands = [ ];
+                    for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
+                    {
+                        var command = { };
+                        command.expanded = (readBEInt (file, 1) !== 0);
+                        command.enabled = (readBEInt (file, 1) !== 0);
+                        command.withDialog = (readBEInt (file, 1) !== 0);
+                        command.dialogOptions = readBEInt (file, 1);
+                        command.eventId = readEventId (file);
+                        command.dictionaryName = readByteString (file);
+                        if (readBEInt (file, 4) !== 0)
+                        {
+                            command.actionDescriptor = that.readActionDescriptor (file, true);
+                        }
+                        action.commands.push (command);
+                    }
+                    actionSet.actions.push (action);
+                }
+                return actionSet;
+            }
+            //
+            var file;
+            if (typeof actionsFile === 'string')
+            {
+                file = new File (actionsFile);
+            }
+            else if (actionsFile instanceof File)
+            {
+                file = actionsFile;
+            }
+            else
+            {
+                throw new Error ('[jamActions.dataFromActionsFile] Invalid argument');
+            }
+            //
+            var fileData;
+            if (file.open ("r"))
+            {
+                try
+                {
+                    file.encoding = 'BINARY';
+                    var fileVersion = readBEInt (file, 4);
+                    if (fileVersion === 16)
+                    {
+                        fileData = { };
+                        fileData.version = fileVersion;
+                        if (isPalette)
+                        {
+                            fileData.actionSets = [ ];
+                            var actionSetCount = readBEInt (file, 4);
+                            for (var actionSetIndex = 0; actionSetIndex < actionSetCount; actionSetIndex++)
+                            {
+                                fileData.actionSets.push (parseActionSet (file));
+                            }
+                        }
+                        else
+                        {
+                            fileData.actionSet = parseActionSet (file);
+                        }
+                    }
+                    else
+                    {
+                        fileData = "Unsupported actions file version: " + fileVersion;
+                    }
+                }
+                catch (e)
+                {
+                    fileData = e.message;
+                }
+                finally
+                {
+                    file.close ();
+                }
+            }
+            else
+            {
+                fileData = "Cannot open file";
+            }
+            return fileData;
+        };
+        //
+        /**
+         * @description Test if a command is a play of a local action (belonging to the same action set).
+         * @param {Object} command Command data structure
+         * @param {String} actionSetName Action set name
+         * @returns {Array|Null} Array of three items: [ localActionName, localCommandIndex, localContinue ] if true, null if false
+         * @see jamActions.dataFromActionsFile
+         * @example
+         * function executeCommand (command)
+         * {
+         *     if (command.enabled)
+         *     {
+         *         var playCommand = jamActions.<strong>isLocalPlayCommand</strong> (command, actionSet.name);
+         *         if (playCommand !== null)
+         *         {
+         *             jamActions.traverseAction (actionSet, playCommand[0], playCommand[1], playCommand[2]);
+         *         }
+         *         else
+         *         {
+         *             var dialogMode = jamActions.determineDialogMode (command);
+         *             app.executeAction (command.eventId, command.actionDescriptor, dialogMode);
+         *         }
+         *     }
+         * }
+         * jamActions.setCommandHandler (executeCommand);
+         * jamActions.traverseAction (fileData.actionSet, actionName);
+         */
+        jamActions.isLocalPlayCommand = function (command, actionSetName)
+        {
+            var localPlayCommand = null;
+            if (command.eventId === app.stringIDToTypeID ("play"))
+            {
+                var targetId = app.stringIDToTypeID ("target");
+                if (command.actionDescriptor.hasKey (targetId))
+                {
+                    var localReference = command.actionDescriptor.getReference (targetId);
+                    do
+                    {
+                        // var desiredClassId = localReference.getDesiredClass ();
+                        try { var desiredClassId = localReference.getDesiredClass (); } catch (e) { break; }
+                        switch (desiredClassId)
+                        {
+                            case app.stringIDToTypeID ("command"):
+                                var localCommandIndex = localReference.getIndex () - 1;
+                                break;
+                            case app.stringIDToTypeID ("action"):
+                                var localActionName = localReference.getName ();
+                                break;
+                            case app.stringIDToTypeID ("actionSet"):
+                                var localActionSetName = localReference.getName ();
+                                break;
+                        }
+                        localReference = localReference.getContainer ();
+                    }
+                    while (localReference);
+                }
+                var continueId = app.stringIDToTypeID ("continue");
+                if (command.actionDescriptor.hasKey (continueId))
+                {
+                    var localContinue = command.actionDescriptor.getBoolean (continueId);
+                }
+                if ((typeof localActionSetName !== 'undefined') && (localActionSetName === actionSetName))
+                {
+                    localPlayCommand = [ localActionName, localCommandIndex, localContinue ];
+                }
+            }
+            return localPlayCommand;
+        };
+        //
+        /**
+         * @description Determine dialog mode depending on command settings
+         * @param {Object} command Command data structure
+         * @returns {Object} Dialog mode: either DialogModes.ALL or DialogModes.NO
+         * @see jamActions.dataFromActionsFile
+         * @example
+         * app.executeAction (command.eventId, command.actionDescriptor, jamActions.<strong>determineDialogMode</strong> (command));
+         */
+        jamActions.determineDialogMode = function (command)
+        {
+            var dialogMode;
+            switch (command.dialogOptions)
+            {
+                case 0:
+                    dialogMode = command.withDialog ? DialogModes.ALL : DialogModes.NO;
+                    break;
+                case 2:
+                    dialogMode = DialogModes.NO;
+                    break;
+                case 1:
+                case 3:
+                    dialogMode = DialogModes.ALL;
+                    break;
+            }
+            return dialogMode;
+        }
+        //
+        var globalCommandHandler = null;
+        //
+        /**
+         * @description Set the global command handler [available in CS2 or later].<br />
+         * @param {Function} commandHandler Global command handler: function to be called by jamActions.traverseAction () for each command in the action
+         * @see jamActions.traverseAction
+         * @example
+         * function debugCommand (command)
+         * {
+         *     $.writeln ("Dictionary Name: " + command.dictionaryName);
+         *     $.writeln ("Enabled: " + command.enabled);
+         *     $.writeln ("With Dialog: " + command.withDialog);
+         *     $.writeln ();
+         * }
+         * jamActions.<strong>setCommandHandler</strong> (debugCommand);
+         * jamActions.traverseAction (fileData.actionSet, 0);
+         */
+        jamActions.setCommandHandler = function (commandHandler)
+        {
+            globalCommandHandler = commandHandler;
+        };
+        //
+        /**
+         * @description Traverse all the commands of a specific action of an action set data structure obtained from a converted actions file (*.atn)
+         * [available in CS2 or later].<br />
+         * The global command handler set by jamActions.setCommandHandler () is called for each command in the action.
+         * @param {Object} actionSet Action set data structure in literal object format
+         * @param {String|Number} actionLocator Action locator: action name or action index (0-based)
+         * @param {Number} [fromCommandIndex] Index (0-based) of command to start from
+         * @param {Boolean} [continuePlay] Continue to play remaining commands after the fromCommandIndex index
+         * @see jamActions.dataFromActionsFile
+         * @see jamActions.setCommandHandler
+         * @example
+         * Folder.current = new Folder ("~/JSON Action Manager/tests/resources/");
+         * jamEngine.jsonPlay ("open", { "target": { "&lt;path&gt;": "Factory.jpg" } });
+         * var actionsFilePath = "Cross Processing.atn";
+         * var fileData = jamActions.dataFromActionsFile (actionsFilePath);
+         * if (typeof fileData === 'string')
+         * {
+         *     alert (fileData + "\n" + "Actions file: “" + actionsFilePath + "”");
+         * }
+         * else
+         * {
+         *     function executeCommand (command)
+         *     {
+         *         if (command.enabled)
+         *         {
+         *             var dialogMode = jamActions.determineDialogMode (command);
+         *             app.executeAction (command.eventId, command.actionDescriptor, dialogMode);
+         *         }
+         *     }
+         *     jamActions.setCommandHandler (executeCommand);
+         *     jamActions.<strong>traverseAction</strong> (fileData.actionSet, "Cross Process 2");
+         * }
+         */
+        jamActions.traverseAction = function (actionSet, actionLocator, fromCommandIndex, continuePlay)
+        {
+            function handleCommands (commands)
+            {
+                var commandMax = (continuePlay) ? commands.length : fromCommandIndex + 1;
+                for (var commandIndex = fromCommandIndex; commandIndex < commandMax; commandIndex++)
+                {
+                    if (globalCommandHandler !== null)
+                    {
+                        globalCommandHandler (commands[commandIndex]);
+                    }
+                }
+            }
+            //
+            if (typeof fromCommandIndex === 'undefined')
+            {
+                fromCommandIndex = 0;
+                continuePlay = true;
+            }
+            var actions = actionSet.actions;
+            if (typeof actionLocator === 'string')
+            {
+                var actionName = actionLocator;
+                for (var actionIndex = 0; actionIndex < actions.length; actionIndex++)
+                {
+                    var action = actions[actionIndex];
+                    if (action.name === actionName)
+                    {
+                        handleCommands (action.commands);
+                        break;
+                    }
+                }
+            }
+            else if (typeof actionLocator === 'number')
+            {
+                var actionIndex = actionLocator;
+                if ((actionIndex >= 0) && (actionIndex < actions.length))
+                {
+                    handleCommands (actions[actionIndex].commands);
+                }
+            }
+        };
+    } ());
+}
+
+//------------------------------------------------------------------------------
+

@@ -1,0 +1,489 @@
+﻿//------------------------------------------------------------------------------
+// File: jamBooks.jsxinc
+// Version: 4.5.1
+// Release Date: 2016-10-13
+// Copyright: © 2016 Michel MARIANI <http://www.tonton-pixel.com/blog/>
+// Licence: GPL <http://www.gnu.org/licenses/gpl.html>
+//------------------------------------------------------------------------------
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//------------------------------------------------------------------------------
+// Version History:
+//  4.5.1:
+//  - Added book description and simplified name of color components fields in 
+//    function jamBooks.getColorBookFileColors ().
+//  4.5:
+//  - Initial release.
+//------------------------------------------------------------------------------
+
+/**
+ * @fileOverview
+ * @name jamBooks.jsxinc
+ * @author Michel MARIANI
+ */
+
+//------------------------------------------------------------------------------
+
+if (typeof jamBooks !== 'object')
+{
+    /**
+     * Global object (used to simulate a namespace in JavaScript) containing
+     * a set of color books-related functions for scripts written with the
+     * <a href="http://www.tonton-pixel.com/blog/json-photoshop-scripting/json-action-manager/">JSON Action Manager</a> engine.<br>
+     * Uses information found in the documents
+     * <a href="http://magnetiq.com/pages/acb-spec/">Adobe Color Book File Format Specification</a> and
+     * <a href="http://www.adobe.com/devnet-apps/photoshop/fileformatashtml/#50577411_pgfId-1066780">Adobe Photoshop File Formats Specification</a>.
+     * @author Michel MARIANI
+     * @version 4.5.1
+     * @namespace
+     */
+    var jamBooks = { };
+    //
+    (function ()
+    {
+        /**
+         * @description Test if a given file is a color book file (*.acb).
+         * @param {Object} file File object
+         * @returns {Boolean} true if color book file
+         * @example
+         * function colorBookFileFilter (f)
+         * {
+         *     return (f instanceof Folder) || jamBooks.<strong>isColorBookFile</strong> (f);
+         * }
+         * var select = (File.fs === "Macintosh") ? colorBookFileFilter : "Color Book Files:*.acb,All Files:*";
+         * var colorBookFile = File.openDialog ("Select a color book file:", select);
+         * if (colorBookFile !== null)
+         * {
+         *     alert ("OK!");
+         * }
+         */
+        jamBooks.isColorBookFile = function (file)
+        {
+            return (file.type === '8BCB') || file.name.match (/\.acb$/i);
+        };
+        //
+        /**
+         * @description Parse a color book file (*.acb) into a data structure in JSON object format.
+         * @param {String|Object} colorBookFile Color book file path string or File object
+         * @param {Boolean} [actualComponents] List actual color components instead of raw color components
+         * @returns {Object|String} Parsed color book file data structure in JSON object format, or error message string
+         * @see jamBooks.dataToColorBookFile
+         * @example
+         * var acbFilter =
+         *     (File.fs === "Macintosh") ?
+         *         function (f) { return (f instanceof Folder) || jamBooks.isColorBookFile (f) } :
+         *         "Color Book Files:*.acb,All Files:*.*";
+         * var colorBookFile = File.openDialog ("Open color book file:", acbFilter);
+         * if (colorBookFile)
+         * {
+         *     var colorBookData = jamBooks.<strong>dataFromColorBookFile</strong> (colorBookFile);
+         *     if (typeof colorBookData === 'string')
+         *     {
+         *         alert ("Error: " + colorBookData);
+         *     }
+         *     else
+         *     {
+         *         alert ("Color space: " + colorBookData["colorSpace"]);
+         *         alert ("Number of colors: " + colorBookData["colors"].length);
+         *     }
+         * }
+         */
+        jamBooks.dataFromColorBookFile = function (colorBookFile, actualComponents)
+        {
+            var file;
+            if (typeof colorBookFile === 'string')
+            {
+                file = new File (colorBookFile);
+            }
+            else if (colorBookFile instanceof File)
+            {
+                file = colorBookFile;
+            }
+            //
+            var colorBookData;
+            if (file.open ("r"))
+            {
+                try
+                {
+                    file.encoding = 'BINARY';
+                    var magicNumber = file.read (4);
+                    if (magicNumber === '8BCB')
+                    {
+                        function readBEInt (file, byteCount)
+                        {
+                            var bytes = file.read (byteCount);
+                            var intValue = 0;
+                            for (var index = 0; index < byteCount; index++)
+                            {
+                                intValue = (intValue << 8) + bytes.charCodeAt (index);
+                            }
+                            return intValue;
+                        }
+                        function readUnicodeString (file)
+                        {
+                            var unicodeString = "";
+                            var unicodeLength = readBEInt (file, 4);    // Includes terminating null
+                            for (var index = 0; index < unicodeLength; index++)
+                            {
+                                var unicodeChar = readBEInt (file, 2);
+                                if (unicodeChar !== 0)
+                                {
+                                    unicodeString += String.fromCharCode (unicodeChar);
+                                }
+                            }
+                            return unicodeString;
+                        }
+                        var formatVersion = readBEInt (file, 2);
+                        if (formatVersion === 1)
+                        {
+                            var colorBook = { };
+                            colorBook["bookID"] = readBEInt (file, 2);
+                            colorBook["bookName"] = readUnicodeString (file);
+                            colorBook["colorNamePrefix"] = readUnicodeString (file);
+                            colorBook["colorNameSuffix"] = readUnicodeString (file);
+                            colorBook["bookDescription"] = readUnicodeString (file);
+                            var colorCount = readBEInt (file, 2);
+                            colorBook["colorsPerPage"] = readBEInt (file, 2);
+                            colorBook["keyColorIndex"] = readBEInt (file, 2);
+                            var colorSpace = readBEInt (file, 2);
+                            var colorSpaces = [ "RGB", null, "CMYK", null, null, null, null, "Lab" ];
+                            if ((colorSpace < 0) || (colorSpace > colorSpaces.length))
+                            {
+                                 throw new Error ("[jamBooks.dataFromColorBookFile] Invalid color space: " + colorSpace);
+                            }
+                            else
+                            {
+                                colorBook["colorSpace"] = colorSpaces[colorSpace];
+                            }
+                            var colors = [ ];
+                            for (var colorIndex = 0; colorIndex < colorCount; colorIndex++)
+                            {
+                                var color = { };
+                                color["colorName"] = readUnicodeString (file);
+                                color["colorKey"] = file.read (6);
+                                var components = file.read ((colorSpace === 2) ? 4 : 3);
+                                var componentArr = [ ];
+                                for (componentIndex =  0; componentIndex < components.length; componentIndex++)
+                                {
+                                    var componentValue = components.charCodeAt (componentIndex);
+                                    if (actualComponents)
+                                    {
+                                        switch (colorSpace)
+                                        {
+                                            case 2: // CMYK
+                                                componentValue = (255 - componentValue) / 255 * 100; // 0% to 100%
+                                                break;
+                                            case 7: // Lab
+                                                if (componentIndex > 0) // a or b
+                                                {
+                                                    componentValue -= 128;  // -128 to 127
+                                                }
+                                                else    // L (luminance)
+                                                {
+                                                    componentValue = componentValue / 255 * 100;    // 0% to 100%
+                                                }
+                                                break;
+                                        }
+                                    }
+                                    componentArr.push (componentValue);
+                                }
+                                color[(actualComponents) ? "actualComponents" : "rawComponents"] = componentArr;
+                                colors.push (color);
+                            }
+                            colorBook["colors"] = colors;
+                            if (!file.eof)
+                            {
+                                colorBook["spotProcess"] = file.read (8);   // Either 'spflspot' or 'spflproc'
+                            }
+                            colorBookData = colorBook;
+                        }
+                        else
+                        {
+                            throw new Error ("[jamBooks.dataFromColorBookFile] Unrecognized format version: " + formatVersion);
+                        }
+                    }
+                    else
+                    {
+                        throw new Error ("[jamBooks.dataFromColorBookFile] Unrecognized magic number: " + magicNumber);
+                    }
+                }
+                catch (e)
+                {
+                    colorBookData = e.message;
+                }
+                finally
+                {
+                    file.close ();
+                }
+            }
+            else
+            {
+                colorBookData = "[jamBooks.dataFromColorBookFile] Cannot open file";
+            }
+            return colorBookData;
+        };
+        //
+        /**
+         * @description Generate a color book file (*.acb) from a data structure in JSON object format.
+         * @param {String|Object} colorBookFile Color book file path string or File object
+         * @param {Object} colorBookData Color book file data structure in JSON object format
+         * @returns {String} Error message string (empty if no error)
+         * @see jamBooks.dataFromColorBookFile
+         * @example
+         * var jsonFilter =
+         *     (File.fs === "Macintosh") ?
+         *         function (f) { return (f instanceof Folder) || f.name.match (/\.json$/i) } :
+         *         "JSON Text Files:*.json,All Files:*.*";
+         * var jsonFile = File.openDialog ("Open JSON text file:", jsonFilter);
+         * if (jsonFile)
+         * {
+         *     var colorBookData = jamUtils.readJsonFile (jsonFile);
+         *     if (colorBookData)
+         *     {
+         *         var result = jamBooks.<strong>dataToColorBookFile</strong> ("~/Desktop/color-book.acb", colorBookData);
+         *         if (result)
+         *         {
+         *             alert ("Error: " + result);
+         *         }
+         *         else
+         *         {
+         *             alert ("Color book file generated on Desktop.");
+         *         }
+         *     }
+         *     else
+         *     {
+         *         alert ("Invalid JSON text file!");
+         *     }
+         * }
+         */
+        jamBooks.dataToColorBookFile = function (colorBookFile, colorBookData)
+        {
+            var file;
+            if (typeof colorBookFile === 'string')
+            {
+                file = new File (colorBookFile);
+            }
+            else if (colorBookFile instanceof File)
+            {
+                file = colorBookFile;
+            }
+            //
+            var result = "";
+            if (file.open ('w', '8BCB', '8BIM'))
+            {
+                try
+                {
+                    function writeBEInt (file, byteCount, intValue)
+                    {
+                        var bytes = "";
+                        for (var index = 0; index < byteCount; index++)
+                        {
+                            bytes = String.fromCharCode (intValue & 0xFF) + bytes;
+                            intValue >>= 8;
+                        }
+                        file.write (bytes);
+                    }
+                    function writeUnicodeString (file, unicodeString)
+                    {
+                        var unicodeLength = unicodeString.length;
+                        writeBEInt (file, 4, unicodeLength);    // Doesn't include terminating null!
+                        for (var index = 0; index < unicodeLength; index++)
+                        {
+                            writeBEInt (file, 2, unicodeString.charCodeAt (index));
+                        }
+                    }
+                    file.encoding = "BINARY";
+                    file.write ('8BCB');
+                    writeBEInt (file, 2, 1);
+                    writeBEInt (file, 2, colorBookData["bookID"]);
+                    writeUnicodeString (file, colorBookData["bookName"]);
+                    writeUnicodeString (file, colorBookData["colorNamePrefix"]);
+                    writeUnicodeString (file, colorBookData["colorNameSuffix"]);
+                    writeUnicodeString (file, colorBookData["bookDescription"]);
+                    var colors = colorBookData["colors"];
+                    var colorCount = colors.length;
+                    writeBEInt (file, 2, colorCount);
+                    writeBEInt (file, 2, colorBookData["colorsPerPage"]);
+                    if ("keyColorIndex" in colorBookData)
+                    {
+                        writeBEInt (file, 2, colorBookData["keyColorIndex"]);
+                    }
+                    else if ("keyColorPage" in colorBookData)  // Legacy...
+                    {
+                        writeBEInt (file, 2, colorBookData["keyColorPage"]);
+                    }
+                    var colorSpace = colorBookData["colorSpace"];
+                    var colorSpaces = { "RGB": 0, "CMYK": 2, "Lab": 7 };
+                    if (colorSpace in colorSpaces)
+                    {
+                        writeBEInt (file, 2, colorSpaces[colorSpace]);
+                    }
+                    else
+                    {
+                        throw new Error ("[jamBooks.dataToColorBookFile] Invalid color space: " + jamJSON.stringify (colorSpace));
+                    }
+                    for (var colorIndex = 0; colorIndex < colorCount; colorIndex++)
+                    {
+                        var color = colors[colorIndex];
+                        writeUnicodeString (file, color["colorName"]);
+                        var colorKey = color["colorKey"];
+                        if (colorKey.length === 6)
+                        {
+                            file.write (colorKey);
+                        }
+                        else
+                        {
+                            throw new Error ("[jamBooks.dataToColorBookFile] Invalid color key: " + jamJSON.stringify (colorKey));
+                        }
+                        if ("actualComponents" in color)
+                        {
+                            var components = color["actualComponents"];
+                            for (componentIndex =  0; componentIndex < components.length; componentIndex++)
+                            {
+                                var componentValue = components[componentIndex];
+                                switch (colorSpace)
+                                {
+                                    case "CMYK":
+                                        componentValue = 255 - Math.round (componentValue * 255 / 100);
+                                        break;
+                                    case "Lab":
+                                        if (componentIndex > 0) // a or b
+                                        {
+                                            componentValue = Math.round (componentValue) + 128;
+                                        }
+                                        else    // L (luminance)
+                                        {
+                                            componentValue = Math.round (componentValue * 255 / 100);
+                                        }
+                                        break;
+                                    case "RGB":
+                                        componentValue = Math.round (componentValue);
+                                        break;
+                                }
+                                file.write (String.fromCharCode (componentValue));
+                            }
+                        }
+                        else if ("rawComponents" in color)
+                        {
+                            var components = color["rawComponents"];
+                            for (componentIndex =  0; componentIndex < components.length; componentIndex++)
+                            {
+                                file.write (String.fromCharCode (components[componentIndex]));
+                            }
+                        }
+                        else if ("components" in color) // Legacy...
+                        {
+                            var components = color["components"];
+                            for (componentIndex =  0; componentIndex < components.length; componentIndex++)
+                            {
+                                file.write (String.fromCharCode (components[componentIndex]));
+                            }
+                        }
+                    }
+                    if ("spotProcess" in colorBookData)
+                    {
+                        file.write (colorBookData["spotProcess"]);  // Either 'spflspot' or 'spflproc'
+                    }
+                }
+                catch (e)
+                {
+                    result = e.message;
+                }
+                finally
+                {
+                    file.close ();
+                }
+            }
+            else
+            {
+                result = "[jamBooks.dataToColorBookFile] Cannot open file";
+            }
+            return result;
+        };
+        //
+        /**
+         * @description Get the list of colors from a color book file (*.acb).
+         * @param {String|Object} colorBookFile Color book file path string or File object
+         * @param {Boolean} [roundComponents] Round color components
+         * @returns {Object|Null} List of colors from a color book file (*.acb), or null if error
+         * @example
+         * var acbFilter =
+         *     (File.fs === "Macintosh") ?
+         *         function (f) { return (f instanceof Folder) || jamBooks.isColorBookFile (f) } :
+         *         "Color Book Files:*.acb,All Files:*.*";
+         * var colorBookFile = File.openDialog ("Open color book file:", acbFilter);
+         * if (colorBookFile )
+         * {
+         *     var colorBookColors = jamBooks.<strong>getColorBookFileColors</strong> (colorBookFile, true);
+         *     if (colorBookColors)
+         *     {
+         *         alert ("First color:\r"+ jamJSON.stringify (colorBookColors["bookColors"][0], '\t'));
+         *     }
+         * }
+         */
+        jamBooks.getColorBookFileColors = function (colorBookFile, roundComponents)
+        {
+            var colorBookColors = null;
+            var colorBookData = this.dataFromColorBookFile (colorBookFile, true);
+            if (colorBookData !== 'string')
+            {
+                colorBookColors = { };
+                colorBookColors["bookFile"] = File.decode (colorBookFile.name);
+                colorBookColors["bookName"] = localize (colorBookData["bookName"]);
+                colorBookColors["bookDescription"] = localize (colorBookData["bookDescription"]);
+                var colorNamePrefix = localize (colorBookData["colorNamePrefix"]);
+                var colorNameSuffix = localize (colorBookData["colorNameSuffix"]);
+                var colorSpace = colorBookData["colorSpace"];
+                var colors = colorBookData["colors"];
+                bookColors = [ ];
+                for (var i = 0; i < colors.length; i++)
+                {
+                    var bookColor = { };
+                    var colorName = localize (colors[i]["colorName"]);
+                    if (colorName)
+                    {
+                        bookColor["name"] = colorNamePrefix + colorName + colorNameSuffix;
+                        var components = colors[i]["actualComponents"];
+                        var color = { };
+                        switch (colorSpace)
+                        {
+                            case "CMYK":
+                                color["C"] = (roundComponents) ? Math.round (components[0]) : components[0];
+                                color["M"] = (roundComponents) ? Math.round (components[1]) : components[1];
+                                color["Y"] = (roundComponents) ? Math.round (components[2]) : components[2];
+                                color["K"] = (roundComponents) ? Math.round (components[3]) : components[3];
+                                break;
+                            case "Lab":
+                                color["L"] = (roundComponents) ? Math.round (components[0]) : components[0];
+                                color["a"] = components[1];
+                                color["b"] = components[2];
+                                break;
+                            case "RGB":
+                                color["R"] = components[0];
+                                color["G"] = components[1];
+                                color["B"] = components[2];
+                                break;
+                        }
+                        bookColor["color"] = color;
+                        bookColors.push (bookColor);
+                    }
+                }
+                colorBookColors["bookColors"] = bookColors;
+            }
+            return colorBookColors;
+        };
+    } ());
+}
+
+//------------------------------------------------------------------------------
+
