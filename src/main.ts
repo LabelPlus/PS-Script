@@ -139,7 +139,6 @@ class LabelPlusInput extends GenericUI {
         let win = GenericUI.getWindow(pnl.parent);
 
         pnl.text = I18n.LABEL_SETTING;
-        pnl.win = win;
 
         pnl.fileMask = "INI Files: *.ini, All Files: *.*";
         pnl.loadPrompt = "Read Setting";
@@ -159,8 +158,6 @@ class LabelPlusInput extends GenericUI {
         pnl.reset = pnl.add('button', [x, y, x + bw, y + 20], I18n.BUTTON_RESET);
 
         pnl.load.onClick = () => {
-            let pnl = this.parent;
-            let win = pnl.win;
             let def = pnl.defaultFile;
             let prmpt = pnl.loadPrompt;
             let sel = Stdlib.createFileSelect(pnl.fileMask);
@@ -174,8 +171,6 @@ class LabelPlusInput extends GenericUI {
             }
         };
         pnl.save.onClick = () => {
-            let pnl = this.parent;
-            let win = pnl.win;
             let def = pnl.defaultFile;
             let prmpt = pnl.savePrompt;
             let sel = Stdlib.createFileSelect(pnl.fileMask);
@@ -196,6 +191,7 @@ class LabelPlusInput extends GenericUI {
         };
         pnl.reset.onClick = () => {
             this.opts = new CustomOptions();
+            this.lpFile = null;
             win.close(4);
         };
 
@@ -499,8 +495,8 @@ class LabelPlusInput extends GenericUI {
                 let def: string;
                 if (pnll.customTempleteTextbox.text !== "") {
                     def = pnll.customTempleteTextbox.text;
-                } else if (pnl.sourceTextBox.text !== "") {
-                    def = pnl.sourceTextBox.text;
+                } else if (this.inputPnl.sourceTextBox.text !== "") {
+                    def = this.inputPnl.sourceTextBox.text;
                 } else {
                     def = Folder.desktop.path;
                 }
