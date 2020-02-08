@@ -75,9 +75,17 @@ export function min(a: number, b: number): number {
     return (a < b) ? a : b;
 }
 
-export const DEFAULT_LOG_PATH: string = GetScriptFolder() + dirSeparator + "lp_ps_script.log";
-export const DEFAULT_INI_PATH: string = GetScriptFolder() + dirSeparator + "lp_ps_script.ini";
-export const DEFAULT_DUMP_PATH: string = GetScriptFolder() + dirSeparator + "lp_ps_script.dump";
+let dataPath = Folder.appData.fsName + dirSeparator + "labelplus_script";
+let dataFolder = new Folder(dataPath);
+if (!dataFolder.exists) {
+    if (!dataFolder.create()) {
+        dataPath = Folder.temp.fsName;
+    }
+}
+export const APP_DATA_FOLDER: string = dataPath;
+export const DEFAULT_LOG_PATH: string = APP_DATA_FOLDER + dirSeparator + "lp_ps_script.log";
+export const DEFAULT_INI_PATH: string = APP_DATA_FOLDER + dirSeparator + "lp_ps_script.ini";
+export const DEFAULT_DUMP_PATH: string = APP_DATA_FOLDER + dirSeparator + "lp_ps_script.dump";
 
 Stdlib.log.setFile(DEFAULT_LOG_PATH);
 export function log(msg: any) { Stdlib.log(msg); }
