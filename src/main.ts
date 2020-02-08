@@ -349,7 +349,7 @@ class LabelPlusInput extends GenericUI {
                     opts.groupSelected[i] = pnl.chooseGroupListBox.selection[i].text;
                 }
             }
-            opts.replaceImgSuffix = (pnl.replaceImgSuffixCheckBox.value) ? pnl.replaceImgSuffixCheckBox.text : "";
+            opts.replaceImgSuffix = (pnl.replaceImgSuffixCheckBox.value) ? pnl.replaceImgSuffixTextbox.text : "";
             opts.matchImgByOrder = pnl.matchImgByOrderCheckBox.value;
             return opts;
         }
