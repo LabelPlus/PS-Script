@@ -28,13 +28,13 @@ LabelPlus是一个用于图片翻译的工具包，本工程是其中的Photosho
 
 ```
 $ sudo apt install python nodejs
-$ sudo npm install -g typescript
+$ sudo npm install -g typescript yarn
 ```
 
 ### build
 
 ```
 $ cd PS-Script
-$ npm install
+$ yarn install
 $ ./build.sh
 ```
