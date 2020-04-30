@@ -150,36 +150,39 @@ export function lpTextParser(path: string): LpFile | null
 
 //
 // 判断字符串行类型 'filehead','labelhead','unknown'
+// filehead:    >>>>>>[filename]<<<<<<
+// labelhead:   ------[num]------[value, list]
 //
 function judgeLineType(str: string) {
-    var myType = 'unknown';
-    var myTitle;
-    var myValues;
-
-    str = str.trim();
-    var fileheadRegExp = />{6,}\[.+\]<{6,}/g;
-    var labelheadRegExp = /-{6,}\[\d+\]-{6,}\[.+\]/g;
-
-    var fileheadStrArr = fileheadRegExp.exec(str);
-    var labelheadStrArr = labelheadRegExp.exec(str);
-    if (fileheadStrArr && fileheadStrArr.length != 0) {
-        myType = 'filehead';
-        var s = fileheadStrArr[0];
-        myTitle = s.substring(s.indexOf("[") + 1, s.indexOf("]"));
-    }
-    else if (labelheadStrArr && labelheadStrArr.length != 0) {
-        myType = 'labelhead';
-        var s = labelheadStrArr[0];
-        myTitle = s.substring(s.indexOf("[") + 1, s.indexOf("]"));
-        var valuesStr = s.substring(s.lastIndexOf("[") + 1, s.lastIndexOf("]"))
-        myValues = valuesStr.split(",");
-    }
-
-    return {
-        Type: myType,
-        Title: myTitle,
-        Values: myValues,
+    let index = 0;
+    var result = {
+        Type: 'unknown',
+        Title: '',
+        Values: [''],
     };
+
+    // FIXME handle invalid string format error
+    str = str.trim();
+    if (str.substr(0, 6) == '>>>>>>') { // assumed to be a file name
+        str = str.slice(2 + str.indexOf(">["));
+        if ((index = str.search(/\]<{6,}$/)) < 0)
+            return result;
+        result.Title = str.substring(0, index);
+        result.Type = 'filehead';
+    } else if (str.substr(0, 6) == '------') { // assumed to be a label
+        str = str.slice(2 + str.indexOf("-["));
+        if ((index = str.search(/\]-{6,}\[/)) < 0)
+            return result;
+        result.Title = str.substring(0, index);
+        str = str.slice(2 + str.indexOf("-["))
+        if ((index = str.search(/\]$/)) < 0)
+            return result;
+        str = str.substring(0, index);
+        result.Values = str.split(',');
+        result.Type = 'labelhead';
+    }
+
+    return result;
 };
 
 function readStartBlocks(str: string) {
