@@ -75,11 +75,10 @@ class LabelPlusInput extends GenericUI {
             let fmask = "*.txt;*.json";
             let f = File.openDialog(I18n.LABEL_TEXT_FILE, fmask);
             if (f && f.exists) {
-                pnl.lpTextFileTextBox.text = decodeURI(f.fsName);
-
+                pnl.lpTextFileTextBox.text = f.fsName;
                 let fl = new Folder(f.path);
-                inputPnl.sourceTextBox.text = decodeURI(fl.fsName);
-                outputPnl.targetTextBox.text = decodeURI(fl.fsName) + dirSeparator + 'output';
+                inputPnl.sourceTextBox.text = fl.fsName;
+                outputPnl.targetTextBox.text = fl.fsName + dirSeparator + 'output';
             } else {
                 return {};        // cancel by user
             }
@@ -217,7 +216,7 @@ class LabelPlusInput extends GenericUI {
                     pnl.sourceTextBox.text : Folder.desktop);
                 let f = Stdlib.selectFolder(I18n.LABEL_SOURCE, def);
                 if (f) {
-                    pnl.sourceTextBox.text = decodeURI(f.fsName);
+                    pnl.sourceTextBox.text = f.fsName;
                 }
             } catch (e) {
                 alert(Stdlib.exceptionMessage(e));
@@ -321,7 +320,7 @@ class LabelPlusInput extends GenericUI {
                     alert(I18n.ERROR_NOT_FOUND_SOURCE);
                     return null;
                 }
-                opts.source = decodeURI(f.fsName)
+                opts.source = f.fsName;
 
                 // images select
                 if (!pnl.chooseImageListBox.selection || pnl.chooseImageListBox.selection.length == 0) {
@@ -378,7 +377,7 @@ class LabelPlusInput extends GenericUI {
                 f = Stdlib.selectFolder(I18n.LABEL_TARGET, def);
 
                 if (f) {
-                    pnl.targetTextBox.text = decodeURI(f.fsName);
+                    pnl.targetTextBox.text = f.fsName;
                 }
             } catch (e) {
                 alert(Stdlib.exceptionMessage(e));
@@ -447,7 +446,7 @@ class LabelPlusInput extends GenericUI {
                         return null;
                     }
                 }
-                opts.target = decodeURI(f.fsName)
+                opts.target = f.fsName;
             }
             opts.outputType = <number>pnl.outputTypeList.selection.index;
             opts.outputLabelIndex = pnl.outputLabelIndexCheckBox.value;
@@ -503,7 +502,7 @@ class LabelPlusInput extends GenericUI {
                 }
                 let f = Stdlib.selectFileOpen(I18n.RB_TEMPLATE_CUSTOM, "*.psd;*.tif;*.tiff", def);
                 if (f)
-                    pnll.customTemplateTextbox.text = decodeURI(f.fsName);
+                    pnll.customTemplateTextbox.text = f.fsName;
             } catch (e) {
                 alert(Stdlib.exceptionMessage(e));
             }
@@ -565,7 +564,7 @@ class LabelPlusInput extends GenericUI {
                 break;
             case OptionDocTemplate.Custom:
                 pnl.docTemplatePnl.customTemplateRb.value = true;
-                pnl.docTemplatePnl.customTemplateTextbox.text = toUiString(opts.docTemplateCustomPath);
+                pnl.docTemplatePnl.customTemplateTextbox.text = opts.docTemplateCustomPath;
                 break;
             case OptionDocTemplate.Auto:
             default:

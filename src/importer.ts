@@ -297,7 +297,7 @@ function closeImage(img: ImageInfo, saveType: OptionOutputType = OptionOutputTyp
     assert(opts !== null);
 
     // 保存文件
-    let fileOut = new File(opts.target + "//" + img.name);
+    let fileOut = new File(opts.target + dirSeparator + img.name);
     let asCopy = false;
     let options: any;
     switch (saveType) {
