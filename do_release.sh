@@ -34,7 +34,7 @@ program_exists python
 cd "$(dirname "$0")"
 
 # Determine if git working space clean
-if [ -n "$(git status --porcelain| grep -v CHANGELOG.md)" ]; then
+if [ -n "$(git status --untracked-files=no --porcelain| grep -v CHANGELOG.md)" ]; then
     echo "git working space not clean"
     exit 1
 fi
@@ -58,7 +58,7 @@ p() {
     if [ -z $1 ]; then
         return 1
     fi
-    cp -v $1 ${PACK_DIR}/
+    cp -vr $1 ${PACK_DIR}/
     return $?
 }
 
