@@ -1,3 +1,3 @@
 namespace LabelPlus {
-    export const VERSION: string = "1.4.1";
+    export const VERSION: string = "1.5.0";
 }
