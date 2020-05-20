@@ -16,8 +16,6 @@ interface Group {
 };
 type GroupDict = { [key: string]: Group };
 
-type ArtLayerDict = { [key: string]: ArtLayer };
-
 interface LabelInfo {
     index: number;
     x: number;
@@ -33,7 +31,7 @@ interface ImageWorkspace {
     textTemplateLayer: ArtLayer;
     dialogOverlayLayer: ArtLayer;
 
-    pendingDelLayerList: ArtLayerDict;
+    pendingDelLayerList: ArtLayer[];
     groups: GroupDict;
 };
 
@@ -125,7 +123,7 @@ function importImage(img: ImageInfo): boolean
             }
         }
         MyAction.lp_dialogClear(points, img.ws.doc.width, img.ws.doc.height, 16, 1, img.ws.dialogOverlayLayer);
-        delete img.ws.pendingDelLayerList[TEMPLATE_LAYER.DIALOG_OVERLAY]; // 不删除涂白图层
+        delArrayElement<ArtLayer>(img.ws.pendingDelLayerList, img.ws.dialogOverlayLayer); // do not delete dialog-overlay-layer
     }
 
     // 遍历LabelData
@@ -149,11 +147,11 @@ function importImage(img: ImageInfo): boolean
         img.ws.dialogOverlayLayer.move(img.ws.bgLayer, ElementPlacement.PLACEBEFORE); // "dialog-overlay" before "bg"
     }
 
-    // 删除多余的图层、分组
-    for (let k in img.ws.pendingDelLayerList) { // 删除模板中无用的图层
-        img.ws.pendingDelLayerList[k].remove();
+    // remove unnecessary Layer/LayerSet
+    for (var layer of img.ws.pendingDelLayerList) { // Layer
+        layer.remove();
     }
-    for (let k in img.ws.groups) { // 删除分组LayerSet
+    for (let k in img.ws.groups) { // LayerSet
         if (img.ws.groups[k].layerSet !== undefined) {
             if (img.ws.groups[k].layerSet?.artLayers.length === 0) {
                 img.ws.groups[k].layerSet?.remove();
@@ -199,12 +197,12 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
     let bgLayer: ArtLayer;
     let textTemplateLayer: ArtLayer;
     let dialogOverlayLayer: ArtLayer;
-    let pendingDelLayerList: ArtLayerDict = {};
+    let pendingDelLayerList: ArtLayer[] = new Array();
     {
         // add all artlayers to the pending delete list
         for (let i = 0; i < wsDoc.artLayers.length; i++) {
             let layer: ArtLayer = wsDoc.artLayers[i];
-            pendingDelLayerList[layer.name] = layer;
+            pendingDelLayerList.push(layer);
         }
 
         // bg layer template
@@ -218,7 +216,7 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
         catch {
             textTemplateLayer = wsDoc.artLayers.add();
             textTemplateLayer.name = TEMPLATE_LAYER.TEXT;
-            pendingDelLayerList[TEMPLATE_LAYER.TEXT] = textTemplateLayer; // pending delete
+            pendingDelLayerList.push(textTemplateLayer); // pending delete
         }
         // dialog overlay layer template
         try { dialogOverlayLayer = wsDoc.artLayers.getByName(TEMPLATE_LAYER.DIALOG_OVERLAY); }
@@ -238,7 +236,7 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
         app.activeDocument = wsDoc;
         wsDoc.activeLayer = bgLayer;
         wsDoc.paste();
-        delete pendingDelLayerList[TEMPLATE_LAYER.IMAGE]; // keep bg layer
+        delArrayElement<ArtLayer>(pendingDelLayerList, bgLayer); // keep bg layer
     } else {
         app.activeDocument = bgDoc;
         let item = bgLayer;

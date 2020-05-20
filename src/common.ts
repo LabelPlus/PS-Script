@@ -75,6 +75,13 @@ export function min(a: number, b: number): number {
     return (a < b) ? a : b;
 }
 
+export function delArrayElement<T>(arr: Array<T>, element: T) {
+    let idx = arr.indexOf(element);
+    if (idx >= 0) {
+        arr.splice(idx, 1);
+    }
+}
+
 let dataPath = Folder.appData.fsName + dirSeparator + "labelplus_script";
 let dataFolder = new Folder(dataPath);
 if (!dataFolder.exists) {
