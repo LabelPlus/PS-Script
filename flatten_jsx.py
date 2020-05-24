@@ -1,4 +1,4 @@
-#!python
+#!/usr/bin/python3
 
 #
 # flatten jsx to a single file, for example:

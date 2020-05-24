@@ -1,4 +1,4 @@
-#!bash
+#!/bin/bash
 
 program_exists() {
     local ret='0'
