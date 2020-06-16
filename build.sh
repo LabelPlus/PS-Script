@@ -1,8 +1,6 @@
-#!bash
+#!/bin/bash -e
 
-set -e
-
-cd "$(dirname "$0")"
+cd "${0%%/*}"
 
 TSC_OUTPUT=build/app.js
 PS_JSX_OUTPUT=build/LabelPlus_Ps_Script.jsx

@@ -1,14 +1,13 @@
-#!bash
+#!/bin/bash
 
 program_exists() {
-    local ret='0'
-    command -v $1 >/dev/null 2>&1 || { local ret='1'; }
-
-    # fail on non-zero return value
-    if [ "$ret" -ne 0 ]; then
-        echo "command $1 notfound, exit..."
-        return 1
-    fi
+    for program in $*; do
+        command -v $program >/dev/null 2>&1
+        [ $? -ne 0 ] && {
+            echo "missing command $program"
+            return 1
+        }
+    done
 
     return 0
 }
@@ -18,62 +17,60 @@ show_usage() {
     exit 1
 }
 
-version=$1
-
-if [ -z $version ]; then
-    echo "error: please input release version!"
+if [ $# -lt 1 ]; then
+    echo "error: Please input release version!"
     show_usage
 fi
 
-set -e
-program_exists git
-program_exists 7z
-program_exists tsc
-program_exists python
+version=$1
+program_exists git 7z tsc python
+[ $? -ne 0 ] && exit 1
 
-cd "$(dirname "$0")"
+cd "${0%%/*}"
 
 # Determine if git working space clean
-if [ -n "$(git status --untracked-files=no --porcelain| grep -v CHANGELOG.md)" ]; then
+if [ -n "$(git status --untracked-files=no --porcelain | grep -v CHANGELOG.md)" ]; then
     echo "git working space not clean"
     exit 1
 fi
 
 # remind
 echo "Check List:"
-echo "* Is CHANGELOG.md ready to release?"
-read
+read -p "* Is CHANGELOG.md ready to release? [y/N] " -n1 try;
+[ "${try##y}" != "" ] && exit 0
 
-echo "start..."
+printf "\nstart...\n"
 
-# edit version
+# update version
 sed -i "s/\".*\"/\"${version}\"/" ./src/version.ts
 
+# FIXME make sure dependencies in node_modules are installed
 # build
 ./build.sh
 
 # prepare to pack
 PACK_DIR=./build/pack
-p() {
-    if [ -z $1 ]; then
-        return 1
-    fi
-    cp -vr $1 ${PACK_DIR}/
-    return $?
+
+# pack directories into ${PACK_DIR}
+pack() {
+    for dir in $*; do
+        cp -vr $dir ${PACK_DIR}/
+    done
 }
 
 mkdir -p ${PACK_DIR}
 rm -rf ./${PACK_DIR}/*
 
-# edit changelog
+# update changelog
 cp -v CHANGELOG.md ${PACK_DIR}/
-date=`date +%Y-%m-%d`
+date=$(date +%Y-%m-%d)
 sed -i "s/\[Unreleased\]/\[${version}\] - ${date}/" $PACK_DIR/CHANGELOG.md
 
-p build/LabelPlus_Ps_Script.jsx
-p build/ps_script_res
-p LICENSE.txt
-p README.md
+pack build/LabelPlus_Ps_Script.jsx \
+    build/ps_script_res \
+    LICENSE.txt \
+    README.md
+
 7z a -t7z build/LabelPlus_PS-Script_${version}.7z ${PACK_DIR}/* -m0=BCJ -m1=LZMA:d=21 -ms -mmt
 
 # git commit, add tag
@@ -84,10 +81,11 @@ sed "1a\\${TEXT}" CHANGELOG.md -i
 git commit -am "release ${version}"
 git tag ${version}
 
-echo ""
-echo "============================="
-echo "complete!"
-echo "please check and push new commit & tag, command:"
-echo "git push"
-echo "git push origin ${version}"
+cat <<END
 
+=============================
+complete!
+please check and push new commit & tag, command:
+git push
+git push origin ${version}
+END
