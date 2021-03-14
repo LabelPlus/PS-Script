@@ -37,6 +37,7 @@ class LabelPlusInput extends GenericUI {
         this.hasBorder = false;
         this.settingsPanel = false;
         this.winRect = { x: 200, y: 200, w: 875, h: 590 };
+        this.center = true;
         this.title = I18n.APP_NAME + " " + VERSION;
         this.notesSize = 0;
         this.processTxt = I18n.BUTTON_RUN;
