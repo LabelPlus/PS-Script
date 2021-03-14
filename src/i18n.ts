@@ -30,7 +30,7 @@ namespace I18n {
     export var CHECKBOX_TEXT_REPLACE: string = "文本替换(格式:\"A->B|C->D\")";
     export var CHECKBOX_IGNORE_NO_LABEL_IMG: string = "不输出未标号图片";
     export var CHECKBOX_MATCH_IMG_BY_ORDER: string = "按顺序匹配图片文件";
-    export var BUTTON_MATCH_IMG_BY_ORDER_PREVIEW: string = "预览匹配结果";
+    export var BUTTON_SOURCE_CHECK_MATCH: string = "检查图源匹配情况";
     export var LABEL_OUTPUT_FILE_TYPE: string = "输出文件类型：";
     export var CHECKBOX_REPLACE_IMG_SUFFIX: string = "替换图片后缀名";
     export var CHECKBOX_RUN_ACTION: string = "执行自动化动作";
@@ -57,6 +57,7 @@ namespace I18n {
     export var ERROR_PARSER_LPTEXT_FAIL: string = "解析LabelPlus文本失败";
     export var ERROR_NO_IMG_CHOOSED: string = "未选择输出图片";
     export var ERROR_NO_LABEL_GROUP_CHOOSED: string = "未选择导入分组";
+    export var ERROR_NO_MATCH_IMG: string = "找不到对应的图片文件！！";
     export var ERROR_PRESET_TEMPLATE_NOT_FOUND: string = "无法自动匹配模板文件，请确认脚本所在目录是否存在ps_script_res目录";
     export var ERROR_TEXT_REPLACE_EXPRESSION: string = "文本替换表达式解析错误，请检查！";
 
@@ -87,7 +88,7 @@ namespace I18n {
         CHECKBOX_TEXT_REPLACE = "Text Replace(e.g. \"A->B|C->D\")";
         CHECKBOX_IGNORE_NO_LABEL_IMG = "Ignore Images With No Label";
         CHECKBOX_MATCH_IMG_BY_ORDER = "Match Image Source By Order";
-        BUTTON_MATCH_IMG_BY_ORDER_PREVIEW = "Preview Match Result";
+        BUTTON_SOURCE_CHECK_MATCH = "Check Match Result";
         LABEL_OUTPUT_FILE_TYPE = "Output File Type:";
         CHECKBOX_REPLACE_IMG_SUFFIX = "Replace Image Suffix";
         CHECKBOX_RUN_ACTION = "Execute Automation Actions";
@@ -112,6 +113,7 @@ namespace I18n {
         ERROR_PARSER_LPTEXT_FAIL = "Fail To Load LabelPlus Text File";
         ERROR_NO_IMG_CHOOSED = "Please select more than one image";
         ERROR_NO_LABEL_GROUP_CHOOSED = "Please select more than one group";
+        ERROR_NO_MATCH_IMG = "No matched image file!!!!";
         ERROR_PRESET_TEMPLATE_NOT_FOUND = "Cannot match template file, please make sure \"ps_script_res\" folder exsit.";
         ERROR_TEXT_REPLACE_EXPRESSION = "Expression of text replacing is wrong, please check again.";
     }

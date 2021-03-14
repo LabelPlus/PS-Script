@@ -18,6 +18,8 @@ export const TEMPLATE_LAYER = {
     DIALOG_OVERLAY: "dialog-overlay",
 };
 
+export const image_suffix_list = [".psd", ".png", ".jpg", ".jpeg", ".tif", ".tiff"];
+
 export function GetScriptPath(): string {
     return <string>$.fileName;
 }
@@ -35,8 +37,11 @@ export function Emit(func: Function): void {
         func();
 }
 
-// 获取制定路径文件列表
-export function getFilesListOfPath(path: string): string[] {
+export function StringEndsWith(str: string, suffix: string) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
+export function getImageFilesListOfPath(path: string): string[] {
     let folder = new Folder(path);
     if (!folder.exists) {
         return new Array<string>();
@@ -48,8 +53,14 @@ export function getFilesListOfPath(path: string): string[] {
     for (let i = 0; i < fileList.length; i++) {
         let file = fileList[i];
         if (file instanceof File) {
-            let short_name = file.toString().split("/");
-            fileNameList.push(short_name[short_name.length - 1]);
+            let tmp = file.toString().split("/");
+            let short_name = tmp[tmp.length - 1];
+            for (let i = 0; i < image_suffix_list.length; i++) {
+                if (StringEndsWith(short_name.toLowerCase(), image_suffix_list[i])) {
+                    fileNameList.push(short_name);
+                    break;
+                }
+            }
         }
     }
 

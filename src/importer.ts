@@ -398,28 +398,15 @@ export function importFiles(custom_opts: CustomOptions): boolean
     }
 
     // 遍历所选图片
-    let originFileList = getFilesListOfPath(opts.source); //读取图源文件夹文件列表
     for (let i = 0; i < opts.imageSelected.length; i++) {
         let originName :string = opts.imageSelected[i].file; // 翻译文件中的图片文件名
-        let filename: string;
+        let filename: string = opts.imageSelected[i].matched_file;
 
         log('[' + originName + '] in processing...' );
         if (opts.ignoreNoLabelImg && lpFile?.images[originName].length == 0) { // ignore img with no label
             log('no label, ignored...');
             continue;
         }
-
-        // replace suffix && match by order
-        if (opts.replaceImgSuffix) {
-            filename = originName.substring(0, originName.lastIndexOf(".")) + opts.replaceImgSuffix;
-        }
-        else if (opts.matchImgByOrder) {
-            filename = originFileList[opts.imageSelected[i].index];
-        }
-        else {
-            filename = originName;
-        }
-
         let ws = openImageWorkspace(filename, template_path);
         if (ws == null) {
             log_err(filename + ": " + I18n.ERROR_FILE_OPEN_FAIL);

@@ -53,6 +53,41 @@ class LabelPlusInput extends GenericUI {
         }
     }
 
+    private getMatchedFileList = () => {
+        let pnl = this.inputPnl;
+        let selectedList = getSelectedItemsText(pnl.chooseImageListBox);
+        let fileList = getImageFilesListOfPath(pnl.sourceTextBox.text);
+        let replaceImgSuffix = (pnl.replaceImgSuffixCheckBox.value) ? pnl.replaceImgSuffixTextbox.text : "";
+        let matchImgByOrder = pnl.matchImgByOrderCheckBox.value;
+        let arr: ImageInfo[] = [];
+        for (let i = 0; i < selectedList.length; i++) {
+            let filename  = selectedList[i].text;
+            let fileindex = selectedList[i].index;
+            if (matchImgByOrder) {
+                arr.push({
+                    file: filename,
+                    matched_file: (fileList.length > i) ? fileList[fileindex] : "",
+                    index: fileindex
+                });
+            }
+            else if (replaceImgSuffix !== "") {
+                arr.push({
+                    file: filename,
+                    matched_file: filename.substring(0, filename.lastIndexOf(".")) + replaceImgSuffix,
+                    index: fileindex
+                });
+            }
+            else {
+                arr.push({
+                    file: filename,
+                    matched_file: filename,
+                    index: fileindex
+                });
+            }
+        }
+        return arr;
+    }
+
     private optPickers: CustomOptionsPicker[] = [];
     private addToPickerList = (picker?: CustomOptionsPicker) => {
         if (picker)
@@ -234,19 +269,20 @@ class LabelPlusInput extends GenericUI {
                 pnl.replaceImgSuffixCheckBox.value = false; // incompatible to "replace image suffix"
                 Emit(pnl.replaceImgSuffixCheckBox.onClick);
             }
-            pnl.matchImgByOrderPreviewButton.enabled = pnl.matchImgByOrderCheckBox.value;
         }
         xx += 195;
-        pnl.matchImgByOrderPreviewButton = pnl.add('button', [xx, yy - 2, xx + 80, yy + 20], I18n.BUTTON_MATCH_IMG_BY_ORDER_PREVIEW);
-        pnl.matchImgByOrderPreviewButton.onClick = () => { // preview button
-            let originFileNameList = getFilesListOfPath(pnl.sourceTextBox.text);
-            let selectedImgFileNameList = getSelectedItemsText(pnl.chooseImageListBox);
-            var logwin = new LogWindow(I18n.BUTTON_MATCH_IMG_BY_ORDER_PREVIEW);
-            for (let i = 0; i < selectedImgFileNameList.length; i++) {
-                if (!originFileNameList[i]) break;
-                let src = selectedImgFileNameList[i].text;
-                let dst = originFileNameList[selectedImgFileNameList[i].index];
-                logwin.append(src + " -> " + dst);
+        pnl.checkSourceMatchButton = pnl.add('button', [xx, yy - 2, xx + 80, yy + 20], I18n.BUTTON_SOURCE_CHECK_MATCH);
+        pnl.checkSourceMatchButton.onClick = () => { // preview button
+            let matchList = this.getMatchedFileList();
+            var logwin = new LogWindow(I18n.BUTTON_SOURCE_CHECK_MATCH);
+            for (let i = 0; i < matchList.length; i++) {
+                if (matchList[i].matched_file == "") {
+                    logwin.append(matchList[i].file + " -> " + I18n.ERROR_NO_MATCH_IMG);
+                }
+                else {
+                    let found = FileIsExists(pnl.sourceTextBox.text + dirSeparator + matchList[i].matched_file);
+                    logwin.append(matchList[i].file + "(" + matchList[i].matched_file + ")" + " -> " + (found ? "OK" : I18n.ERROR_NO_MATCH_IMG));
+                }
             }
             logwin.show();
         }
@@ -267,7 +303,8 @@ class LabelPlusInput extends GenericUI {
         xx += 195;
         pnl.replaceImgSuffixTextbox = pnl.add('edittext', [xx, yy, xx + 80, yy + 20]);
         xx += 85;
-        let type_list = ["", ".psd", ".png", ".jpg", ".jpeg", ".tif", ".tiff"];
+        let type_list = [""];
+        type_list = type_list.concat(image_suffix_list);
         pnl.setSourceFileTypeList = pnl.add('dropdownlist', [xx, yy - 1, xx + 50, yy + 21], type_list);
         let func = () => {
             pnl.replaceImgSuffixTextbox.text = pnl.setSourceFileTypeList.selection.text;
@@ -297,17 +334,6 @@ class LabelPlusInput extends GenericUI {
         // tip for multiple selection
         pnl.add('statictext', [xx, yy, xx + 330, yy + 44], I18n.LABEL_SELECT_TIP, { multiline: true });
 
-        let opts = this.opts;
-        if (opts.matchImgByOrder !== undefined) {
-            pnl.matchImgByOrderCheckBox.value = opts.matchImgByOrder;
-            Emit(pnl.matchImgByOrderCheckBox.onClick);
-        }
-        if (opts.replaceImgSuffix !== undefined) {
-            pnl.replaceImgSuffixCheckBox.value = (opts.replaceImgSuffix !== "");
-            pnl.replaceImgSuffixTextbox.text = opts.replaceImgSuffix;
-            Emit(pnl.replaceImgSuffixCheckBox.onClick);
-        }
-
         let getOption = (opts: CustomOptions, toFile: boolean): CustomOptions | null => {
             if (!toFile) {
                 // image source folder
@@ -323,11 +349,7 @@ class LabelPlusInput extends GenericUI {
                     alert(I18n.ERROR_NO_IMG_CHOOSED);
                     return null;
                 }
-                opts.imageSelected = [];
-                let items = pnl.chooseImageListBox.selection.sort();
-                for (let i = 0; i < items.length; i++) {
-                    opts.imageSelected[i] = { file: items[i].text, index: items[i].index };
-                }
+                opts.imageSelected = this.getMatchedFileList();
 
                 // label groups
                 if (!pnl.chooseGroupListBox.selection || pnl.chooseGroupListBox.selection.length == 0) {
@@ -339,8 +361,6 @@ class LabelPlusInput extends GenericUI {
                     opts.groupSelected[i] = pnl.chooseGroupListBox.selection[i].text;
                 }
             }
-            opts.replaceImgSuffix = (pnl.replaceImgSuffixCheckBox.value) ? pnl.replaceImgSuffixTextbox.text : "";
-            opts.matchImgByOrder = pnl.matchImgByOrderCheckBox.value;
             return opts;
         }
 
