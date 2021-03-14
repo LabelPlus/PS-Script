@@ -52,6 +52,7 @@ namespace I18n {
     export var ERROR_NOT_FOUND_SOURCE: string = "未找到图源文件夹";
     export var ERROR_NOT_FOUND_TARGET: string = "未找到目标文件夹";
     export var ERROR_NOT_FOUND_LPTEXT: string = "未找到LabelPlus文本文件";
+    export var ERROR_NOT_FOUND_TEMPLATE: string = "未找到Photoshop模板文件";
     export var ERROR_CREATE_NEW_FOLDER: string = "无法创建新文件夹";
     export var ERROR_PARSER_LPTEXT_FAIL: string = "解析LabelPlus文本失败";
     export var ERROR_NO_IMG_CHOOSED: string = "未选择输出图片";
@@ -106,6 +107,7 @@ namespace I18n {
         ERROR_NOT_FOUND_SOURCE = "Image Source Folder Not Found!";
         ERROR_NOT_FOUND_TARGET = "Output PSD Folder Not Found!";
         ERROR_NOT_FOUND_LPTEXT = "LabelPlus Text File Not Found!";
+        ERROR_NOT_FOUND_TEMPLATE = "Photoshop template file not found!";
         ERROR_CREATE_NEW_FOLDER = "Could not build new folder";
         ERROR_PARSER_LPTEXT_FAIL = "Fail To Load LabelPlus Text File";
         ERROR_NO_IMG_CHOOSED = "Please select more than one image";

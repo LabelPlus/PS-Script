@@ -366,6 +366,10 @@ export function importFiles(custom_opts: CustomOptions): boolean
     switch (opts.docTemplate) {
     case OptionDocTemplate.Custom:
         template_path = opts.docTemplateCustomPath;
+        if (!FileIsExists(template_path)) {
+            log_err("error: " + I18n.ERROR_NOT_FOUND_TEMPLATE + " " + template_path);
+            return false;
+        }
         break;
     case OptionDocTemplate.Auto:
         let tempdir = GetScriptFolder() + dirSeparator + "ps_script_res" + dirSeparator;
@@ -385,10 +389,13 @@ export function importFiles(custom_opts: CustomOptions): boolean
             log_err("error: " + I18n.ERROR_PRESET_TEMPLATE_NOT_FOUND);
             return false;
         }
+        log("auto match template: " + template_path);
         break;
+    case OptionDocTemplate.No:
     default:
+        log("template not used");
+        break;
     }
-    log("check template path done: " + template_path);
 
     // 遍历所选图片
     let originFileList = getFilesListOfPath(opts.source); //读取图源文件夹文件列表
