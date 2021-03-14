@@ -37,6 +37,7 @@ interface ImageWorkspace {
 interface ImageInfo {
     ws: ImageWorkspace;
     name: string;
+    name_pair: string;
     labels: LpLabel[];
 };
 
@@ -319,7 +320,7 @@ function closeImage(img: ImageInfo, saveType: OptionOutputType = OptionOutputTyp
         asCopy = true;
         break;
     default:
-        log_err("unkown save type: " + saveType);
+        log_err(img.name_pair + ": unkown save type " + saveType);
         return false
     }
 
@@ -399,32 +400,34 @@ export function importFiles(custom_opts: CustomOptions): boolean
 
     // 遍历所选图片
     for (let i = 0; i < opts.imageSelected.length; i++) {
-        let originName :string = opts.imageSelected[i].file; // 翻译文件中的图片文件名
-        let filename: string = opts.imageSelected[i].matched_file;
+        let orgin_name :string = opts.imageSelected[i].file; // 翻译文件中的图片文件名
+        let matched_name: string = opts.imageSelected[i].matched_file;
+        let name_pair = LabelPlus.str_filename_pair(orgin_name, matched_name);
 
-        log('[' + originName + '] in processing...' );
-        if (opts.ignoreNoLabelImg && lpFile?.images[originName].length == 0) { // ignore img with no label
+        log(name_pair + 'in processing...' );
+        if (opts.ignoreNoLabelImg && lpFile?.images[orgin_name].length == 0) { // ignore img with no label
             log('no label, ignored...');
             continue;
         }
-        let ws = openImageWorkspace(filename, template_path);
+        let ws = openImageWorkspace(matched_name, template_path);
         if (ws == null) {
-            log_err(filename + ": " + I18n.ERROR_FILE_OPEN_FAIL);
+            log_err(name_pair + ": " + I18n.ERROR_FILE_OPEN_FAIL);
             continue;
         }
 
         let img_info: ImageInfo = {
             ws: ws,
-            name: filename,
-            labels: lpFile.images[originName],
+            name: matched_name,
+            name_pair: name_pair,
+            labels: lpFile.images[orgin_name],
         };
         if (!importImage(img_info)) {
-            log_err(filename + ": import label failed");
+            log_err(name_pair + ": import label failed");
         }
         if (!closeImage(img_info, opts.outputType)) {
-            log_err(filename + ": " + I18n.ERROR_FILE_SAVE_FAIL);
+            log_err(name_pair + ": " + I18n.ERROR_FILE_SAVE_FAIL);
         }
-        log(filename + ": done");
+        log(name_pair + ": done");
     }
     log("All Done!");
     return true;

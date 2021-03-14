@@ -112,4 +112,8 @@ export function log(msg: any) { Stdlib.log(msg); alllog += msg + '\n'; }
 export function log_err(msg: any) { Stdlib.log(msg); errlog += msg + '\n'; alllog += msg + '\n'; }
 export function showdump(o: any) { alert(Stdlib.listProps(o)); }
 
+export function str_filename_pair(file_orign: string, file_matched: string): string {
+    return file_orign + "(" + file_matched + ")";
+}
+
 } // namespace LabelPlus
