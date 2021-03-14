@@ -1,5 +1,6 @@
 //todo: 以下标记可能被typescript过滤掉，需要找个更妥当的办法导入js
 //@include "./xtools/xlib/GenericUI.jsx";
+//@include "./xtools/xlib/LogWindow.js";
 //@include  "my_action.js"
 //@include "./jam/jamJSON.jsxinc"
 
@@ -240,20 +241,14 @@ class LabelPlusInput extends GenericUI {
         pnl.matchImgByOrderPreviewButton.onClick = () => { // preview button
             let originFileNameList = getFilesListOfPath(pnl.sourceTextBox.text);
             let selectedImgFileNameList = getSelectedItemsText(pnl.chooseImageListBox);
-            let preview_list_string = '';
+            var logwin = new LogWindow(I18n.BUTTON_MATCH_IMG_BY_ORDER_PREVIEW);
             for (let i = 0; i < selectedImgFileNameList.length; i++) {
                 if (!originFileNameList[i]) break;
                 let src = selectedImgFileNameList[i].text;
                 let dst = originFileNameList[selectedImgFileNameList[i].index];
-                preview_list_string += src + " -> " + dst + "\n";
-                if (i >= 20) {
-                    alert(preview_list_string);
-                    preview_list_string = "";
-                }
+                logwin.append(src + " -> " + dst);
             }
-            if (preview_list_string !== "") {
-                alert(preview_list_string);
-            }
+            logwin.show();
         }
         xx = xOfs;
         yy += 25;
