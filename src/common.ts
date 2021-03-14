@@ -5,7 +5,7 @@ namespace LabelPlus {
 
 export function assert(condition: any, msg?: string): asserts condition {
     if (!condition) {
-        throw "error: assert " + condition;
+        throw new Error("error: assert " + condition);
     }
 }
 
@@ -93,9 +93,12 @@ export const APP_DATA_FOLDER: string = dataPath;
 export const DEFAULT_LOG_PATH: string = APP_DATA_FOLDER + dirSeparator + "lp_ps_script.log";
 export const DEFAULT_INI_PATH: string = APP_DATA_FOLDER + dirSeparator + "lp_ps_script.ini";
 export const DEFAULT_DUMP_PATH: string = APP_DATA_FOLDER + dirSeparator + "lp_ps_script.dump";
+export let alllog: string = "";
+export let errlog: string = "";
 
 Stdlib.log.setFile(DEFAULT_LOG_PATH);
-export function log(msg: any) { Stdlib.log(msg); }
+export function log(msg: any) { Stdlib.log(msg); alllog += msg + '\n'; }
+export function log_err(msg: any) { Stdlib.log(msg); errlog += msg + '\n'; alllog += msg + '\n'; }
 export function showdump(o: any) { alert(Stdlib.listProps(o)); }
 
 } // namespace LabelPlus

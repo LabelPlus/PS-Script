@@ -798,8 +798,31 @@ LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: b
 
 LabelPlusInput.prototype.process = function (opts: CustomOptions, doc)
 {
-    writeIni(DEFAULT_INI_PATH, opts); // auto save ini
-    importFiles(opts);
+    let result = false;
+
+    try {
+        writeIni(DEFAULT_INI_PATH, opts); // auto save ini
+        result = importFiles(opts);
+    } catch (e) {
+        log_err('All log:');
+        log_err(alllog);
+        log_err('Unexpected Error:');
+        log_err(Stdlib.exceptionMessage(e));
+    }
+    if (result && (errlog == "")) {
+        alert(I18n.COMPLETE);
+        return;
+    }
+    else if (result && (errlog != "")) {
+        alert(I18n.COMPLETE_WITH_ERROR, "error", true);
+    }
+    else if (!result) {
+        alert(I18n.COMPLETE_FAILED, "error", true);
+    }
+
+    var logwin = new LogWindow('Error');
+    logwin.append(errlog);
+    logwin.show();
 }
 
 function writeIni (iniFile: string, ini: CustomOptions) {
@@ -809,7 +832,7 @@ function writeIni (iniFile: string, ini: CustomOptions) {
     let file = GenericUI.iniFileToFile(iniFile);
 
     if (!file) {
-        throw "Bad ini file specified: \"" + iniFile + "\"."
+        throw new Error("Bad ini file specified: \"" + iniFile + "\".");
     }
 
     if (file.open("w", "TEXT", "????")) {
@@ -827,7 +850,7 @@ function readIni(iniFile: string): CustomOptions {
     let file = GenericUI.iniFileToFile(iniFile);
 
     if (!file) {
-        throw "Bad ini file specified: \"" + iniFile + "\".";
+        throw new Error("Bad ini file specified: \"" + iniFile + "\".");
     }
     if (file.exists && file.open("r", "TEXT", "????")) {
         file.lineFeed = "unix";

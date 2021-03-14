@@ -7,7 +7,6 @@ namespace LabelPlus {
 
 // global var
 let opts: CustomOptions | null = null;
-let errorMsg: string = ""; // error message collection, shown after all done
 let textReplace: TextReplaceInfo = [];
 
 interface Group {
@@ -96,7 +95,7 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
     if (opts.actionGroup) {
         img.ws.doc.activeLayer = textLayer;
         let result = doAction(label.group, opts.actionGroup);
-        Stdlib.log("run action " + label.group + "[" + opts.actionGroup + "]..." + result ? "done" : "fail");
+        log("run action " + label.group + "[" + opts.actionGroup + "]..." + result ? "done" : "fail");
     }
     return true;
 }
@@ -109,7 +108,7 @@ function importImage(img: ImageInfo): boolean
     if (opts.actionGroup) {
         img.ws.doc.activeLayer = img.ws.doc.layers[img.ws.doc.layers.length - 1];
         let result = doAction("_start", opts.actionGroup);
-        Stdlib.log("run action _start[" + opts.actionGroup + "]..." + result ? "done" : "fail");
+        log("run action _start[" + opts.actionGroup + "]..." + result ? "done" : "fail");
     }
 
     // 找出需要涂白的标签,记录他们的坐标,执行涂白
@@ -122,6 +121,7 @@ function importImage(img: ImageInfo): boolean
                 points.push({ x: l.x, y: l.y });
             }
         }
+        log("do lp_dialogClear: " + points);
         MyAction.lp_dialogClear(points, img.ws.doc.width, img.ws.doc.height, 16, 1, img.ws.dialogOverlayLayer);
         delArrayElement<ArtLayer>(img.ws.pendingDelLayerList, img.ws.dialogOverlayLayer); // do not delete dialog-overlay-layer
     }
@@ -139,15 +139,18 @@ function importImage(img: ImageInfo): boolean
             group: l.group,
             contents: l.contents,
         };
+        log("import label " + label_info.index + "...");
         importLabel(img, label_info);
     }
 
     // adjust layer order
     if (img.ws.bgLayer && (opts.dialogOverlayLabelGroups !== "")) {
-        img.ws.dialogOverlayLayer.move(img.ws.bgLayer, ElementPlacement.PLACEBEFORE); // "dialog-overlay" before "bg"
+        log('move "dialog-overlay" before "bg"');
+        img.ws.dialogOverlayLayer.move(img.ws.bgLayer, ElementPlacement.PLACEBEFORE);
     }
 
     // remove unnecessary Layer/LayerSet
+    log('remove unnecessary Layer/LayerSet...');
     for (var layer of img.ws.pendingDelLayerList) { // Layer
         layer.remove();
     }
@@ -163,7 +166,7 @@ function importImage(img: ImageInfo): boolean
     if (opts.actionGroup) {
         img.ws.doc.activeLayer = img.ws.doc.layers[img.ws.doc.layers.length - 1];
         let result = doAction("_end", opts.actionGroup);
-        Stdlib.log("run action _start[" + opts.actionGroup + "]..." + result ? "done" : "fail");
+        log("run action _end[" + opts.actionGroup + "]..." + result ? "done" : "fail");
     }
     return true;
 }
@@ -248,6 +251,7 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
 
     // 若文档类型为索引色模式 更改为RGB模式
     if (wsDoc.mode == DocumentMode.INDEXEDCOLOR) {
+        log("wsDoc.mode is INDEXEDCOLOR, set RGB");
         wsDoc.changeMode(ChangeMode.RGB);
     }
 
@@ -315,7 +319,8 @@ function closeImage(img: ImageInfo, saveType: OptionOutputType = OptionOutputTyp
         asCopy = true;
         break;
     default:
-        throw "unkown save type";
+        log_err("unkown save type: " + saveType);
+        return false
     }
 
     let extensionType = Extension.LOWERCASE;
@@ -332,30 +337,29 @@ export function importFiles(custom_opts: CustomOptions): boolean
 {
     opts = custom_opts;
 
-    Stdlib.log("Start import process!!!");
-    Stdlib.log("Properties:");
-    Stdlib.log(Stdlib.listProps(opts));
+    log("Start import process!!!");
+    log("Properties start ------------------");
+    log(Stdlib.listProps(opts));
+    log("Properties end   ------------------");
 
     //解析LabelPlus文本
     let lpFile = lpTextParser(opts.lpTextFilePath);
     if (lpFile == null) {
-        let errmsg = "error: " + I18n.ERROR_PARSER_LPTEXT_FAIL;
-        Stdlib.log(errmsg);
-        alert(errmsg);
+        log_err("error: " + I18n.ERROR_PARSER_LPTEXT_FAIL);
         return false;
     }
+    log("parse lptext done...");
 
     // 替换文本解析
     if (opts.textReplace) {
         let tmp = textReplaceReader(opts.textReplace);
         if (tmp === null) {
-            let errmsg = "error: " + I18n.ERROR_TEXT_REPLACE_EXPRESSION;
-            Stdlib.log(errmsg);
-            alert(errmsg);
+            log_err("error: " + I18n.ERROR_TEXT_REPLACE_EXPRESSION);
             return false;
         }
         textReplace = tmp;
     }
+    log("parse textreplace done...");
 
     // 确定doc模板文件
     let template_path: string = "";
@@ -378,13 +382,13 @@ export function importFiles(custom_opts: CustomOptions): boolean
             }
         }
         if (template_path === "") {
-            let errmsg = "error: " + I18n.ERROR_PRESET_TEMPLATE_NOT_FOUND;
-            Stdlib.log(errmsg);
-            throw errmsg;
+            log_err("error: " + I18n.ERROR_PRESET_TEMPLATE_NOT_FOUND);
+            return false;
         }
         break;
     default:
     }
+    log("check template path done: " + template_path);
 
     // 遍历所选图片
     let originFileList = getFilesListOfPath(opts.source); //读取图源文件夹文件列表
@@ -392,8 +396,11 @@ export function importFiles(custom_opts: CustomOptions): boolean
         let originName :string = opts.imageSelected[i].file; // 翻译文件中的图片文件名
         let filename: string;
 
-        if (opts.ignoreNoLabelImg && lpFile?.images[originName].length == 0) // ignore img with no label
+        log('[' + originName + '] in processing...' );
+        if (opts.ignoreNoLabelImg && lpFile?.images[originName].length == 0) { // ignore img with no label
+            log('no label, ignored...');
             continue;
+        }
 
         // replace suffix && match by order
         if (opts.replaceImgSuffix) {
@@ -406,12 +413,9 @@ export function importFiles(custom_opts: CustomOptions): boolean
             filename = originName;
         }
 
-        Stdlib.log("open file: " + filename);
         let ws = openImageWorkspace(filename, template_path);
-        if (ws == null) { // error, ignore
-            let msg = filename + ": open file failed";
-            Stdlib.log(msg);
-            errorMsg = errorMsg + msg + "\r\n";
+        if (ws == null) {
+            log_err(filename + ": " + I18n.ERROR_FILE_OPEN_FAIL);
             continue;
         }
 
@@ -421,22 +425,14 @@ export function importFiles(custom_opts: CustomOptions): boolean
             labels: lpFile.images[originName],
         };
         if (!importImage(img_info)) {
-            let msg = filename + ": import label failed";
-            Stdlib.log(msg);
-            errorMsg = errorMsg + msg + "\r\n";
+            log_err(filename + ": import label failed");
         }
         if (!closeImage(img_info, opts.outputType)) {
-            let msg = filename + ": save/close file failed";
-            Stdlib.log(msg);
-            errorMsg = errorMsg + msg + "\r\n";
+            log_err(filename + ": " + I18n.ERROR_FILE_SAVE_FAIL);
         }
-        Stdlib.log("complete file: " + filename);
+        log(filename + ": done");
     }
-    alert(I18n.COMPLETE);
-    if (errorMsg != "") {
-        alert("error:\r\n" + errorMsg);
-    }
-    Stdlib.log("Complete!");
+    log("All Done!");
     return true;
 };
 

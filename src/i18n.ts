@@ -43,7 +43,12 @@ namespace I18n {
     export var CHECKBOX_DIALOG_OVERLAY: string = "对指定分组涂白(多个分组以半角逗号隔开)：";
 
     export var COMPLETE: string = "导出完毕！";
+    export var COMPLETE_WITH_ERROR: string = "导出完毕，但遇到些错误...";
+    export var COMPLETE_FAILED: string = "导出失败！";
 
+    export var ERROR_UNEXPECTED: string = "未预料到的错误，请与作者联系！";
+    export var ERROR_FILE_OPEN_FAIL: string = "文件打开失败，请检查PS是否能正确打开该文件！";
+    export var ERROR_FILE_SAVE_FAIL: string = "文件保存失败，请检查是否有磁盘操作权限、磁盘空间是否充足。";
     export var ERROR_NOT_FOUND_SOURCE: string = "未找到图源文件夹";
     export var ERROR_NOT_FOUND_TARGET: string = "未找到目标文件夹";
     export var ERROR_NOT_FOUND_LPTEXT: string = "未找到LabelPlus文本文件";
@@ -93,6 +98,11 @@ namespace I18n {
         CHECKBOX_NO_LAYER_GROUP = "Layer Not Grouping";
         CHECKBOX_DIALOG_OVERLAY = "Execute \"Dialog Overlay\" On Specified Groups (split groups with comma):";
         COMPLETE = "Export completed!";
+        COMPLETE_WITH_ERROR = "Export Completed, but some error occured..."
+        COMPLETE_FAILED = "Exported failed..."
+        ERROR_UNEXPECTED = "Unexpected error, please contact with maintenance...";
+        ERROR_FILE_OPEN_FAIL = "open file failed, please confirm whether Photoshop can open the file.";
+        ERROR_FILE_SAVE_FAIL = "File saving failed, please check whether you have disk operation permission and whether the disk space is sufficient.";
         ERROR_NOT_FOUND_SOURCE = "Image Source Folder Not Found!";
         ERROR_NOT_FOUND_TARGET = "Output PSD Folder Not Found!";
         ERROR_NOT_FOUND_LPTEXT = "LabelPlus Text File Not Found!";

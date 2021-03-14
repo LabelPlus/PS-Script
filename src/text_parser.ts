@@ -22,13 +22,10 @@ export interface LpFile {
 
 export function lpTextParser(path: string): LpFile | null
 {
-    if (!path) {
-        throw "LabelPlusTextReader no filename";
-    }
-
     var f = new File(path);
     if (!f || !f.exists) {
-        throw "LabelPlusTextReader file not exists";
+        log_err("LabelPlusTextReader: file " + path + " not exists");
+        return null;
     }
 
     // 打开
@@ -63,8 +60,10 @@ export function lpTextParser(path: string): LpFile | null
                 if (state == 'start') {
                     //处理start blocks
                     var result = readStartBlocks(notDealStr);
-                    if (!result)
-                        throw "readStartBlocks fail";
+                    if (!result) {
+                        log_err("readStartBlocks fail");
+                        return null;
+                    }
                     groupData = result.Groups;
                 }
                 else if (state == 'filehead') {
@@ -88,9 +87,9 @@ export function lpTextParser(path: string): LpFile | null
                 break;
 
             case 'labelhead':
-                if (state == 'start') {   //start-labelhead 不存在
-                    throw "start-filehead";
-                    break;
+                if (state == 'start') {
+                    log_err("start-filehead not found...");
+                    return null;
                 }
                 else if (state == 'filehead') {
                 }
@@ -187,13 +186,17 @@ function judgeLineType(str: string) {
 
 function readStartBlocks(str: string) {
     var blocks = str.split("-");
-    if (blocks.length < 3)
-        throw "Start blocks error!";
+    if (blocks.length < 3) {
+        log_err("Start blocks format error!");
+        return null;
+    }
 
     //block1 文件头
     var filehead = blocks[0].split(",");
-    if (filehead.length < 2)
-        throw "filehead error!";
+    if (filehead.length < 2) {
+        log_err("filehead format error!");
+        return null;
+    }
     var first_version = parseInt(filehead[0]);
     var last_version = parseInt(filehead[1]);
 
