@@ -812,8 +812,22 @@ LabelPlusInput.prototype.createPanel = function (pnl: any, ini: never) {
 // validate user panel, generate CustomOptions
 // tofile: if it is saving config to file
 LabelPlusInput.prototype.validatePanel = function (pnl: any, ini: any, tofile: boolean) :CustomOptions | boolean {
-    let ret = this.geCustomOptions(tofile);
-    return (ret == null) ? false : ret;
+    let opts = this.geCustomOptions(tofile);
+    if (opts == null) {
+        return true; // continue, will not close the indow
+    }
+
+    // check image source exsits
+    for (let i = 0; i < opts.imageSelected.length; i++) {
+        let item = opts.imageSelected[i];
+        if (!FileIsExists(opts.source + dirSeparator + item.matched_file)) {
+            alert(I18n.ERROR_HAVE_NO_MATCH_IMG, 'error', true);
+            Emit(this.inputPnl.checkSourceMatchButton.onClick);
+            return true; // continue, will not close the indow
+        }
+    }
+
+    return opts; // go process()
 };
 
 LabelPlusInput.prototype.process = function (opts: CustomOptions, doc)

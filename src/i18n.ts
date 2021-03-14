@@ -58,6 +58,7 @@ namespace I18n {
     export var ERROR_NO_IMG_CHOOSED: string = "未选择输出图片";
     export var ERROR_NO_LABEL_GROUP_CHOOSED: string = "未选择导入分组";
     export var ERROR_NO_MATCH_IMG: string = "找不到对应的图片文件！！";
+    export var ERROR_HAVE_NO_MATCH_IMG: string = "存在无法匹配的图源文件，请重新检查！";
     export var ERROR_PRESET_TEMPLATE_NOT_FOUND: string = "无法自动匹配模板文件，请确认脚本所在目录是否存在ps_script_res目录";
     export var ERROR_TEXT_REPLACE_EXPRESSION: string = "文本替换表达式解析错误，请检查！";
 
@@ -114,6 +115,7 @@ namespace I18n {
         ERROR_NO_IMG_CHOOSED = "Please select more than one image";
         ERROR_NO_LABEL_GROUP_CHOOSED = "Please select more than one group";
         ERROR_NO_MATCH_IMG = "No matched image file!!!!";
+        ERROR_HAVE_NO_MATCH_IMG = "Some image files did not match, please check again."
         ERROR_PRESET_TEMPLATE_NOT_FOUND = "Cannot match template file, please make sure \"ps_script_res\" folder exsit.";
         ERROR_TEXT_REPLACE_EXPRESSION = "Expression of text replacing is wrong, please check again.";
     }
