@@ -14,6 +14,7 @@ program_exists() {
 
 show_usage() {
     echo "Usage: $0 <version>"
+    echo "  version:\tlike 1.6.0"
     exit 1
 }
 

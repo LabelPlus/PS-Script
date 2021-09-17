@@ -1,11 +1,8 @@
 # Changelog
 
-## [Unreleased]
-### Added
-### Changed
+## [1.6.1] - 2021-09-17
 ### Fixed
-### Removed
-
+- 修复涂白功能在高DPI图片下可能将对话框的边缘覆盖的问题
 
 ## [1.6.0] - 2021-03-14
 ### Added
