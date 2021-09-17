@@ -122,8 +122,11 @@ function importImage(img: ImageInfo): boolean
                 points.push({ x: l.x, y: l.y });
             }
         }
-        log("do lp_dialogClear: " + points);
-        MyAction.lp_dialogClear(points, img.ws.doc.width, img.ws.doc.height, 16, 1, img.ws.dialogOverlayLayer);
+
+        let contract_px = (img.ws.doc.resolution / 72) * 2;
+        let tolerance = 16;
+        log("do lp_dialogClear ,contract_px=" + contract_px + ",tolerance=" + tolerance);
+        MyAction.lp_dialogClear(points, img.ws.doc.width, img.ws.doc.height, tolerance, contract_px, img.ws.dialogOverlayLayer);
         delArrayElement<ArtLayer>(img.ws.pendingDelLayerList, img.ws.dialogOverlayLayer); // do not delete dialog-overlay-layer
     }
 
