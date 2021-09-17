@@ -124,10 +124,10 @@ function importImage(img: ImageInfo): boolean
             }
         }
 
-        let contract_px = (img.ws.doc.resolution / 72) * 2;
+        let contract = UnitValue(2, 'pt');
         let tolerance = 16;
-        log("dialogClear() ,contract_px=" + contract_px + ",tolerance=" + tolerance);
-        dialogClear(points, img.ws.doc.width, img.ws.doc.height, tolerance, contract_px, img.ws.dialogOverlayLayer);
+        log("dialogClear() ,contract_px=" + contract + ",tolerance=" + tolerance);
+        dialogClear(img.ws.doc, img.ws.bgLayer, img.ws.dialogOverlayLayer, points, tolerance, contract);
         delArrayElement<ArtLayer>(img.ws.pendingDelLayerList, img.ws.dialogOverlayLayer); // do not delete dialog-overlay-layer
     }
 
