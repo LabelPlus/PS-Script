@@ -2,6 +2,7 @@
 /// <reference path="custom_options.ts" />
 /// <reference path="common.ts" />
 /// <reference path="text_parser.ts" />
+/// <reference path="dialog_clear.ts" />
 
 namespace LabelPlus {
 
@@ -125,8 +126,8 @@ function importImage(img: ImageInfo): boolean
 
         let contract_px = (img.ws.doc.resolution / 72) * 2;
         let tolerance = 16;
-        log("do lp_dialogClear ,contract_px=" + contract_px + ",tolerance=" + tolerance);
-        MyAction.lp_dialogClear(points, img.ws.doc.width, img.ws.doc.height, tolerance, contract_px, img.ws.dialogOverlayLayer);
+        log("dialogClear() ,contract_px=" + contract_px + ",tolerance=" + tolerance);
+        dialogClear(points, img.ws.doc.width, img.ws.doc.height, tolerance, contract_px, img.ws.dialogOverlayLayer);
         delArrayElement<ArtLayer>(img.ws.pendingDelLayerList, img.ws.dialogOverlayLayer); // do not delete dialog-overlay-layer
     }
 
