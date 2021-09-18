@@ -270,6 +270,7 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
         if (!opts.noLayerGroup) {
             tmp.layerSet = wsDoc.layerSets.add();
             tmp.layerSet.name = name;
+            tmp.layerSet.blendMode = BlendMode.NORMAL;
         }
         // 尝试寻找分组模板，找不到则使用默认文本模板
         if (opts.docTemplate !== OptionDocTemplate.No) {
