@@ -116,6 +116,17 @@ class LabelPlusInput extends GenericUI {
                 let fl = new Folder(f.path);
                 inputPnl.sourceTextBox.text = fl.fsName;
                 outputPnl.targetTextBox.text = fl.fsName + dirSeparator + 'output';
+
+                // detect images source sub dir
+                let src_subdirs = ["images", "image", "img", "source", "图源"];
+                for (let subdir of src_subdirs) {
+                    let dir_path = fl.fsName + dirSeparator + subdir;
+                    if (FolderIsExists(dir_path)) {
+                        log("dectect images source: " + dir_path);
+                        inputPnl.sourceTextBox.text = dir_path;
+                        break;
+                    }
+                }
             } else {
                 return {};        // cancel by user
             }

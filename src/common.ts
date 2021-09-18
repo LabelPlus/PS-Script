@@ -32,6 +32,10 @@ export function FileIsExists(path: string): boolean {
     return (new File(path)).exists;
 }
 
+export function FolderIsExists(path: string): boolean {
+    return (new Folder(path)).exists;
+}
+
 export function Emit(func: Function): void {
     if (func !== undefined)
         func();
