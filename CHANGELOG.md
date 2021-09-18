@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+### Added
+### Changed
+### Fixed
+### Removed
+
+
 ## [1.7.0] - 2021-09-19
 重写了涂白功能的逻辑，避免各种神奇问题。
 ### Added
