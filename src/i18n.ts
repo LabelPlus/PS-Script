@@ -40,7 +40,10 @@ namespace I18n {
     export var LABEL_TEXT_DIRECTION: string = "文字方向：";
     export var LIST_TEXT_DIT_ITEMS: string[] = [ "默认", "横向", "纵向" ];
     export var CHECKBOX_NO_LAYER_GROUP: string = "不对图层进行分组";
-    export var CHECKBOX_DIALOG_OVERLAY: string = "对指定分组涂白(多个分组以半角逗号隔开)：";
+
+    export var CHECKBOX_DIALOG_OVERLAY: string = "启用对话框自动涂白";
+    export var LABEL_DIALOG_OVERLAY_GROUP: string = "指定需要涂白的分组(例如: 框内,心理)：";
+    export var LABEL_DIALOG_OVERLAY_TOLERANCE: string = "容差：";
 
     export var COMPLETE: string = "导出完毕！";
     export var COMPLETE_WITH_ERROR: string = "导出完毕，但遇到些错误...";
@@ -92,14 +95,16 @@ namespace I18n {
         BUTTON_SOURCE_CHECK_MATCH = "Check Match Result";
         LABEL_OUTPUT_FILE_TYPE = "Output File Type:";
         CHECKBOX_REPLACE_IMG_SUFFIX = "Replace Image Suffix";
-        CHECKBOX_RUN_ACTION = "Execute Automation Actions";
+        CHECKBOX_RUN_ACTION = "Execute Action:";
         CHECKBOX_NOT_CLOSE = "Do Not Close File";
         CHECKBOX_SET_FONT = "Font";
         CHECKBOX_SET_LEADING = "Leading";
         LABEL_TEXT_DIRECTION = "Text Direction:";
         LIST_TEXT_DIT_ITEMS = [ "Default", "Horizontal", "Vertical" ];
         CHECKBOX_NO_LAYER_GROUP = "Layer Not Grouping";
-        CHECKBOX_DIALOG_OVERLAY = "Execute \"Dialog Overlay\" On Specified Groups (split groups with comma):";
+        CHECKBOX_DIALOG_OVERLAY = "Execute \"Dialog Overlay\"";
+        LABEL_DIALOG_OVERLAY_GROUP = "Specified Groups(like: group1,group2)：";
+        LABEL_DIALOG_OVERLAY_TOLERANCE = "Tolerance:";
         COMPLETE = "Export completed!";
         COMPLETE_WITH_ERROR = "Export Completed, but some error occured..."
         COMPLETE_FAILED = "Exported failed..."

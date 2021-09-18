@@ -125,7 +125,7 @@ function importImage(img: ImageInfo): boolean
         }
 
         let contract = UnitValue(2, 'pt');
-        let tolerance = 16;
+        let tolerance = opts.dialogOverlayTolerance;
         log("dialogClear() ,contract_px=" + contract + ",tolerance=" + tolerance);
         dialogClear(img.ws.doc, img.ws.bgLayer, img.ws.dialogOverlayLayer, points, tolerance, contract);
         delArrayElement<ArtLayer>(img.ws.pendingDelLayerList, img.ws.dialogOverlayLayer); // do not delete dialog-overlay-layer

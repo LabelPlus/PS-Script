@@ -39,6 +39,7 @@ export class CustomOptions {
 
     actionGroup: string = ""; // action group name
     dialogOverlayLabelGroups: string = ""; // the label groups need dialog overlay layer, split by ","
+    dialogOverlayTolerance: number = 16; // dialog overlay tolerance
 };
 
 } // namespace LabelPlus

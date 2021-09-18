@@ -153,10 +153,13 @@ class LabelPlusInput extends GenericUI {
                 inputPnl.chooseGroupListBox[i].selected = true;
 
                 // dialog overlay
-                if (automationPnl.overlayGroupTextBox.text == "") { // first group
-                    automationPnl.overlayGroupTextBox.text = g;
+                {
+                    let doPnl = automationPnl.overlayPnl;
+                    if (doPnl.groupTextBox.text == "") { // first group
+                        doPnl.groupTextBox.text = g;
+                    }
+                    doPnl.addGroupList[i] = doPnl.addGroupList.add('item', g, i);
                 }
-                automationPnl.overlayGroupAddGroupList[i] = automationPnl.overlayGroupAddGroupList.add('item', g, i);
             }
             return {};
         };
@@ -663,13 +666,12 @@ class LabelPlusInput extends GenericUI {
         yy += 23;
 
         // run action
-        pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 500, yy + 20],
+        pnl.runActionGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20],
             I18n.CHECKBOX_RUN_ACTION);
         pnl.runActionGroupCheckBox.onClick = () => {
             pnl.runActionGroupList.enabled = pnl.runActionGroupCheckBox.value;
         }
-        xx = xOfs + 30;
-        yy += 23;
+        xx += 260;
         let ary = Stdlib.getActionSets();
         pnl.runActionGroupList = pnl.add('dropdownlist', [xx, yy, xx + 180, yy + 20], ary);
         pnl.runActionGroupList.selection = pnl.runActionGroupList.find("LabelPlusAction");
@@ -682,26 +684,45 @@ class LabelPlusInput extends GenericUI {
         yy += 23;
 
         // dialog overlay
+        pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 20], I18n.CHECKBOX_DIALOG_OVERLAY);
+        pnl.dialogOverlayCheckBox.onClick = () => {
+            let enable = pnl.dialogOverlayCheckBox.value;
+            pnl.overlayPnl.enabled = enable;
+        }
+
+        // pnl
+        xx =+ 10;
+        yy += 23;
+        pnl.overlayPnl = pnl.add('panel', [xx, yy, xx + 460, yy + 75]);
+
         {
-            pnl.dialogOverlayCheckBox = pnl.add('checkbox', [xx, yy, xx + 300, yy + 20], I18n.CHECKBOX_DIALOG_OVERLAY);
-            pnl.dialogOverlayCheckBox.onClick = () => {
-                let enable = pnl.dialogOverlayCheckBox.value;
-                pnl.overlayGroupTextBox.enabled = enable;
-                pnl.overlayGroupAddGroupList.enabled = enable;
-            }
-            xx = xOfs + 30;
-            yy += 23;
-            pnl.overlayGroupTextBox = pnl.add('edittext', [xx, yy, xx + 250, yy + 20]);
+            let xx = xOfs;
+            let yy = 5;
+            let doPnl = pnl.overlayPnl;
+
+            doPnl.toleranceLabel = doPnl.add('statictext', [xx, yy, xx + 60, yy + 20], I18n.LABEL_DIALOG_OVERLAY_TOLERANCE);
+            xx += 65;
+            doPnl.toleranceTextBox = doPnl.add('edittext', [xx, yy, xx + 50, yy + 20]);
+            doPnl.toleranceTextBox.text = "16";
+
+
+            xx = xOfs;
+            yy += 20;
+            pnl.overlayPnl.overlayGroupLabel = doPnl.add('statictext', [xx, yy, xx + 600, yy + 20], I18n.LABEL_DIALOG_OVERLAY_GROUP);
+            yy += 20;
+
+            doPnl.groupTextBox = doPnl.add('edittext', [xx, yy, xx + 250, yy + 20]);
             xx += 255;
             let arr = [""];
-            pnl.overlayGroupAddGroupList = pnl.add('dropdownlist', [xx, yy - 1, xx + 100, yy + 21], arr);
+            doPnl.addGroupList = doPnl.add('dropdownlist', [xx, yy - 1, xx + 100, yy + 21], arr);
             let func = () => {
-                pnl.overlayGroupTextBox.text += "," + pnl.overlayGroupAddGroupList.selection.text;
-                pnl.overlayGroupAddGroupList.onChange = undefined;
-                pnl.overlayGroupAddGroupList.selection = pnl.overlayGroupAddGroupList.find("");
-                pnl.overlayGroupAddGroupList.onChange = func;
+                doPnl.groupTextBox.text += "," + doPnl.addGroupList.selection.text;
+                doPnl.addGroupList.onChange = undefined;
+                doPnl.addGroupList.selection = doPnl.addGroupList.find("");
+                doPnl.addGroupList.onChange = func;
             }
-            pnl.overlayGroupAddGroupList.onChange = func;
+            doPnl.addGroupList.onChange = func;
+
         }
 
         let opts = this.opts;
@@ -719,14 +740,20 @@ class LabelPlusInput extends GenericUI {
         }
         if (opts.dialogOverlayLabelGroups !== undefined) {
             pnl.dialogOverlayCheckBox.value = (opts.dialogOverlayLabelGroups !== "");
-            pnl.overlayGroupTextBox.text = opts.dialogOverlayLabelGroups;
+            pnl.overlayPnl.groupTextBox.text = opts.dialogOverlayLabelGroups;
             Emit(pnl.dialogOverlayCheckBox.onClick);
+        }
+        if (opts.dialogOverlayTolerance !== undefined) {
+            pnl.overlayPnl.toleranceTextBox.text = opts.dialogOverlayTolerance.toString();
         }
 
         let getOption = (opts: CustomOptions): CustomOptions | null => {
             opts.textReplace = (pnl.textReplaceCheckBox.value) ? pnl.textReplaceTextBox.text : "";
             opts.actionGroup = (pnl.runActionGroupCheckBox.value) ? pnl.runActionGroupList.selection.text : "";
-            opts.dialogOverlayLabelGroups = (pnl.dialogOverlayCheckBox.value)? pnl.overlayGroupTextBox.text : "";
+            opts.dialogOverlayLabelGroups = (pnl.dialogOverlayCheckBox.value)? pnl.overlayPnl.groupTextBox.text : "";
+            if (pnl.overlayPnl.toleranceTextBox.text !== "") {
+                opts.dialogOverlayTolerance = pnl.overlayPnl.toleranceTextBox.text;
+            }
             return opts;
         }
 
@@ -780,16 +807,16 @@ class LabelPlusInput extends GenericUI {
         yy += 130;
 
         // style
-        this.stylePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 180]);
+        this.stylePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 170]);
         ret = this.uiStylePanel(this.stylePnl);
         this.addToPickerList(ret.getOption);
-        yy += 190;
+        yy += 180;
 
         // automation
-        this.automationPnl = pnl.add('panel', [xx, yy, xx + 480, yy + 160]);
+        this.automationPnl = pnl.add('panel', [xx, yy, xx + 480, yy + 170]);
         ret = this.uiAutomationPanel(this.automationPnl);
         this.addToPickerList(ret.getOption);
-        yy += 170;
+        yy += 180;
 
         // help bar
         xx = this.winRect.w - 220;
