@@ -48,10 +48,14 @@ export function dialogClear(doc: Document, bgLayer: ArtLayer, overLayer: ArtLaye
             { x: width - 1, y: height -1 },
         ];
         for (let j = 0; j < corners.length; j++) {
-            if (getColor(doc, UnitValue(corners[j].x, 'px'), UnitValue(corners[j].y, 'px')) == tmp_color) {
+            let x = corners[j].x;
+            let y = corners[j].y;
+            let color = getColor(doc, UnitValue(x, 'px'), UnitValue(y, 'px'));
+            if (color.rgb.hexValue == tmp_color.rgb.hexValue) {
+                log("detect corner (" + x + "," + y + ") is tmp_color");
                 continue;
             }
-            MyAction.magicWand(corners[j].x, corners[j].y, 0, false, true, 'addTo');
+            MyAction.magicWand(x, y, 0, false, true, 'addTo');
         }
         doc.selection.invert();
         doc.selection.contract(contract);
