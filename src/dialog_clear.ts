@@ -2,12 +2,60 @@
 
 namespace LabelPlus {
 
+// note: too slow
+// function getColor(doc: Document, x: UnitValue, y: UnitValue): SolidColor
+// {
+//     let sample = doc.colorSamplers.add([x, y]);
+//     let color = sample.color;
+//     sample.remove();
+//     return color;
+// }
+
 function getColor(doc: Document, x: UnitValue, y: UnitValue): SolidColor
 {
-    let sample = doc.colorSamplers.add([x, y]);
-    let color = sample.color;
-    sample.remove();
+    let x_px = Math.floor(x.as("px"));
+    let y_px = Math.floor(y.as("px"));
+
+    var st = doc.activeHistoryState;
+
+    Stdlib.selectBounds(doc, [x_px, y_px, x_px+1, y_px+1]);
+
+    let color = getSelectionColor(doc);
+
+    doc.activeHistoryState = st;
+
     return color;
+}
+
+function getSelectionColor(doc: Document): SolidColor
+{
+    function findPV(h: number[]) {
+        let max = 0;
+        for (var i = 0; i <= 255; i++) {
+            if (h[i] > h[max]) {
+                max = i;
+            }
+        }
+        return max;
+    }
+
+    let pColour = new SolidColor();
+
+    if (doc.mode == DocumentMode.RGB) {
+        pColour.model = ColorModel.RGB;
+        pColour.rgb.red = findPV(doc.channels[0].histogram);
+        pColour.rgb.green = findPV(doc.channels[1].histogram);
+        pColour.rgb.blue = findPV(doc.channels[2].histogram);
+    }
+    else if (doc.mode == DocumentMode.GRAYSCALE) {
+        let gr = findPV(doc.channels.getByName("Gray").histogram);
+        pColour.model = ColorModel.GRAYSCALE;
+        pColour.gray.gray = 100 * (gr / 255);
+    }
+    else {
+        log("getSelectionColor: Color Mode not supported: " + doc.mode);
+    }
+    return pColour;
 }
 
 function isSelectionValid()
@@ -53,13 +101,13 @@ export function dialogClear(doc: Document, bgLayer: ArtLayer, overLayer: ArtLaye
     for (let i = 0; i < labels.length; i++) {
         let x = labels[i].x * width;
         let y = labels[i].y * height;
-        let fill_color = getColor(doc, UnitValue(x, 'px'), UnitValue(y, 'px'));
-
-        log("point " + i + "(" + x + "," + y + ") color=" + fill_color.rgb.hexValue.toString());
 
         app.activeDocument.activeLayer = bgLayer;
         doc.selection.deselect();
         MyAction.magicWand(x, y, tolerance, false, true, 'addTo');
+
+        let fill_color = getSelectionColor(doc);
+        log("point " + i + "(" + x + "," + y + ") color=" + fill_color.rgb.hexValue.toString());
 
         let tmp_layer = doc.artLayers.add();
         app.activeDocument.activeLayer = tmp_layer;
