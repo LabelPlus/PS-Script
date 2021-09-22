@@ -10,6 +10,28 @@ function getColor(doc: Document, x: UnitValue, y: UnitValue): SolidColor
     return color;
 }
 
+function isSelectionValid()
+{
+    try {
+        let bounds = app.activeDocument.selection.bounds; // if no selection, raise error
+
+        let bound_width = bounds[2].as('pt') - bounds[0].as('pt');
+        let bound_height = bounds[3].as('pt') - bounds[1].as('pt');
+
+        log("select bounds: " + bounds.toString() + "bound_width=" + bound_width + " bound_height=" + bound_height);
+        if ((bound_width < 20) || (bound_height < 20)) {
+            log("selection too small...");
+            return false;
+        }
+
+        return true;
+    }
+    catch (e) {
+        log("no selection...");
+        return false;
+    }
+}
+
 // clear dialog
 //      bgLayer: the background layer
 //      overLayer: the overlay layer
@@ -32,6 +54,8 @@ export function dialogClear(doc: Document, bgLayer: ArtLayer, overLayer: ArtLaye
         let x = labels[i].x * width;
         let y = labels[i].y * height;
         let fill_color = getColor(doc, UnitValue(x, 'px'), UnitValue(y, 'px'));
+
+        log("point " + i + "(" + x + "," + y + ") color=" + fill_color.rgb.hexValue.toString());
 
         app.activeDocument.activeLayer = bgLayer;
         doc.selection.deselect();
@@ -57,12 +81,19 @@ export function dialogClear(doc: Document, bgLayer: ArtLayer, overLayer: ArtLaye
             }
             MyAction.magicWand(x, y, 0, false, true, 'addTo');
         }
-        doc.selection.invert();
-        doc.selection.contract(contract);
+
         tmp_layer.remove();
 
-        app.activeDocument.activeLayer = overLayer;
-        doc.selection.fill(fill_color, ColorBlendMode.NORMAL, 100, false);
+        doc.selection.invert();
+        if (isSelectionValid()) {
+            doc.selection.contract(contract);
+
+            app.activeDocument.activeLayer = overLayer;
+            doc.selection.fill(fill_color, ColorBlendMode.NORMAL, 100, false);
+        }
+        else {
+            log("selection is not valid, ignore...");
+        }
     }
     return true;
 }
