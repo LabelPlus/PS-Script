@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+### Added
+### Changed
+### Fixed
+### Removed
+
+
 ## [1.7.1] - 2021-09-23
 ### Changed
 - 改进涂白功能填充颜色的精准度，之前取的点的颜色只采样单点，容易受文字附近的噪点干扰，已改为采样区域颜色
