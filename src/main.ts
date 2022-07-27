@@ -750,7 +750,9 @@ class LabelPlusInput extends GenericUI {
 
         let getOption = (opts: CustomOptions): CustomOptions | null => {
             opts.textReplace = (pnl.textReplaceCheckBox.value) ? pnl.textReplaceTextBox.text : "";
-            opts.actionGroup = (pnl.runActionGroupCheckBox.value) ? pnl.runActionGroupList.selection.text : "";
+            if (pnl.runActionGroupCheckBox.value && pnl.runActionGroupList.selection) {
+                opts.actionGroup = pnl.runActionGroupList.selection.text;
+            }
             opts.dialogOverlayLabelGroups = (pnl.dialogOverlayCheckBox.value)? pnl.overlayPnl.groupTextBox.text : "";
             if (pnl.overlayPnl.toleranceTextBox.text !== "") {
                 opts.dialogOverlayTolerance = pnl.overlayPnl.toleranceTextBox.text;
