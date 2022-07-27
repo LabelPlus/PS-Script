@@ -611,7 +611,8 @@ class LabelPlusInput extends GenericUI {
                 pnl.setFontCheckBox.value = false;
             } else {
                 pnl.setFontCheckBox.value = true;
-                pnl.font.setFont(opts.font, opts.fontSize);
+                pnl.font.family.selection = pnl.font.family.find(opts.font);
+                pnl.font.fontSize.text    = opts.fontSize;
             }
             Emit(pnl.setFontCheckBox.onClick);
         }
