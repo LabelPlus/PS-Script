@@ -64,6 +64,7 @@ namespace I18n {
     export var ERROR_HAVE_NO_MATCH_IMG: string = "存在无法匹配的图源文件，请重新检查！";
     export var ERROR_PRESET_TEMPLATE_NOT_FOUND: string = "无法自动匹配模板文件，请确认脚本所在目录是否存在ps_script_res目录";
     export var ERROR_TEXT_REPLACE_EXPRESSION: string = "文本替换表达式解析错误，请检查！";
+    export var ERROR_OPT_FONT_NOT_FOUND: string = "找不到配置中保存的字体";
 
     declare var app: any;
     // if (true) {
@@ -123,5 +124,6 @@ namespace I18n {
         ERROR_HAVE_NO_MATCH_IMG = "Some image files did not match, please check again."
         ERROR_PRESET_TEMPLATE_NOT_FOUND = "Cannot match template file, please make sure \"ps_script_res\" folder exsit.";
         ERROR_TEXT_REPLACE_EXPRESSION = "Expression of text replacing is wrong, please check again.";
+        ERROR_OPT_FONT_NOT_FOUND = "Cannot found the font";
     }
 }
