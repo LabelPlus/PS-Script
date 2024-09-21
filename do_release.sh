@@ -24,7 +24,7 @@ if [ $# -lt 1 ]; then
 fi
 
 version=$1
-program_exists git 7z tsc python
+program_exists git 7z python
 [ $? -ne 0 ] && exit 1
 
 cd "${0%%/*}"
