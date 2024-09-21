@@ -30,6 +30,7 @@ export function lpTextParser(path: string): LpFile | null
 
     // 打开
     f.open("r");
+    f.encoding = 'UTF-8';
 
     // json格式读取
     if (path.substring(path.lastIndexOf("."), path.length) == '.json') {
