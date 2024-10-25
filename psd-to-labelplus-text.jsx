@@ -16,6 +16,9 @@ const IMG_SUFFIX = ".png";
 
 // 全局变量，计数Label序号
 var label_count = 0;
+// 全局变量，当前处理的文档的尺寸
+var g_docWidth = 0;
+var g_docHeight = 0;
 
 function main() {
 
@@ -35,6 +38,9 @@ function main() {
 
             // 将文档设置激活才能正常访问到图层
             app.activeDocument = doc;
+
+            g_docWidth = doc.width;
+            g_docHeight = doc.height;
 
             // LabelPlus 图片文件名
             var fileName = doc.name.replace(/\.[^\.]+$/, IMG_SUFFIX);
@@ -75,11 +81,8 @@ function scanLayerSets(el) {
 
         if (lk == "LayerKind.TEXT") {
             var item = el.artLayers[j].textItem;
-            var docWidth = el.parent.width;
-            var docHeight = el.parent.height;
-
-            var xPos = item.position[0] / docWidth;
-            var yPos = item.position[1] / docHeight;
+            var xPos = item.position[0] / g_docWidth;
+            var yPos = item.position[1] / g_docHeight;            
             
             label_count += 1;
             mystr += "----------------[" + label_count + "]----------------[" + xPos.toFixed(3) + "," + yPos.toFixed(3) + ",1]\n";
