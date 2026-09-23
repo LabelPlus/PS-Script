@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash
+set -e
 
 cd "${0%%/*}"
 
@@ -10,7 +11,7 @@ rm -rf ./build/*
 mkdir -p build/
 $TSC --preserveConstEnums -p . --out $TSC_OUTPUT
 cat src/copyleft_header.js $TSC_OUTPUT > $PS_JSX_OUTPUT
-python ./flatten_jsx.py $PS_JSX_OUTPUT $PS_JSX_OUTPUT -I build/ src/
+python3 ./flatten_jsx.py $PS_JSX_OUTPUT $PS_JSX_OUTPUT -I build/ src/
 
 cp -r doc_template/ build/ps_script_res
 

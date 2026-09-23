@@ -24,10 +24,10 @@ LabelPlus是一个用于图片翻译的工具包，本工程是其中的Photosho
 
 ### requirement
 * typescript
-* python
+* python3
 
 ```
-$ sudo apt install python nodejs
+$ sudo apt install python3 nodejs
 $ sudo npm install -g typescript yarn
 $ npm config set registry https://registry.npmmirror.com
 $ yarn config set registry https://registry.npmmirror.com
