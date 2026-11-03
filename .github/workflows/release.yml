@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install locked dependencies
+        run: |
+          node scripts/prepare_ci_lock.cjs
+          npm ci --ignore-scripts
+      - name: Build release archive and notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 scripts/package_release.py "$RELEASE_TAG"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" build/LabelPlus_PS-Script_*.7z \
+            --verify-tag --title "v${RELEASE_TAG#v}" --notes-file build/release-notes.md
