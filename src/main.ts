@@ -37,7 +37,7 @@ class LabelPlusInput extends GenericUI {
         this.saveIni = false;
         this.hasBorder = false;
         this.settingsPanel = false;
-        this.winRect = { x: 200, y: 200, w: 875, h: 590 };
+        this.winRect = { x: 200, y: 200, w: 875, h: 630 };
         this.center = true;
         this.title = I18n.APP_NAME + " " + VERSION;
         this.notesSize = 0;
@@ -443,6 +443,20 @@ class LabelPlusInput extends GenericUI {
 
         // do not create layer group
         pnl.noLayerGroupCheckBox = pnl.add('checkbox', [xx, yy, xx + 250, yy + 20], I18n.CHECKBOX_NO_LAYER_GROUP);
+        xx = xOfs;
+        yy += 23;
+
+        // ppi
+        pnl.setPPICheckBox = pnl.add('checkbox', [xx, yy, xx + 100, yy + 20], I18n.CHECKBOX_SET_PPI);
+        pnl.setPPICheckBox.onClick = () => {
+            pnl.ppiTextBox.enabled = pnl.setPPICheckBox.value;
+        }
+        xx += 101;
+        pnl.ppiTextBox = pnl.add('edittext', [xx, yy, xx + 50, yy + 20]);
+        pnl.ppiTextBox.enabled = false;
+        pnl.ppiTextBox.text = "300";
+        pnl.ppiTextBox.onChanging = GenericUI.numericKeystrokeFilter; // 只允许输入正整数
+        xx = xOfs;
         yy += 23;
 
         let opts = this.opts;
@@ -465,6 +479,11 @@ class LabelPlusInput extends GenericUI {
             pnl.noLayerGroupCheckBox.value = opts.noLayerGroup;
             Emit(pnl.noLayerGroupCheckBox.onClick);
         }
+        if (opts.ppi !== undefined && opts.ppi !== 0) {
+            pnl.setPPICheckBox.value = (opts.ppi > 0); // 正数=启用，负数=禁用但保留上次的值
+            pnl.ppiTextBox.text = Math.abs(opts.ppi).toString();
+            Emit(pnl.setPPICheckBox.onClick);
+        }
 
         let getOption = (opts: CustomOptions, toFile: boolean): CustomOptions | null => {
             if (!toFile) {
@@ -483,6 +502,8 @@ class LabelPlusInput extends GenericUI {
             opts.ignoreNoLabelImg = pnl.ignoreNoLabelImgCheckBox.value;
             opts.notClose = pnl.notCloseCheckBox.value;
             opts.noLayerGroup = pnl.noLayerGroupCheckBox.value;
+            let ppiVal = Number(pnl.ppiTextBox.text);
+            opts.ppi = (isFinite(ppiVal) && ppiVal > 0) ? (pnl.setPPICheckBox.value ? ppiVal : -ppiVal) : 0;
             return opts;
         }
 
@@ -569,12 +590,36 @@ class LabelPlusInput extends GenericUI {
             yy += 25;
         }
 
+        // anti-alias
+        pnl.setAntiAliasCheckBox = pnl.add('checkbox', [xx, yy, xx + 100, yy + 20], I18n.CHECKBOX_SET_ANTI_ALIAS);
+        pnl.setAntiAliasCheckBox.onClick = () => {
+            pnl.antiAliasList.enabled = pnl.setAntiAliasCheckBox.value;
+        }
+        xx += 100;
+        let aaItems = I18n.LIST_ANTI_ALIAS_ITEMS;
+        pnl.antiAliasList = pnl.add('dropdownlist', [xx, yy, xx + 80, yy + 20], aaItems);
+        pnl.antiAliasList.enabled = false;
+        pnl.antiAliasList.selection = pnl.antiAliasList.items[4]; // 默认“平滑”
+        xx += 160;
+
+        // text color
+        pnl.setTextColorCheckBox = pnl.add('checkbox', [xx, yy, xx + 90, yy + 20], I18n.CHECKBOX_SET_TEXT_COLOR);
+        pnl.setTextColorCheckBox.onClick = () => {
+            pnl.textColorTextBox.enabled = pnl.setTextColorCheckBox.value;
+        }
+        xx += 90;
+        pnl.textColorTextBox = pnl.add('edittext', [xx, yy, xx + 80, yy + 20]);
+        pnl.textColorTextBox.enabled = false;
+        pnl.textColorTextBox.text = "#000000";
+        xx = xOfs;
+        yy += 23;
+
         // leading
         pnl.setTextLeadingCheckBox = pnl.add('checkbox', [xx, yy, xx + 100, yy + 20], I18n.CHECKBOX_SET_LEADING);
         pnl.setTextLeadingCheckBox.onClick = () => {
             pnl.textLeadingTextBox.enabled = pnl.setTextLeadingCheckBox.value;
         }
-        xx += 105;
+        xx += 101;
         pnl.textLeadingTextBox = pnl.add('edittext', [xx, yy, xx + 50, yy + 20]);
         pnl.textLeadingTextBox.enabled = false;
         pnl.textLeadingTextBox.text = "120";
@@ -620,6 +665,25 @@ class LabelPlusInput extends GenericUI {
             }
             Emit(pnl.setFontCheckBox.onClick);
         }
+        if (opts.antiAlias !== undefined) {
+            let val = Math.abs(opts.antiAlias);
+            if (val === 0) {
+                pnl.setAntiAliasCheckBox.value = false;
+            } else {
+                pnl.setAntiAliasCheckBox.value = (opts.antiAlias > 0);
+                pnl.antiAliasList.selection = pnl.antiAliasList.items[val - 1] || pnl.antiAliasList.items[0];
+            }
+            Emit(pnl.setAntiAliasCheckBox.onClick);
+        }
+        if (opts.textColor !== undefined) {
+            if (opts.textColor === "") {
+                pnl.setTextColorCheckBox.value = false;
+            } else {
+                pnl.setTextColorCheckBox.value = true;
+                pnl.textColorTextBox.text = opts.textColor;
+            }
+            Emit(pnl.setTextColorCheckBox.onClick);
+        }
         if (opts.textLeading !== undefined) {
             if (opts.textLeading === 0) {
                 pnl.setTextLeadingCheckBox.value = false;
@@ -646,6 +710,9 @@ class LabelPlusInput extends GenericUI {
                 opts.font = "";
                 opts.fontSize = 0;
             }
+            let aliasVal = pnl.antiAliasList.selection.index + 1; // 下拉下标+1 = AntiAlias 编号
+            opts.antiAlias = (pnl.setAntiAliasCheckBox.value) ? aliasVal : -aliasVal;
+            opts.textColor = (pnl.setTextColorCheckBox.value) ? pnl.textColorTextBox.text : "";
             opts.textLeading = (pnl.setTextLeadingCheckBox.value) ? pnl.textLeadingTextBox.text : 0;
             opts.textDirection = <OptionTextDirection> I18n.LIST_TEXT_DIT_ITEMS.indexOf(pnl.textDirList.selection.text);
             return opts;
@@ -696,7 +763,7 @@ class LabelPlusInput extends GenericUI {
         }
 
         // pnl
-        xx =+ 10;
+        xx = xOfs;
         yy += 23;
         pnl.overlayPnl = pnl.add('panel', [xx, yy, xx + 460, yy + 75]);
 
@@ -798,7 +865,7 @@ class LabelPlusInput extends GenericUI {
         yy += 60;
 
         // input options
-        this.inputPnl = pnl.add('panel', [xx, yy, xx + 355, yy + 420]);
+        this.inputPnl = pnl.add('panel', [xx, yy, xx + 355, yy + 460]);
         ret = this.uiInputPanel(this.inputPnl);
         this.addToPickerList(ret.getOption);
         xx += 365;
@@ -808,16 +875,16 @@ class LabelPlusInput extends GenericUI {
         yy = yOfs;
 
         // output options
-        this.outputPnl = pnl.add('panel', [xx, yy, xx + 480, yy + 120]);
+        this.outputPnl = pnl.add('panel', [xx, yy, xx + 480, yy + 140]);
         ret = this.uiOutputPanel(this.outputPnl);
         this.addToPickerList(ret.getOption);
-        yy += 130;
+        yy += 150;
 
         // style
-        this.stylePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 170]);
+        this.stylePnl = pnl.add('panel', [xx, yy, xx + 480, yy + 190]);
         ret = this.uiStylePanel(this.stylePnl);
         this.addToPickerList(ret.getOption);
-        yy += 180;
+        yy += 200;
 
         // automation
         this.automationPnl = pnl.add('panel', [xx, yy, xx + 480, yy + 170]);
@@ -828,7 +895,7 @@ class LabelPlusInput extends GenericUI {
         // help bar
         xx = this.winRect.w - 220;
         yy = 5;
-        this.HelpPnl = pnl.add('panel', [ , 0, "", [xx, yy, xx + 200, yy + 25]]);
+        this.HelpPnl = pnl.add('panel', [xx, yy, xx + 200, yy + 25]);
         ret = this.uiHelpPanel(this.HelpPnl);
 
         this.allPanelEnable(this.lpFile != null);
@@ -882,6 +949,9 @@ class LabelPlusInput extends GenericUI {
                 return true; // continue, will not close the indow
             }
         }
+
+        if (!tofile && this.outputPnl.setPPICheckBox.value && opts.ppi === 0)
+            log_err(I18n.ERROR_INVALID_PPI + " " + this.outputPnl.ppiTextBox.text);
 
         return opts; // go process()
     };

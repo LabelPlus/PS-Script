@@ -91,7 +91,9 @@ LogWindow = function LogWindow(title, bounds, text) {
                                        "Log file:*.log,All files:*",
                                        "/c/temp");
       if (f) {
-        f.open("w") || throwError(f.error);
+        if (!f.open("w")) {
+          throw new Error(f.error || "Log File Open Error");
+        }
         try { f.write(self.text); }
         finally { try { f.close(); } catch (e) {} }
       }
@@ -148,8 +150,8 @@ LogWindow = function LogWindow(title, bounds, text) {
    var oldFolder = Folder.current;
    if (startFolder) {
      if (typeof(startFolder) == "object") {
-       if (!(startFolder instanceof "Folder")) {
-         throw "Folder object wrong type";
+       if (!(startFolder instanceof Folder)) {
+         throw new Error("Folder object wrong type");
        }
        Folder.current = startFolder;
      } else if (typeof(startFolder) == "string") {
@@ -176,10 +178,6 @@ LogWindow.open = function(str, title) {
   var logwin = new LogWindow(title, undefined, str);
   logwin.show();
   return logwin;
-};
-
-function throwError(e) {
-  throw e;
 };
 
 "LogWindow.js";

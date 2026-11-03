@@ -609,19 +609,6 @@ GenericUI.prototype.createFontPanel = function(pnl, ini, label, lwidth) {
     var pnl = this;
     var font = pnl.style.selection.font;
     return { font: font.postScriptName, size: Number(pnl.fontSize.text) };
-
-    var fsel = pnl.family.selection.text;
-    var ssel = pnl.style.selection.text;
-    var family = pnl.fontTable[sel];
-    var styles = familyStyles;
-    var font = undefined;
-
-    for (var i = 0; i < styles.length && font == undefined; i++) {
-      if (styles[i].style == ssel) {
-        font = styles[i].font;
-      }
-    }
-    return { font: font, size: Number(font.fontSize) };
   }
 
   return pnl;

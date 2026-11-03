@@ -36,6 +36,9 @@ export class CustomOptions {
     textReplace: string = ""; // run text replacing function, if the expression is not empty
     outputLabelIndex: boolean = false; // if true, output label index as text layer
     textDirection: OptionTextDirection = OptionTextDirection.Keep; // text direction option
+    textColor: string = ""; // set text color(hex) if it is not empty
+    antiAlias: number = 0; // set anti-alias, 0=disabled, 1=None, 2=Sharp, 3=Crisp, 4=Strong, 5=Smooth; negative = remember the value but disabled
+    ppi: number = 0; // set PPI if neq 0, positive = enabled with that value, negative = disabled but remember value
 
     actionGroup: string = ""; // action group name
     dialogOverlayLabelGroups: string = ""; // the label groups need dialog overlay layer, split by ","

@@ -37,8 +37,12 @@ namespace I18n {
     export var CHECKBOX_NOT_CLOSE: string = "导入后不关闭文档";
     export var CHECKBOX_SET_FONT: string = "字体";
     export var CHECKBOX_SET_LEADING: string = "行距";
+    export var CHECKBOX_SET_TEXT_COLOR: string  = "文字颜色";
+    export var CHECKBOX_SET_ANTI_ALIAS: string  = "消除锯齿";
+    export var CHECKBOX_SET_PPI: string = "设置PPI";
     export var LABEL_TEXT_DIRECTION: string = "文字方向：";
     export var LIST_TEXT_DIT_ITEMS: string[] = [ "默认", "横向", "纵向" ];
+    export var LIST_ANTI_ALIAS_ITEMS: string[] = [ "无", "锐利", "犀利", "浑厚", "平滑" ];
     export var CHECKBOX_NO_LAYER_GROUP: string = "不对图层进行分组";
 
     export var CHECKBOX_DIALOG_OVERLAY: string = "启用对话框自动涂白";
@@ -56,6 +60,7 @@ namespace I18n {
     export var ERROR_NOT_FOUND_TARGET: string = "未找到目标文件夹";
     export var ERROR_NOT_FOUND_LPTEXT: string = "未找到LabelPlus文本文件";
     export var ERROR_NOT_FOUND_TEMPLATE: string = "未找到Photoshop模板文件";
+    export var ERROR_TEMPLATE_OPEN_FAIL: string = "Photoshop模板文件打开失败，请检查PS是否能正确打开该文件！";
     export var ERROR_CREATE_NEW_FOLDER: string = "无法创建新文件夹";
     export var ERROR_PARSER_LPTEXT_FAIL: string = "解析LabelPlus文本失败";
     export var ERROR_NO_IMG_CHOOSED: string = "未选择输出图片";
@@ -65,9 +70,12 @@ namespace I18n {
     export var ERROR_PRESET_TEMPLATE_NOT_FOUND: string = "无法自动匹配模板文件，请确认脚本所在目录是否存在ps_script_res目录";
     export var ERROR_TEXT_REPLACE_EXPRESSION: string = "文本替换表达式解析错误，请检查！";
     export var ERROR_OPT_FONT_NOT_FOUND: string = "找不到配置中保存的字体";
+    export var ERROR_INVALID_TEXT_COLOR: string = "文字颜色格式不正确(应为 #RRGGBB)，已忽略该设置";
+    export var ERROR_INVALID_PPI: string = "PPI 设置无效(应大于零)，已忽略该设置";
+    export var ERROR_PPI_RESIZE_FAIL: string = "设置PPI失败，已跳过该图片";
 
     declare var app: any;
-    // if (true) {
+
     if (!(app.locale in {"zh_CN":1, "zh_TW":1, "zh_HK":1})) {
         BUTTON_RUN = "Run";
         BUTTON_CANCEL = "Cancel";
@@ -100,8 +108,12 @@ namespace I18n {
         CHECKBOX_NOT_CLOSE = "Do Not Close File";
         CHECKBOX_SET_FONT = "Font";
         CHECKBOX_SET_LEADING = "Leading";
+        CHECKBOX_SET_TEXT_COLOR = "Text Color";
+        CHECKBOX_SET_ANTI_ALIAS = "Anti-Alias";
+        CHECKBOX_SET_PPI = "Set PPI";
         LABEL_TEXT_DIRECTION = "Text Direction:";
         LIST_TEXT_DIT_ITEMS = [ "Default", "Horizontal", "Vertical" ];
+        LIST_ANTI_ALIAS_ITEMS = [ "None", "Sharp", "Crisp", "Strong", "Smooth" ];
         CHECKBOX_NO_LAYER_GROUP = "Layer Not Grouping";
         CHECKBOX_DIALOG_OVERLAY = "Execute \"Dialog Overlay\"";
         LABEL_DIALOG_OVERLAY_GROUP = "Specified Groups(like: group1,group2)：";
@@ -116,6 +128,7 @@ namespace I18n {
         ERROR_NOT_FOUND_TARGET = "Output PSD Folder Not Found!";
         ERROR_NOT_FOUND_LPTEXT = "LabelPlus Text File Not Found!";
         ERROR_NOT_FOUND_TEMPLATE = "Photoshop template file not found!";
+        ERROR_TEMPLATE_OPEN_FAIL = "Photoshop template file open failed, please confirm whether Photoshop can open the file.";
         ERROR_CREATE_NEW_FOLDER = "Could not build new folder";
         ERROR_PARSER_LPTEXT_FAIL = "Fail To Load LabelPlus Text File";
         ERROR_NO_IMG_CHOOSED = "Please select more than one image";
@@ -125,5 +138,8 @@ namespace I18n {
         ERROR_PRESET_TEMPLATE_NOT_FOUND = "Cannot match template file, please make sure \"ps_script_res\" folder exsit.";
         ERROR_TEXT_REPLACE_EXPRESSION = "Expression of text replacing is wrong, please check again.";
         ERROR_OPT_FONT_NOT_FOUND = "Cannot found the font";
+        ERROR_INVALID_TEXT_COLOR = "Invalid text color (#RRGGBB expected), setting ignored";
+        ERROR_INVALID_PPI = "Invalid PPI value (positive integer expected), setting ignored";
+        ERROR_PPI_RESIZE_FAIL = "Failed to set PPI, image skipped";
     }
 }

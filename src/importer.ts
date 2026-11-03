@@ -82,11 +82,13 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
         direction: textDir,
         lgroup: img.ws.groups[label.group].layerSet,
         lending: opts.textLeading ? opts.textLeading : undefined,
+        color: opts.textColor ? hexToColor(opts.textColor) : undefined,
+        antiAlias: (opts.antiAlias > 0) ? opts.antiAlias : undefined,
     };
 
     // 使用模板时，用户不设置字体大小，不做更改；不使用模板时，如果用户不设置大小，自动调整到合适的大小
     if (opts.docTemplate === OptionDocTemplate.No) {
-        let proper_size = UnitValue(min(img.ws.doc.height.as("pt"), img.ws.doc.height.as("pt")) / 90.0, "pt");
+        let proper_size = UnitValue(min(img.ws.doc.width.as("pt"), img.ws.doc.height.as("pt")) / 90.0, "pt");
         o.size = (opts.fontSize !== 0) ? UnitValue(opts.fontSize, "pt") : proper_size;
     } else {
         o.size = (opts.fontSize !== 0) ? UnitValue(opts.fontSize, "pt") : undefined;
@@ -97,7 +99,7 @@ function importLabel(img: ImageInfo, label: LabelInfo): boolean
     if (opts.actionGroup) {
         img.ws.doc.activeLayer = textLayer;
         let result = doAction(label.group, opts.actionGroup);
-        log("run action " + label.group + "[" + opts.actionGroup + "]..." + result ? "done" : "fail");
+        log("run action " + label.group + "[" + opts.actionGroup + "]..." + (result ? "done" : "fail"));
     }
     return true;
 }
@@ -110,7 +112,7 @@ function importImage(img: ImageInfo): boolean
     if (opts.actionGroup) {
         img.ws.doc.activeLayer = img.ws.doc.layers[img.ws.doc.layers.length - 1];
         let result = doAction("_start", opts.actionGroup);
-        log("run action _start[" + opts.actionGroup + "]..." + result ? "done" : "fail");
+        log("run action _start[" + opts.actionGroup + "]..." + (result ? "done" : "fail"));
     }
 
     // 找出需要涂白的标签,记录他们的坐标,执行涂白
@@ -171,12 +173,12 @@ function importImage(img: ImageInfo): boolean
     if (opts.actionGroup) {
         img.ws.doc.activeLayer = img.ws.doc.layers[img.ws.doc.layers.length - 1];
         let result = doAction("_end", opts.actionGroup);
-        log("run action _end[" + opts.actionGroup + "]..." + result ? "done" : "fail");
+        log("run action _end[" + opts.actionGroup + "]..." + (result ? "done" : "fail"));
     }
     return true;
 }
 
-function openImageWorkspace(img_filename: string, template_path: string): ImageWorkspace | null
+function openImageWorkspace(img_filename: string, template_path: string, name_pair: string): ImageWorkspace | null
 {
     assert(opts !== null);
 
@@ -194,6 +196,7 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
         let bgFile = new File(opts.source + dirSeparator + img_filename);
         bgDoc = app.open(bgFile);
     } catch {
+        log_err(name_pair + ": " + I18n.ERROR_FILE_OPEN_FAIL);
         return null; //note: do not exit if image not exist
     }
 
@@ -203,8 +206,14 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
         wsDoc = app.documents.add(bgDoc.width, bgDoc.height, bgDoc.resolution, bgDoc.name, NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
         wsDoc.activeLayer.name = TEMPLATE_LAYER.IMAGE;
     } else {
-        let docFile = new File(template_path);  //note: if template must do not exist, crash
-        wsDoc = app.open(docFile);
+        let docFile = new File(template_path);
+        try {
+            wsDoc = app.open(docFile);
+        } catch {
+            log_err(name_pair + ": " + I18n.ERROR_TEMPLATE_OPEN_FAIL);
+            bgDoc.close(SaveOptions.DONOTSAVECHANGES);
+            return null;
+        }
         wsDoc.resizeImage(undefined, undefined, bgDoc.resolution);
         wsDoc.resizeCanvas(bgDoc.width, bgDoc.height);
     }
@@ -225,7 +234,7 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
         try { bgLayer = wsDoc.artLayers.getByName(TEMPLATE_LAYER.IMAGE); }
         catch {
             bgLayer = wsDoc.artLayers.add();
-            bgLayer.name = TEMPLATE_LAYER.DIALOG_OVERLAY;
+            bgLayer.name = TEMPLATE_LAYER.IMAGE;
         }
         // text layer template
         try { textTemplateLayer = wsDoc.artLayers.getByName(TEMPLATE_LAYER.TEXT); }
@@ -239,6 +248,7 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
         catch {
             dialogOverlayLayer = wsDoc.artLayers.add();
             dialogOverlayLayer.name = TEMPLATE_LAYER.DIALOG_OVERLAY;
+            pendingDelLayerList.push(dialogOverlayLayer);
         }
     }
 
@@ -260,6 +270,20 @@ function openImageWorkspace(img_filename: string, template_path: string): ImageW
             item = bgDoc.layers[i].duplicate(item, ElementPlacement.PLACEAFTER);
         }
     }
+
+    // set PPI
+    if (opts.ppi > 0) {
+        try {
+            wsDoc.resizeImage(undefined, undefined, opts.ppi, ResampleMethod.NONE);
+            log("override PPI to " + opts.ppi);
+        } catch {
+            log_err(name_pair + ": " + I18n.ERROR_PPI_RESIZE_FAIL);
+            wsDoc.close(SaveOptions.DONOTSAVECHANGES);
+            bgDoc.close(SaveOptions.DONOTSAVECHANGES);
+            return null;
+        }
+    }
+
     bgDoc.close(SaveOptions.DONOTSAVECHANGES);
 
     // 若文档类型为索引色模式 更改为RGB模式
@@ -411,6 +435,10 @@ export function importFiles(custom_opts: CustomOptions): boolean
         break;
     }
 
+    // 文字颜色格式预检
+    if (opts.textColor && hexToColor(opts.textColor) === undefined)
+        log_err(I18n.ERROR_INVALID_TEXT_COLOR + " " + opts.textColor);
+
     // 遍历所选图片
     for (let i = 0; i < opts.imageSelected.length; i++) {
         let orgin_name :string = opts.imageSelected[i].file; // 翻译文件中的图片文件名
@@ -422,9 +450,8 @@ export function importFiles(custom_opts: CustomOptions): boolean
             log('no label, ignored...');
             continue;
         }
-        let ws = openImageWorkspace(matched_name, template_path);
+        let ws = openImageWorkspace(matched_name, template_path, name_pair);
         if (ws == null) {
-            log_err(name_pair + ": " + I18n.ERROR_FILE_OPEN_FAIL);
             continue;
         }
 
@@ -455,7 +482,21 @@ interface TextInputOptions {
     direction?: Direction;
     lgroup?: LayerSet;
     lending?: number;        // 自动行距
+    color?: SolidColor;      // 文本颜色
+    antiAlias?: number;      // 消除锯齿 1=None 2=Sharp 3=Crisp 4=Strong 5=Smooth
 };
+
+// hex颜色字符串转SolidColor, 如 "#ff0000" 或 "ff0000"
+function hexToColor(hex: string): SolidColor | undefined {
+    hex = hex.trim().replace(/^#/, "");
+    if (!/^[0-9a-fA-F]{6}$/.test(hex))
+        return undefined;
+    let color = new SolidColor();
+    color.rgb.red   = parseInt(hex.substring(0, 2), 16);
+    color.rgb.green = parseInt(hex.substring(2, 4), 16);
+    color.rgb.blue  = parseInt(hex.substring(4, 6), 16);
+    return color;
+}
 
 // 创建文本图层
 function newTextLayer(doc: Document, text: string, x: number, y: number, topts: TextInputOptions = {}): ArtLayer
@@ -492,6 +533,18 @@ function newTextLayer(doc: Document, text: string, x: number, y: number, topts: 
     if ((topts.lending) && (topts.lending != 0)) {
         textItemRef.useAutoLeading = true;
         textItemRef.autoLeadingAmount = topts.lending;
+    }
+
+    if (topts.color) {
+        textItemRef.color = topts.color;
+    }
+
+    if (topts.antiAlias) {
+        let aaMap = [undefined, AntiAlias.NONE, AntiAlias.SHARP, AntiAlias.CRISP, AntiAlias.STRONG, AntiAlias.SMOOTH];
+        let aa = aaMap[topts.antiAlias];
+        if (aa !== undefined) {
+            textItemRef.antiAliasMethod = aa;
+        }
     }
 
     artLayerRef.name     = text;
