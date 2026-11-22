@@ -9,7 +9,7 @@ PS_JSX_OUTPUT=build/LabelPlus_Ps_Script.jsx
 
 rm -rf ./build/*
 mkdir -p build/
-$TSC --preserveConstEnums -p . --out $TSC_OUTPUT
+$TSC --preserveConstEnums -p . --outFile $TSC_OUTPUT
 cat src/copyleft_header.js $TSC_OUTPUT > $PS_JSX_OUTPUT
 python3 ./flatten_jsx.py $PS_JSX_OUTPUT $PS_JSX_OUTPUT -I build/ src/
 
