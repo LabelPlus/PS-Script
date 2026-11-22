@@ -36,6 +36,29 @@ export function FolderIsExists(path: string): boolean {
     return (new Folder(path)).exists;
 }
 
+// 在 source 目录中定位 LP 文本里写的图片文件
+// 1. 原文件名能直接命中则原样返回，因此 bmp、webp 等未收录格式也能导入
+// 2. 否则去掉扩展名，按 image_suffix_list 逐个尝试，保持旧行为
+// 找不到时返回 null
+export function findImageFile(sourceDir: string, labelFileName: string): string | null {
+    if (FileIsExists(sourceDir + dirSeparator + labelFileName)) {
+        return labelFileName;
+    }
+
+    // 无扩展名或是隐藏文件时不能截取，避免拼出 "\.psd" 这类路径
+    let dot = labelFileName.lastIndexOf(".");
+    let base = (dot > 0) ? labelFileName.substring(0, dot) : labelFileName;
+
+    for (let i = 0; i < image_suffix_list.length; i++) {
+        let name = base + image_suffix_list[i];
+        if (FileIsExists(sourceDir + dirSeparator + name)) {
+            return name;
+        }
+    }
+
+    return null;
+}
+
 export function Emit(func: Function): void {
     if (func !== undefined)
         func();

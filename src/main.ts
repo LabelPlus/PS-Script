@@ -294,8 +294,8 @@ class LabelPlusInput extends GenericUI {
                     logwin.append(matchList[i].file + " -> " + I18n.ERROR_NO_MATCH_IMG);
                 }
                 else {
-                    let found = FileIsExists(pnl.sourceTextBox.text + dirSeparator + matchList[i].matched_file);
-                    logwin.append(matchList[i].file + "(" + matchList[i].matched_file + ")" + " -> " + (found ? "OK" : I18n.ERROR_NO_MATCH_IMG));
+                    let found = findImageFile(pnl.sourceTextBox.text, matchList[i].matched_file);
+                    logwin.append(matchList[i].file + "(" + matchList[i].matched_file + ")" + " -> " + (found !== null ? "OK" : I18n.ERROR_NO_MATCH_IMG));
                 }
             }
             logwin.show();
@@ -929,24 +929,13 @@ class LabelPlusInput extends GenericUI {
             return true; // continue, will not close the indow
         }
 
-        // check image source exsits
+        // check image source exists
         for (let i = 0; i < opts.imageSelected.length; i++) {
             let item = opts.imageSelected[i].matched_file;
-            let file_name = item.substring(0, item.lastIndexOf('.'));
-            let path = opts.source + dirSeparator + file_name;
-            
-            let is_exist : boolean = false;
-            for(let j = 0; j < image_suffix_list.length; j++) {
-                let new_path = path + image_suffix_list[j];
-                if(FileIsExists(new_path)) {
-                    is_exist = true;
-                    break;
-                }
-            }
-            if (!is_exist) {
+            if (findImageFile(opts.source, item) === null) {
                 alert(I18n.ERROR_HAVE_NO_MATCH_IMG, 'error', true);
                 Emit(this.inputPnl.checkSourceMatchButton.onClick);
-                return true; // continue, will not close the indow
+                return true; // continue, will not close the window
             }
         }
 

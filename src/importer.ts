@@ -185,13 +185,12 @@ function openImageWorkspace(img_filename: string, template_path: string, name_pa
     // open background image
     let bgDoc: Document;
 
-    img_filename = img_filename.substring(0, img_filename.lastIndexOf('.'));
-    for (let i = 0; i < image_suffix_list.length; i++) {
-        if (FileIsExists(opts.source + dirSeparator + img_filename + image_suffix_list[i])){
-            img_filename = img_filename + image_suffix_list[i];
-            break;
-        }
+    let found_name = findImageFile(opts.source, img_filename);
+    if (found_name === null) {
+        log_err(name_pair + ": " + I18n.ERROR_NO_MATCH_IMG);
+        return null; //note: do not exit if image not exist
     }
+    img_filename = found_name;
     try {
         let bgFile = new File(opts.source + dirSeparator + img_filename);
         bgDoc = app.open(bgFile);
