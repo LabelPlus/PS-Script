@@ -18,7 +18,7 @@ export const TEMPLATE_LAYER = {
     DIALOG_OVERLAY: "dialog-overlay",
 };
 
-export const image_suffix_list = [".psd", ".png", ".jpg", ".jpeg", ".tif", ".tiff"];
+export const image_suffix_list = [".psd", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".psb", ".bmp", ".webp", ".gif"];
 
 export function GetScriptPath(): string {
     return <string>$.fileName;
@@ -71,8 +71,40 @@ export function getImageFilesListOfPath(path: string): string[] {
     return fileNameList.sort();
 }
 
-export function getFileSuffix(filename: string) {
-	return filename.substring(filename.lastIndexOf("."), filename.length)
+export function stripFileSuffix(filename: string): string {
+    if (!filename) {
+        return "";
+    }
+    let idx = filename.lastIndexOf(".");
+    if (idx <= 0) {
+        return filename;
+    }
+    return filename.substring(0, idx);
+}
+
+export function resolveImageFileName(source: string, filename: string): string {
+    if (!filename) {
+        return "";
+    }
+    if (FileIsExists(source + dirSeparator + filename)) {
+        return filename;
+    }
+    let base = stripFileSuffix(filename);
+    for (let i = 0; i < image_suffix_list.length; i++) {
+        let candidate = base + image_suffix_list[i];
+        if (FileIsExists(source + dirSeparator + candidate)) {
+            return candidate;
+        }
+    }
+    return "";
+}
+
+export function normalizeImageSuffix(suffix: string): string {
+    suffix = suffix.trim();
+    if (suffix === "" || suffix.charAt(0) === ".") {
+        return suffix;
+    }
+    return "." + suffix;
 }
 
 export function doAction(action: string, actionSet: string): boolean

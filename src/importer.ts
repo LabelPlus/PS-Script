@@ -185,13 +185,6 @@ function openImageWorkspace(img_filename: string, template_path: string, name_pa
     // open background image
     let bgDoc: Document;
 
-    img_filename = img_filename.substring(0, img_filename.lastIndexOf('.'));
-    for (let i = 0; i < image_suffix_list.length; i++) {
-        if (FileIsExists(opts.source + dirSeparator + img_filename + image_suffix_list[i])){
-            img_filename = img_filename + image_suffix_list[i];
-            break;
-        }
-    }
     try {
         let bgFile = new File(opts.source + dirSeparator + img_filename);
         bgDoc = app.open(bgFile);
@@ -441,16 +434,21 @@ export function importFiles(custom_opts: CustomOptions): boolean
 
     // 遍历所选图片
     for (let i = 0; i < opts.imageSelected.length; i++) {
-        let orgin_name :string = opts.imageSelected[i].file; // 翻译文件中的图片文件名
+        let orgin_name: string = opts.imageSelected[i].file; // 翻译文件中的图片文件名
         let matched_name: string = opts.imageSelected[i].matched_file;
-        let name_pair = LabelPlus.str_filename_pair(orgin_name, matched_name);
+        let resolved_name = resolveImageFileName(opts.source, matched_name);
+        let name_pair = LabelPlus.str_filename_pair(orgin_name, resolved_name === "" ? matched_name : resolved_name);
 
         log(name_pair + 'in processing...' );
         if (opts.ignoreNoLabelImg && lpFile?.images[orgin_name].length == 0) { // ignore img with no label
             log('no label, ignored...');
             continue;
         }
-        let ws = openImageWorkspace(matched_name, template_path, name_pair);
+        if (resolved_name === "") {
+            log_err(name_pair + ": " + I18n.ERROR_FILE_OPEN_FAIL);
+            continue; // 与原逻辑一致：图片不存在不中断整个导入
+        }
+        let ws = openImageWorkspace(resolved_name, template_path, name_pair);
         if (ws == null) {
             continue;
         }
