@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+### Added
+### Changed
+### Fixed
+### Removed
+
 ## [1.8.1] - 2026-11-25
 ### Added
 - 图源后缀匹配新增 .bmp/.webp/.gif/.psb 格式
