@@ -40,3 +40,22 @@ $ cd PS-Script
 $ yarn install
 $ ./build.sh
 ```
+
+### release
+
+版本号只写在 `CHANGELOG.md` 里。`src/version.ts` 是占位值，发布时由 `scripts/package_release.py` 填入。
+
+1. 在 `CHANGELOG.md` 里把 `[Unreleased]` 下的条目移到新的版本小节，例如 `## [1.8.2] - 2026-12-01`。`[Unreleased]` 只保留空的小标题。
+2. 把这次修改合入 `master`。
+3. 在 GitHub 的 Actions 页面选 Release，点 Run workflow，分支选 `master`。
+
+工作流会读取 `CHANGELOG.md` 最上面的版本号，给 `master` 最新提交打上同名 tag，然后构建并发布 Release。以下情况会直接失败：
+
+* `[Unreleased]` 下还有条目，或最新版本小节是空的。
+* 同名 tag 已经指向别的提交，或同名 Release 已经存在。
+
+也可以在本地打 tag 并推送，tag 必须和 `CHANGELOG.md` 最新版本一致。本地检查版本号：
+
+```
+$ python3 scripts/package_release.py --print-version
+```
