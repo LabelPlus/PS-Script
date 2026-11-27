@@ -32,6 +32,9 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
       - name: Resolve release tag
         id: tag
         env:
@@ -41,10 +44,10 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         run: |
           if [ "$EVENT" = push ]; then
-            python3 scripts/package_release.py --print-version "$REF_NAME" >/dev/null
+            node scripts/release.mjs --print-version "$REF_NAME" >/dev/null
             tag="$REF_NAME"
           else
-            tag=$(python3 scripts/package_release.py --print-version)
+            tag=$(node scripts/release.mjs --print-version)
             if ref=$(gh api "repos/$GH_REPO/git/ref/tags/$tag" --jq '.object.type + " " + .object.sha' 2>/dev/null); then
               set -- $ref
               sha=$2
@@ -62,13 +65,11 @@ jobs:
           echo "Release tag: $tag"
           echo "name=$tag" >> "$GITHUB_OUTPUT"
       - name: Install locked dependencies
-        run: |
-          node scripts/prepare_ci_lock.cjs
-          npm ci --ignore-scripts
+        run: npm ci --ignore-scripts
       - name: Build release archive and notes
         env:
           RELEASE_TAG: ${{ steps.tag.outputs.name }}
-        run: python3 scripts/package_release.py "$RELEASE_TAG"
+        run: npm run release -- "$RELEASE_TAG"
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -82,5 +83,5 @@ jobs:
           else
             tag_opt="--target=$GITHUB_SHA"
           fi
-          gh release create "$RELEASE_TAG" build/LabelPlus_PS-Script_*.7z "$tag_opt" \
+          gh release create "$RELEASE_TAG" build/LabelPlus_PS-Script_*.zip "$tag_opt" \
             --title "v${RELEASE_TAG#v}" --notes-file build/release-notes.md

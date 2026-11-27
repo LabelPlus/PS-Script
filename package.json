@@ -1,4 +1,12 @@
 {
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "release": "node scripts/release.mjs"
+  },
   "dependencies": {
     "photoshop.d.ts": "^1.0.0"
   },

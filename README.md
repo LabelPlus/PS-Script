@@ -22,28 +22,26 @@ LabelPlus是一个用于图片翻译的工具包，本工程是其中的Photosho
 
 ## 开发方法
 
-### requirement
-* typescript
-* python3
+只需要 Node.js 20 或更高版本，不需要其他工具。下面的命令在 Windows、macOS 和 Linux 上相同，PowerShell、cmd 和 bash 都能用。
+
+### 构建
 
 ```
-$ sudo apt install python3 nodejs
-$ sudo npm install -g typescript yarn
-$ npm config set registry https://registry.npmmirror.com
-$ yarn config set registry https://registry.npmmirror.com
+npm ci
+npm run build
 ```
 
-### build
+输出在 `build/` 目录：`LabelPlus_Ps_Script.jsx` 是脚本本体，`ps_script_res/` 是文档模板。
+
+在国内下载依赖慢，可以先设置镜像，`package-lock.json` 不需要改：
 
 ```
-$ cd PS-Script
-$ yarn install
-$ ./build.sh
+npm config set registry https://registry.npmmirror.com
 ```
 
-### release
+### 发布
 
-版本号只写在 `CHANGELOG.md` 里。`src/version.ts` 是占位值，发布时由 `scripts/package_release.py` 填入。
+版本号只写在 `CHANGELOG.md` 里。`src/version.ts` 是占位值，发布构建时由 `scripts/release.mjs` 填入。
 
 1. 在 `CHANGELOG.md` 里把 `[Unreleased]` 下的条目移到新的版本小节，例如 `## [1.8.2] - 2026-12-01`。`[Unreleased]` 只保留空的小标题。
 2. 把这次修改合入 `master`。
@@ -54,8 +52,11 @@ $ ./build.sh
 * `[Unreleased]` 下还有条目，或最新版本小节是空的。
 * 同名 tag 已经指向别的提交，或同名 Release 已经存在。
 
-也可以在本地打 tag 并推送，tag 必须和 `CHANGELOG.md` 最新版本一致。本地检查版本号：
+也可以在本地打 tag 并推送，tag 必须和 `CHANGELOG.md` 最新版本一致。
+
+在本地检查版本号，或生成和 CI 相同的发布包 `build/LabelPlus_PS-Script_<版本>.zip`：
 
 ```
-$ python3 scripts/package_release.py --print-version
+npm run release -- --print-version
+npm run release
 ```
